@@ -38,8 +38,10 @@ that gap rigorously — and, if it's confirmed, to design toward the credible ap
 - **Neutron source design** — shielding calculations and compact-generator specs, for the
   scenario where the anomaly turns out to be real and controllable.
 
-See [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) for the full physics-honest
-assessment and [`docs/ANOMALY_INVESTIGATION_ROADMAP.md`](docs/ANOMALY_INVESTIGATION_ROADMAP.md)
+See [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) (also as
+[PDF](docs/TECHNICAL_REPORT.pdf), regenerate with `docs/render_pdf.sh`) for the full
+physics-honest assessment and
+[`docs/ANOMALY_INVESTIGATION_ROADMAP.md`](docs/ANOMALY_INVESTIGATION_ROADMAP.md)
 for the phased research plan this tool supports.
 
 ## Why this might matter to you
