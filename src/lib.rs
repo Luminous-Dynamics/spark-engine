@@ -10,10 +10,20 @@
 //! - Anomaly investigation (Path C): Understanding observed vs predicted rates
 //! - Neutron source design (Path D): Compact neutron generator applications
 //!
-//! ## Key Finding
+//! ## Numerical baseline qualification
 //!
-//! Standard Gamow physics predicts `<σv>` ~ 10⁻⁵⁰ cm³/s at room temperature,
-//! yet NASA observed ~10³ neutrons/s. This gap is the central mystery.
+//! The D-D Maxwellian kernel uses a constant-S Gamow approximation. Its
+//! keV·barn-to-cm³/s conversion and total two-branch S factor are regression
+//! checked against the NRL Plasma Formulary 2019 (p. 45) over 1–20 keV, using
+//! a declared 35% approximation envelope. The 300 K / beam-lattice regime is
+//! outside that validation domain: results there are extrapolations, not a
+//! validated thermonuclear baseline or a measured LCF rate.
+//!
+//! NASA Glenn reported detector-efficiency-corrected fusion-energy neutron
+//! rates scaled to the sample location of 1.5 ± 0.3 × 10³ and
+//! 1.6 ± 0.3 × 10³ neutrons/s for two samples. These are inferred source
+//! rates, not raw detector count rates (Steinetz et al., Phys. Rev. C 101,
+//! 044610 (2020), DOI 10.1103/PhysRevC.101.044610).
 //!
 //! ## Modules
 //!
@@ -148,7 +158,17 @@ pub mod constants {
     /// Boltzmann constant (keV/K)
     pub const KB_KEV: f64 = 8.617e-8;
 
-    /// NASA observed neutron rate (n/s per cm²)
+    /// NASA Steinetz TS1575 detector-efficiency-corrected source rate at sample location (n/s).
+    /// Source: Steinetz et al., Phys. Rev. C 101, 044610 (2020), Table/Results text.
+    pub const NASA_STEINETZ_TS1575_RATE_S: f64 = 1.5e3;
+    /// Reported standard uncertainty for the TS1575 source rate (n/s).
+    pub const NASA_STEINETZ_TS1575_RATE_UNCERTAINTY_S: f64 = 0.3e3;
+    /// NASA Steinetz TS1576 detector-efficiency-corrected source rate at sample location (n/s).
+    pub const NASA_STEINETZ_TS1576_RATE_S: f64 = 1.6e3;
+    /// Reported standard uncertainty for the TS1576 source rate (n/s).
+    pub const NASA_STEINETZ_TS1576_RATE_UNCERTAINTY_S: f64 = 0.3e3;
+    /// Legacy rounded sample-location source-rate placeholder (n/s).
+    /// Not an areal detector count rate; prefer the sample-specific constants above.
     pub const NASA_OBSERVED_RATE: f64 = 1e3;
 
     /// Pd density (g/cm³)
