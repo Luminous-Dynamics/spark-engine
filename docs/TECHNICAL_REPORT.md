@@ -11,10 +11,14 @@
 > Q and 40-order anomaly-gap figures are withdrawn pending a separately validated
 > sub-keV model and matched experiment boundary. A unit-conversion defect in the
 > Maxwellian prefactor and a one-branch/total-branch S-factor mismatch were found.
-> The corrected constant-S bare D-D kernel is now regression checked against the
-> 2019 NRL Plasma Formulary at 1–20 keV with a 35% approximation envelope. See
-> docs/DD_MAXWELLIAN_REACTIVITY_REFERENCE_BENCHMARK.md. The 300 K lattice/beam
-> regime is outside that reference domain and remains an extrapolation.
+> The legacy constant-S kernel has an NRL 1–20 keV regression check, but it is
+> not the bare-nucleus authority. A new branch-resolved Bosch-Hale module now
+> implements D(d,n)³He and D(d,p)T cross-sections, analytic Maxwellian reactivities,
+> and a numerical cross-section integration cross-check within published domains.
+> A second correction fixes identical-reactant rate density from n_D²<σv>/4 to
+> n_D²<σv>/2, with branch fractions applied separately. Tests are written but
+> not executed here; see docs/BOSCH_HALE_DD_BRANCH_BENCHMARK.md. The 300 K
+> lattice/beam regime remains outside these thermonuclear fit domains.
 
 ---
 
@@ -69,11 +73,36 @@ against the NRL Plasma Formulary (2019, p. 45):
 | 20 keV | 5.2 × 10⁻¹⁸ cm³/s | 3.89 × 10⁻¹⁸ cm³/s | −25.1% |
 
 The 35% acceptance envelope is for this simplified constant-S regression
-only. It is not an uncertainty band on the physical reaction rate. A
-full energy-dependent Bosch–Hale branch implementation is the next accuracy
-upgrade.
+only. It is not an uncertainty band on the physical reaction rate. This
+constant-S path remains useful for transparent sensitivity experiments but is
+not the authoritative bare-nucleus reference.
 
-### 1.3 Room-temperature and lattice regime
+### 1.3 Branch-resolved Bosch-Hale reference
+
+The new module, src/bosch_hale.rs, implements two separate reference models:
+- Energy-dependent D(d,n)³He and D(d,p)T cross-sections using the Bosch-Hale
+  polynomial fits, returned in millibarns versus centre-of-mass energy.
+- Analytic Maxwellian reactivities for each branch, returned in cm³/s over
+  0.2 < T_i < 100 keV.
+
+A separate adaptive-Simpson integration evaluates each branch cross-section
+over the Maxwellian relative-energy distribution. Its 1–100 keV conservative
+validation interval avoids integrating below the published 0.5 keV
+cross-section-fit boundary. The numerical integration and analytic rate fit
+agree within approximately 2% in an independent Python check over 1–50 keV;
+the Rust regression suite uses a 2.5% envelope and is not yet executed.
+
+The implementation is checked against the MIT Magnetic Fusion Energy
+Formulary (2014), §§9.7–9.8, including tabulated cross-sections and branch
+rates. The 2019 NRL total-rate table is retained as a separate comparison;
+its low-temperature values differ from the Bosch-Hale total and should not be
+treated as an exact branch-resolved Bosch-Hale oracle. See
+docs/BOSCH_HALE_DD_BRANCH_BENCHMARK.md.
+
+The 0.2–100 keV analytic-fit range is a thermonuclear reference domain, not
+a justification for extrapolating to 300 K or a deuterated solid lattice.
+
+### 1.4 Room-temperature and lattice regime
 
 300 K corresponds to approximately 2.6 × 10⁻⁵ keV, far below the 1–20 keV
 regression cases above. The GamowIntegration::dd_rate result at 300 K,
