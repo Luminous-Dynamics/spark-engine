@@ -47,17 +47,21 @@
 //! use spark_engine::physics::{GamowIntegration, QFactor, QFactorParams};
 //! use spark_engine::anomaly::AnomalyAnalysis;
 //!
-//! // Standard physics calculation
+//! // Model-screening example only; 300 K is outside the independent
+//! // 1–20 keV reactivity regression domain.
 //! let gamow = GamowIntegration::dd_rate(300.0, 309.0, 2);
 //! let (q, achievable) = QFactor::compute(&gamow, &QFactorParams::lcf_typical());
-//! assert!(q < 1.0, "Q < 1 at room temperature - physics is honest");
+//! assert!(q < 1.0, "Q remains below unity in this modelled scenario");
 //!
-//! // Anomaly investigation
-//! let observed = 1e3; // NASA neutron rate
-//! let n_d = 4.8e22; // D atoms/cm³
-//! let volume = 0.01; // cm³
-//! let predicted = gamow.to_neutron_rate(n_d, volume);
-//! let gap = AnomalyAnalysis::compute_gap(observed, predicted);
+//! // API illustration with synthetic, boundary-matched rates only.
+//! // Do not substitute a published source-location rate until its sample
+//! // geometry, detector correction, energy distribution and model domain match.
+//! let synthetic_observed_source_rate = 100.0;
+//! let synthetic_predicted_source_rate = 1.0;
+//! let gap = AnomalyAnalysis::compute_gap(
+//!     synthetic_observed_source_rate,
+//!     synthetic_predicted_source_rate,
+//! );
 //! ```
 
 // Core physics modules
