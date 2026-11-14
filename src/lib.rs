@@ -13,12 +13,13 @@
 //!
 //! ## Numerical baseline qualification
 //!
-//! The D-D Maxwellian kernel uses a constant-S Gamow approximation. Its
-//! keV·barn-to-cm³/s conversion and total two-branch S factor are regression
-//! checked against the NRL Plasma Formulary 2019 (p. 45) over 1–20 keV, using
-//! a declared 35% approximation envelope. The 300 K / beam-lattice regime is
-//! outside that validation domain: results there are extrapolations, not a
-//! validated thermonuclear baseline or a measured LCF rate.
+//! The bare-nucleus reference is branch-resolved Bosch-Hale cross-sections
+//! and Maxwellian reactivities in bosch_hale.rs, with numerical integration
+//! cross-checks and explicit published validity domains. The legacy constant-S
+//! Gamow kernel in physics.rs remains an exploratory screening/phonon sensitivity
+//! model; its 1–20 keV NRL comparison has a 35% approximation envelope. The
+//! 300 K / beam-lattice regime is outside both thermonuclear fit domains: results
+//! there are extrapolations, not validated reactivities or measured LCF rates.
 //!
 //! NASA Glenn reported detector-efficiency-corrected fusion-energy neutron
 //! rates scaled to the sample location of 1.5 ± 0.3 × 10³ and
