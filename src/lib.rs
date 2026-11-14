@@ -89,7 +89,7 @@ pub mod optimal_experiment;
 pub use benchmark::{
     BenchmarkRecord, DataRights, DetectionChannel, EnergyFrame, EvidenceClass, ExperimentClass,
     LoadingState, Measurement, MeasurementUnit, MeasurementUncertainty, QuantityKind,
-    SourceReference, UncertaintyKind, UncertaintyStatus, ValueBasis,
+    RateBoundary, SourceReference, UncertaintyKind, UncertaintyStatus, ValueBasis,
 };
 
 pub use anomaly::{AnomalyAnalysis, AnomalyHypothesis};
