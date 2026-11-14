@@ -294,7 +294,7 @@ pub fn integrate_dd_branch_maxwellian(
     }
 
     let fit = CrossSectionFit::for_branch(branch);
-    let e_min = CROSS_SECTION_MIN_KEV;
+    let e_min = CROSS_SECTION_MIN_KEV * (1.0 + 1.0e-12);
     let e_max = (60.0 * temperature_kev)
         .max(20.0)
         .min(fit.max_energy_kev * (1.0 - 1.0e-12));
