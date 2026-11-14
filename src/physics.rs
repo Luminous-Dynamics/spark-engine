@@ -88,27 +88,37 @@ pub struct GamowResult {
     pub phonon_modes: u32,
 }
 
+/// Total D-D reaction-rate density for identical deuterons.
+///
+/// The Maxwellian reactivity is defined for a pair collision. Since the two
+/// reactants are the same species, each physical pair is counted once:
+/// R = n_D^2 * <sigma v> / 2. A branch fraction is applied separately.
+#[inline]
+fn dd_reaction_rate_density(n_d_cm3: f64, sigma_v_cm3_s: f64) -> f64 {
+    0.5 * n_d_cm3.powi(2) * sigma_v_cm3_s
+}
+
 impl GamowResult {
-    /// Convert reaction rate to neutron production rate.
+    /// Convert total D-D reactivity to neutron production rate.
     ///
     /// `n_d_cm3`: Deuterium number density (atoms/cm³)
     /// `volume_cm3`: Active volume (cm³)
     pub fn to_neutron_rate(&self, n_d_cm3: f64, volume_cm3: f64) -> f64 {
-        // Reaction rate density: R = n² × <σv> / 4 (factor of 4 for identical particles)
-        let reaction_rate_density = n_d_cm3.powi(2) * self.sigma_v_cm3_s / 4.0;
-
-        // Total reactions per second
-        let total_rate = reaction_rate_density * volume_cm3;
-
-        // ~50% go to neutron channel
-        total_rate * 0.5
+        // Identical-reactant symmetry is 1/2; the neutron branch fraction is
+        // a separate factor and must not be folded into that symmetry term.
+        let total_rate_density = dd_reaction_rate_density(n_d_cm3, self.sigma_v_cm3_s);
+        let (neutron_fraction, _) =
+            GamowIntegration::dd_branching_ratio(self.gamow_peak_kev);
+        total_rate_density * neutron_fraction * volume_cm3
     }
 
     /// Compute fusion power density (W/cm³).
     pub fn fusion_power_density(&self, n_d_cm3: f64) -> f64 {
-        let reaction_rate_density = n_d_cm3.powi(2) * self.sigma_v_cm3_s / 4.0;
-        let e_fusion_j = DD_Q_AVERAGE * 1.602e-13; // MeV to J
-        reaction_rate_density * e_fusion_j
+        let total_rate_density = dd_reaction_rate_density(n_d_cm3, self.sigma_v_cm3_s);
+        let (neutron_fraction, proton_fraction) =
+            GamowIntegration::dd_branching_ratio(self.gamow_peak_kev);
+        let mean_q_mev = neutron_fraction * DD_Q_NEUTRON + proton_fraction * DD_Q_PROTON;
+        total_rate_density * mean_q_mev * 1.602e-13 // MeV to J
     }
 }
 
@@ -310,10 +320,10 @@ impl GamowIntegration {
         let neutron_sigma_v = gamow.sigma_v_cm3_s * neutron_frac;
         let proton_sigma_v = gamow.sigma_v_cm3_s * proton_frac;
 
-        // Reaction rate density: R = n² × <σv> / 4
-        let _total_rate_density = n_d_cm3.powi(2) * gamow.sigma_v_cm3_s / 4.0;
-        let neutron_rate_density = n_d_cm3.powi(2) * neutron_sigma_v / 4.0;
-        let proton_rate_density = n_d_cm3.powi(2) * proton_sigma_v / 4.0;
+        // Apply identical-reactant symmetry once per branch; branch
+        // reactivities already encode the neutron/proton split.
+        let neutron_rate_density = dd_reaction_rate_density(n_d_cm3, neutron_sigma_v);
+        let proton_rate_density = dd_reaction_rate_density(n_d_cm3, proton_sigma_v);
 
         // Product rates
         let neutron_rate_per_cm3 = neutron_rate_density; // 1 neutron per reaction
@@ -464,6 +474,48 @@ mod tests {
                 relative_error * 100.0
             );
         }
+    }
+
+    #[test]
+    fn test_dd_identical_reactant_symmetry_factor() {
+        // R = n_D^2 <sigma v> / 2 for identical D + D reactants.
+        assert_eq!(dd_reaction_rate_density(2.0, 3.0), 6.0);
+    }
+
+    #[test]
+    fn test_neutron_rate_applies_branch_fraction_separately() {
+        let result = GamowResult {
+            sigma_v_cm3_s: 2.0,
+            gamow_peak_kev: 5.0,
+            gamow_width_kev: 1.0,
+            screening_enhancement: 1.0,
+            phonon_enhancement: 1.0,
+            temperature_k: 0.0,
+            screening_ev: 0.0,
+            phonon_modes: 0,
+        };
+        let n_d_cm3 = 2.0;
+        let volume_cm3 = 3.0;
+        let neutron_fraction = GamowIntegration::dd_branching_ratio(5.0).0;
+        let expected = 0.5 * n_d_cm3.powi(2) * result.sigma_v_cm3_s
+            * neutron_fraction * volume_cm3;
+        let actual = result.to_neutron_rate(n_d_cm3, volume_cm3);
+        assert!((actual - expected).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_branched_rates_sum_to_identical_particle_total() {
+        let temperature_k = 5.0 / KB_KEV;
+        let n_d_cm3 = 2.0;
+        let result = GamowIntegration::dd_branched(temperature_k, 0.0, 0, n_d_cm3);
+        let expected_total = 0.5 * n_d_cm3.powi(2) * result.total_sigma_v_cm3_s;
+        let actual_total = result.neutron_rate_per_cm3 + result.tritium_rate_per_cm3;
+        assert!(expected_total > 0.0);
+        assert!((actual_total - expected_total).abs() / expected_total < 1e-12);
+
+        let expected_power = result.neutron_rate_per_cm3 * DD_Q_NEUTRON * 1.602e-13
+            + result.tritium_rate_per_cm3 * DD_Q_PROTON * 1.602e-13;
+        assert!((result.power_density_w_cm3 - expected_power).abs() / expected_power < 1e-12);
     }
 
     #[test]
