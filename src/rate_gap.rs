@@ -210,7 +210,11 @@ impl RateGapCalculator {
         }
     }
 
-    /// Analyze NASA Steinetz 2020 results.
+    /// Apply legacy illustrative conditions to the NASA Steinetz 2020 source-rate reference.
+    ///
+    /// This is not a validation-grade anomaly-gap calculation: the simplified
+    /// thermal model, assumed active volume/loading and experiment's
+    /// non-Maxwellian energy distribution are not yet independently matched.
     pub fn analyze_nasa_steinetz() -> RateGapAnalysis {
         let conditions = ExperimentalConditions {
             temperature_k: 300.0,
