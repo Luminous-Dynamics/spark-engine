@@ -133,3 +133,15 @@ References:
 - [DOE: Final Fusion Science and Technology Roadmap, 9 June 2026](https://www.energy.gov/articles/energy-department-releases-finalized-fusion-science-and-technology-roadmap-accelerate)
 - [LLNL: NIF repeated ignition; 7.9 MJ and target gain ~3.8, 20 June 2026](https://lmf.llnl.gov/science/achieving-fusion-ignition)
 - [Wendelstein 7-X: triple product result, *Physical Review E* (2026)](https://doi.org/10.1103/q59k-8m26)
+
+
+## Separate tokamak equilibrium benchmark — do not conflate with LCF
+
+The NeurIPS 2026 Fusion Equilibrium Challenge published final results on 14 November 2026. Its 9,121-shot DIII-D/MAST benchmark measures offline reconstruction of tokamak poloidal-flux maps without magnetic diagnostic measurements as model inputs. It is a useful Symthaea plasma-inference benchmark, but it is physically and statistically distinct from Spark's materials-mediated D–D observation corpus.
+
+- Symthaea benchmark programme: [FUSION-EQUILIBRIUM-TRANSFER-001 #12055](https://github.com/Luminous-Dynamics/symthaea/issues/12055).
+- Symtropy inference receipt/replay programme: [FUSION-EQUILIBRIUM-RECEIPT-001 #5138](https://github.com/Luminous-Dynamics/symtropy/issues/5138).
+- Official data/splits/errata: https://fusion-equilibrium-challenge.sophelio.io/data/
+- Official final scores: https://fusion-equilibrium-challenge.sophelio.io/results/
+
+The DIII-D/MAST flux maps, q95/betaN targets and tokamak equilibrium score are not LCF reaction-yield evidence. Keep both benchmark families in the same broader reactor-research portfolio but never merge their measurements, claims or performance metrics.
