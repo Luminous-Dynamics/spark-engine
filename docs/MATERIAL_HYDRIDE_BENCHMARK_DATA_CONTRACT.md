@@ -31,15 +31,33 @@ These cannot be combined into one undifferentiated "LCF yield" dataset. In parti
 | Relative yield | Dimensionless | Named normalization reference |
 | Hydride-to-metal yield ratio | Dimensionless | Named control |
 | Absolute yield | Events per incident ion | Absolute |
-| Total detector count rate | Counts per second | Absolute |
-| Areal detector count rate | Counts per second per cm² | Absolute |
-| Total reaction rate | Reactions per second | Absolute |
-| Volumetric reaction rate | Reactions per second per cm³ | Absolute |
-| Calorimetric power | Watt | Absolute; calorimetry channel only |
+| Total detector count rate | Counts per second | Absolute; detector-plane boundary |
+| Areal detector count rate | Counts per second per cm² | Absolute; detector-plane-per-area boundary |
+| Neutron source rate | Neutrons per second | Absolute; sample-location-source boundary |
+| Total reaction rate | Reactions per second | Absolute; sample-set-total boundary |
+| Volumetric reaction rate | Reactions per second per cm³ | Absolute; per-volume boundary |
+| Calorimetric power | Watt | Absolute; calorimetry channel and device boundary |
 | Loading ratio | Deuterium per host atom | Absolute |
 | Enhancement ratio | Dimensionless | Named model/reference calculation |
 
 A model-relative enhancement ratio is not a reaction rate, thermal power, Q-factor or net-electric output. Plant energy boundaries are owned separately by Symtropy's typed energy-port work.
+
+
+
+## Rate and power boundaries
+
+A rate's unit does not by itself identify where it applies. Every rate/power record must carry a matching boundary:
+
+| Quantity | Required boundary |
+|---|---|
+| Detector count rate | Detector plane |
+| Areal detector count rate | Detector plane per area |
+| Neutron source rate | Sample-location source |
+| Total reaction rate | Total declared sample/sample-set source |
+| Volumetric reaction rate | Per-volume |
+| Calorimetric power | Declared device boundary |
+
+For example, a detector-efficiency-corrected neutron source rate scaled back to the sample location must not be entered as a detector count rate. A neutron source rate is also not synonymous with a total reaction rate: branch fraction, detection geometry and particle yield remain separate transformations with their own provenance.
 
 ## Provenance and uncertainty
 
@@ -71,6 +89,8 @@ The Rust unit tests require the contract to reject:
 - relative yield without a named normalization reference;
 - hydride-to-metal ratio without a named control;
 - model-relative enhancement represented as a power unit;
+- sample-location neutron source rate confused with detector count rate;
+- rate/power records missing or carrying an incompatible measurement boundary;
 - areal detector count rate confused with total detector count rate;
 - volumetric reaction rate confused with total reaction rate;
 - calorimetric power assigned to a particle detector channel;
