@@ -513,7 +513,7 @@ mod tests {
             q(1.0).unwrap(),
         )
         .unwrap();
-        assert_eq!(result.power_density.value(), 1.0e18 * 1.0e-22 * MEV_TO_JOULE);
+        assert_eq!(result.power_density.value(), 1.0e18 * MEV_TO_JOULE);
     }
 
     #[test]
