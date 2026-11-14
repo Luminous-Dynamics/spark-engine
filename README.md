@@ -4,14 +4,15 @@ A physics-honest Rust toolkit for investigating **Lattice Confinement Fusion (LC
 the anomalous neutron production NASA Glenn Research Center reported from deuterium-loaded
 metal lattices under X-ray triggering (Steinetz et al. 2020, *Phys. Rev. C*).
 
-**This is a research tool, not a power source.** Spark's bare D-D Maxwellian kernel now has a
-unit-corrected, total-two-branch constant-S Gamow approximation benchmarked against the
-2019 NRL Plasma Formulary over 1–20 keV (35% acceptance envelope). The 300 K solid-lattice
-regime is far outside that reference domain: absolute room-temperature rates from this
-approximation are extrapolations, not validated standard reactivities. Do not treat a
-beam-target screening potential as a measured Maxwellian plasma correction. `QFactor`
-continues to flag Q < 1 at room temperature; its absolute low-temperature value remains
-model-dependent.
+**This is a research tool, not a power source.** Spark now includes a branch-resolved
+Bosch–Hale bare-nucleus reference fit for D–D cross-sections and Maxwellian reactivities,
+with independent numerical integration checks within published fit domains. The
+constant-S Gamow kernel remains an exploratory screening/phonon sensitivity model.
+The 300 K solid-lattice regime lies outside the thermonuclear fit domains: absolute
+room-temperature rates are extrapolations, not validated standard reactivities. Do
+not treat a beam-target screening potential as a measured Maxwellian plasma correction.
+`QFactor` continues to flag Q < 1 in modelled room-temperature scenarios; absolute
+low-temperature values remain model-dependent.
 
 NASA Glenn reported detector-efficiency-corrected fusion-energy neutron rates scaled to
 the sample location of 1.5 ± 0.3 × 10³ and 1.6 ± 0.3 × 10³ neutrons/s for two samples.
