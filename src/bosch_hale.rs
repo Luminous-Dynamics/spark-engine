@@ -32,6 +32,9 @@ pub enum DDBranch {
 pub const CROSS_SECTION_MIN_KEV: f64 = 0.5;
 pub const MAXWELLIAN_TEMPERATURE_MIN_KEV: f64 = 0.2;
 pub const MAXWELLIAN_TEMPERATURE_MAX_KEV: f64 = 100.0;
+/// Conservative lower bound for cross-section-integral validation because
+/// the published D-D cross-section fit begins above 0.5 keV centre-of-mass.
+pub const INTEGRATION_MIN_TEMPERATURE_KEV: f64 = 1.0;
 
 /// Numerical or validity error from a Bosch-Hale evaluation.
 #[derive(Debug, Clone, PartialEq)]
@@ -281,7 +284,7 @@ pub fn dd_maxwellian_cm3_s(
 
 /// Independently integrate a Bosch-Hale cross-section over a Maxwellian
 /// relative-energy distribution. This validates the analytic branch-rate
-/// fit; it is not a lattice/beam-target model.
+/// fit for 1 <= T_i < 100 keV; it is not a lattice/beam-target model.
 pub fn integrate_dd_branch_maxwellian(
     branch: DDBranch,
     temperature_kev: f64,
@@ -289,6 +292,13 @@ pub fn integrate_dd_branch_maxwellian(
 ) -> Result<IntegratedReactivity, BoschHaleError> {
     // Reuse the published analytic fit's temperature domain for comparison.
     dd_branch_maxwellian_cm3_s(branch, temperature_kev)?;
+    if temperature_kev < INTEGRATION_MIN_TEMPERATURE_KEV {
+        return Err(BoschHaleError::TemperatureOutOfRange {
+            temperature_kev,
+            min_exclusive_kev: INTEGRATION_MIN_TEMPERATURE_KEV,
+            max_exclusive_kev: MAXWELLIAN_TEMPERATURE_MAX_KEV,
+        });
+    }
     if !relative_tolerance.is_finite() || relative_tolerance <= 0.0 {
         return Err(BoschHaleError::InvalidQuadrature);
     }
