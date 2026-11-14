@@ -3,9 +3,9 @@
 // Commercial licensing: see COMMERCIAL_LICENSE.md at repository root
 //! # Rate Gap Calculator (Option D)
 //!
-//! Quantitative tools for analyzing the gap between observed and predicted
-//! fusion rates in LCF experiments. This is the central mystery: NASA observed
-//! ~10³ n/s while standard Gamow physics predicts ~10⁻⁵⁰.
+//! Quantitative tools for comparing observed and model-predicted LCF rates.
+//! Rate comparisons are meaningful only when experiment class, source-vs-detector
+//! boundary, units, active volume, and model validity domain are explicit.
 
 use crate::constants::*;
 use crate::physics::GamowResult;
