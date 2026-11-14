@@ -4,20 +4,30 @@ A physics-honest Rust toolkit for investigating **Lattice Confinement Fusion (LC
 the anomalous neutron production NASA Glenn Research Center reported from deuterium-loaded
 metal lattices under X-ray triggering (Steinetz et al. 2020, *Phys. Rev. C*).
 
-**This is a research tool, not a power source.** Under standard Gamow physics, D-D fusion
-at 300 K gives `<σv>` ≈ 5×10⁻⁹⁰ cm³/s and Q ≈ 10⁻⁵⁷ — no net energy gain is possible. The
-code enforces this: `QFactor` computes and flags Q < 1 explicitly, it does not let you
-assert otherwise. What's real and unexplained is a **~40-to-50-order-of-magnitude gap**
-between that prediction and the ~10³ n/s NASA observed. This crate exists to investigate
-that gap rigorously — and, if it's confirmed, to design toward the credible application: a
-**compact neutron source**, not an energy device.
+**This is a research tool, not a power source.** Spark's bare D-D Maxwellian kernel now has a
+unit-corrected, total-two-branch constant-S Gamow approximation benchmarked against the
+2019 NRL Plasma Formulary over 1–20 keV (35% acceptance envelope). The 300 K solid-lattice
+regime is far outside that reference domain: absolute room-temperature rates from this
+approximation are extrapolations, not validated standard reactivities. Do not treat a
+beam-target screening potential as a measured Maxwellian plasma correction. `QFactor`
+continues to flag Q < 1 at room temperature; its absolute low-temperature value remains
+model-dependent.
+
+NASA Glenn reported detector-efficiency-corrected fusion-energy neutron rates scaled to
+the sample location of 1.5 ± 0.3 × 10³ and 1.6 ± 0.3 × 10³ neutrons/s for two samples.
+These are inferred source rates, not raw detector counts or counts per square centimetre.
+The mechanism and reproducibility of lattice-mediated results remain research questions.
+Spark's goal is to separate these hypotheses, measurements and model predictions rigorously
+before any application or scale-up claim.
 
 ## What's here
 
-- **Literature-validated core physics** — full Gamow integration (electron screening,
-  phonon-enhanced tunneling, D-D multi-channel branching), Q-factor enforcement, DPA-based
-  lattice-lifetime/degradation modeling. Parameters checked against ENDF/B-VIII.0, Miracle
-  & Senkov (HEA review), and standard radiation-damage references.
+- **Reference-benchmarked core physics** — total two-branch constant-S D-D Maxwellian
+  Gamow integration with unit conversion regression checks against the NRL Plasma Formulary
+  at 1–20 keV; optional screening/phonon hypotheses remain model assumptions and are not
+  established reactor mechanisms. Q-factor enforcement and DPA-based lattice-lifetime
+  modelling remain separate, model-qualified workstreams. See
+  [the D-D reactivity benchmark](docs/DD_MAXWELLIAN_REACTIVITY_REFERENCE_BENCHMARK.md).
 - **Anomaly investigation** — `rate_gap` quantifies the observed/predicted gap and its
   possible explanations; `hypothesis_models` implements four candidate mechanisms (transient
   hot spots, coherent phonon cascade, super-screening, lattice-modified tunneling) plus
