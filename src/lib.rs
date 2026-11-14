@@ -66,6 +66,7 @@
 
 // Core physics modules
 pub mod anomaly;
+pub mod bosch_hale;
 pub mod error;
 pub mod lattice;
 pub mod neutron_source;
@@ -99,6 +100,11 @@ pub mod optimal_experiment;
 
 // Core re-exports
 pub use anomaly::{AnomalyAnalysis, AnomalyHypothesis};
+pub use bosch_hale::{
+    BoschHaleError, DDBoschHaleReactivity, DDBranch, IntegratedReactivity,
+    dd_branch_maxwellian_cm3_s, dd_cross_section_mb, dd_maxwellian_cm3_s,
+    integrate_dd_branch_maxwellian,
+};
 pub use bayesian::{ALL_HYPOTHESES, HypothesisBelief, ObservedOutcome, OutcomeClasses};
 pub use error::{Result, SparkError};
 pub use lattice::{LatticeLifetime, LatticeState};
