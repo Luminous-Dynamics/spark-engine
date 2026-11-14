@@ -83,6 +83,7 @@ pub enum EnergyFrame {
 pub enum QuantityKind {
     IncidentEnergy,
     RelativeYield,
+    HydrideToMetalYieldRatio,
     AbsoluteYield,
     DetectorCountRate,
     FusionPower,
@@ -167,9 +168,9 @@ impl Measurement {
                 self.unit,
                 MeasurementUnit::ElectronVolt | MeasurementUnit::KiloElectronVolt
             ),
-            QuantityKind::RelativeYield | QuantityKind::EnhancementRatio => {
-                self.unit == MeasurementUnit::Dimensionless
-            }
+            QuantityKind::RelativeYield
+            | QuantityKind::HydrideToMetalYieldRatio
+            | QuantityKind::EnhancementRatio => self.unit == MeasurementUnit::Dimensionless,
             QuantityKind::AbsoluteYield => {
                 self.unit == MeasurementUnit::EventsPerIncidentIon
             }
@@ -191,6 +192,9 @@ impl Measurement {
         let basis_matches = match self.quantity {
             QuantityKind::RelativeYield => {
                 matches!(&self.basis, ValueBasis::NormalizedTo { reference_id } if !reference_id.trim().is_empty())
+            }
+            QuantityKind::HydrideToMetalYieldRatio => {
+                matches!(&self.basis, ValueBasis::RatioToControl { control_id } if !control_id.trim().is_empty())
             }
             QuantityKind::EnhancementRatio => {
                 matches!(&self.basis, ValueBasis::EnhancementVsModel { model_id } if !model_id.trim().is_empty())
@@ -286,7 +290,11 @@ impl SourceReference {
             url.trim().starts_with("https://") || url.trim().starts_with("http://")
         });
         let has_digest = self.content_sha256.is_some();
-        if !has_doi && !has_url && !has_digest {
+        if evidence_class != EvidenceClass::SyntheticFixture
+            && !has_doi
+            && !has_url
+            && !has_digest
+        {
             errors.push("source requires a DOI, stable URL, or content digest".to_string());
         }
 
@@ -298,8 +306,12 @@ impl SourceReference {
             }
         }
 
-        if evidence_class == EvidenceClass::RawDataset && !has_digest {
-            errors.push("raw-dataset evidence requires a content SHA-256".to_string());
+        if matches!(evidence_class, EvidenceClass::RawDataset | EvidenceClass::DigitizedFigure)
+            && !has_digest
+        {
+            errors.push(
+                "raw-dataset and digitized-figure evidence require a content SHA-256".to_string(),
+            );
         }
 
         if errors.is_empty() {
@@ -430,7 +442,7 @@ mod tests {
     fn source(evidence_class: EvidenceClass) -> SourceReference {
         SourceReference {
             citation: "Synthetic benchmark fixture".to_string(),
-            doi: Some("10.0000/example.fixture".to_string()),
+            doi: None,
             stable_url: None,
             source_locator: "fixture:relative-yield-point".to_string(),
             content_sha256: if evidence_class == EvidenceClass::RawDataset {
@@ -517,6 +529,28 @@ mod tests {
         measurement.unit = MeasurementUnit::Dimensionless;
         measurement.basis = ValueBasis::Absolute;
         assert!(measurement.validate().is_err());
+    }
+
+    #[test]
+    fn hydride_to_metal_ratio_requires_a_named_control() {
+        let ratio = Measurement {
+            quantity: QuantityKind::HydrideToMetalYieldRatio,
+            value: 1.15,
+            unit: MeasurementUnit::Dimensionless,
+            basis: ValueBasis::RatioToControl {
+                control_id: "beam-only-metal-control".to_string(),
+            },
+            uncertainty_status: UncertaintyStatus::NotReported,
+            uncertainty: None,
+            energy_frame: None,
+        };
+        assert!(ratio.validate().is_ok());
+
+        let mut unnamed = ratio;
+        unnamed.basis = ValueBasis::RatioToControl {
+            control_id: " ".to_string(),
+        };
+        assert!(unnamed.validate().is_err());
     }
 
     #[test]
