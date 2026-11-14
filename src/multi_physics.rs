@@ -820,7 +820,8 @@ impl PatternAnalyzer {
 
         // Gamow prediction
         let n_d: f64 = 0.7 * 12.02 * 6.022e23 / 106.42; // D atoms/cm³
-        let predicted_rate_per_cm3 = n_d * n_d * gamow.sigma_v_cm3_s / 4.0 * 0.5;
+        // Reuse the canonical D-D identical-particle and branch accounting.
+        let predicted_rate_per_cm3 = gamow.to_neutron_rate(n_d, 1.0);
 
         let gap_factor = observed_rate_per_cm3 / predicted_rate_per_cm3.max(1e-100);
         let gap_orders = gap_factor.log10();
@@ -920,7 +921,8 @@ impl PatternAnalyzer {
         for _ in 0..100 {
             let t_mid = (t_low + t_high) / 2.0;
             let gamow = GamowIntegration::dd_rate(t_mid, SCREENING_PD_EV, 0);
-            let rate = n_d * n_d * gamow.sigma_v_cm3_s / 4.0 * 0.5;
+            // Match the neutron-channel event-rate convention used elsewhere.
+            let rate = gamow.to_neutron_rate(n_d, 1.0);
 
             if rate > target_rate {
                 t_high = t_mid;
