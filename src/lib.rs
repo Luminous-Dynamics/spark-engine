@@ -51,6 +51,7 @@
 //! ```
 
 // Core physics modules
+pub mod benchmark;
 pub mod anomaly;
 pub mod error;
 pub mod lattice;
@@ -84,6 +85,13 @@ pub mod bayesian;
 pub mod optimal_experiment;
 
 // Core re-exports
+// Provenance-aware benchmark data contract
+pub use benchmark::{
+    BenchmarkRecord, DataRights, DetectionChannel, EnergyFrame, EvidenceClass, ExperimentClass,
+    LoadingState, Measurement, MeasurementUnit, MeasurementUncertainty, QuantityKind,
+    SourceReference, UncertaintyKind, UncertaintyStatus, ValueBasis,
+};
+
 pub use anomaly::{AnomalyAnalysis, AnomalyHypothesis};
 pub use bayesian::{ALL_HYPOTHESES, HypothesisBelief, ObservedOutcome, OutcomeClasses};
 pub use error::{Result, SparkError};
