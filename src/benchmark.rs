@@ -86,6 +86,10 @@ pub enum QuantityKind {
     HydrideToMetalYieldRatio,
     AbsoluteYield,
     DetectorCountRate,
+    ArealDetectorCountRate,
+    TotalReactionRate,
+    VolumetricReactionRate,
+    CalorimetricPower,
     LoadingRatio,
     EnhancementRatio,
 }
@@ -98,6 +102,9 @@ pub enum MeasurementUnit {
     KiloElectronVolt,
     EventsPerIncidentIon,
     CountsPerSecond,
+    CountsPerSecondPerSquareCentimeter,
+    ReactionsPerSecond,
+    ReactionsPerSecondPerCubicCentimeter,
     Watt,
     DeuteriumPerHostAtom,
 }
@@ -176,6 +183,16 @@ impl Measurement {
             QuantityKind::DetectorCountRate => {
                 self.unit == MeasurementUnit::CountsPerSecond
             }
+            QuantityKind::ArealDetectorCountRate => {
+                self.unit == MeasurementUnit::CountsPerSecondPerSquareCentimeter
+            }
+            QuantityKind::TotalReactionRate => {
+                self.unit == MeasurementUnit::ReactionsPerSecond
+            }
+            QuantityKind::VolumetricReactionRate => {
+                self.unit == MeasurementUnit::ReactionsPerSecondPerCubicCentimeter
+            }
+            QuantityKind::CalorimetricPower => self.unit == MeasurementUnit::Watt,
             QuantityKind::LoadingRatio => {
                 self.unit == MeasurementUnit::DeuteriumPerHostAtom
             }
@@ -325,6 +342,10 @@ impl SourceReference {
 pub struct BenchmarkRecord {
     pub record_id: String,
     pub evidence_class: EvidenceClass,
+    /// Required with an exact version/revision when evidence_class is ModelOutput.
+    pub producer_model: Option<String>,
+    /// Model release, source revision, or immutable build identifier.
+    pub producer_revision: Option<String>,
     pub experiment_class: ExperimentClass,
     pub source: SourceReference,
     pub host_material: String,
@@ -350,6 +371,48 @@ impl BenchmarkRecord {
         }
         if self.isotope_pair.trim().is_empty() {
             errors.push("isotope_pair must not be empty".to_string());
+        }
+
+        match (
+            self.evidence_class,
+            self.producer_model.as_deref(),
+            self.producer_revision.as_deref(),
+        ) {
+            (EvidenceClass::ModelOutput, Some(model), Some(revision))
+                if !model.trim().is_empty() && !revision.trim().is_empty() => {}
+            (EvidenceClass::ModelOutput, _, _) => errors.push(
+                "model outputs require non-empty producer_model and producer_revision".to_string(),
+            ),
+            (_, None, None) => {}
+            (_, _, _) => errors.push(
+                "producer model metadata is only valid for ModelOutput evidence".to_string(),
+            ),
+        }
+
+        let detector_channel_valid = match self.observable.quantity {
+            QuantityKind::CalorimetricPower => {
+                self.detection_channel == DetectionChannel::Calorimetry
+            }
+            QuantityKind::IncidentEnergy
+            | QuantityKind::RelativeYield
+            | QuantityKind::HydrideToMetalYieldRatio
+            | QuantityKind::AbsoluteYield
+            | QuantityKind::DetectorCountRate
+            | QuantityKind::ArealDetectorCountRate
+            | QuantityKind::TotalReactionRate
+            | QuantityKind::VolumetricReactionRate
+            | QuantityKind::EnhancementRatio => {
+                self.detection_channel != DetectionChannel::Calorimetry
+            }
+            QuantityKind::LoadingRatio => {
+                self.detection_channel != DetectionChannel::Calorimetry
+            }
+        };
+        if !detector_channel_valid {
+            errors.push(format!(
+                "detection channel {:?} is incompatible with observable {:?}",
+                self.detection_channel, self.observable.quantity
+            ));
         }
 
         if let Err(source_errors) = self.source.validate(self.evidence_class) {
@@ -486,6 +549,8 @@ mod tests {
         BenchmarkRecord {
             record_id: "fixture-pdd-relative-yield-001".to_string(),
             evidence_class: EvidenceClass::SyntheticFixture,
+            producer_model: None,
+            producer_revision: None,
             experiment_class: ExperimentClass::BeamDrivenMetalTarget,
             source: source(EvidenceClass::SyntheticFixture),
             host_material: "palladium hydride".to_string(),
@@ -549,6 +614,85 @@ mod tests {
             control_id: " ".to_string(),
         };
         assert!(unnamed.validate().is_err());
+    }
+
+    #[test]
+    fn areal_and_total_detector_rates_cannot_be_conflated() {
+        let total = Measurement {
+            quantity: QuantityKind::DetectorCountRate,
+            value: 10.0,
+            unit: MeasurementUnit::CountsPerSecond,
+            basis: ValueBasis::Absolute,
+            uncertainty_status: UncertaintyStatus::NotReported,
+            uncertainty: None,
+            energy_frame: None,
+        };
+        assert!(total.validate().is_ok());
+
+        let mut mislabeled = total;
+        mislabeled.unit = MeasurementUnit::CountsPerSecondPerSquareCentimeter;
+        assert!(mislabeled.validate().is_err());
+
+        let areal = Measurement {
+            quantity: QuantityKind::ArealDetectorCountRate,
+            value: 10.0,
+            unit: MeasurementUnit::CountsPerSecondPerSquareCentimeter,
+            basis: ValueBasis::Absolute,
+            uncertainty_status: UncertaintyStatus::NotReported,
+            uncertainty: None,
+            energy_frame: None,
+        };
+        assert!(areal.validate().is_ok());
+    }
+
+    #[test]
+    fn volumetric_and_total_reaction_rates_have_distinct_units() {
+        let volumetric = Measurement {
+            quantity: QuantityKind::VolumetricReactionRate,
+            value: 1.0e6,
+            unit: MeasurementUnit::ReactionsPerSecondPerCubicCentimeter,
+            basis: ValueBasis::Absolute,
+            uncertainty_status: UncertaintyStatus::NotReported,
+            uncertainty: None,
+            energy_frame: None,
+        };
+        assert!(volumetric.validate().is_ok());
+
+        let mut mislabeled = volumetric;
+        mislabeled.unit = MeasurementUnit::ReactionsPerSecond;
+        assert!(mislabeled.validate().is_err());
+    }
+
+    #[test]
+    fn calorimetric_power_requires_calorimetry_channel() {
+        let power = Measurement {
+            quantity: QuantityKind::CalorimetricPower,
+            value: 0.2,
+            unit: MeasurementUnit::Watt,
+            basis: ValueBasis::Absolute,
+            uncertainty_status: UncertaintyStatus::NotReported,
+            uncertainty: None,
+            energy_frame: None,
+        };
+        assert!(power.validate().is_ok());
+
+        let mut record = beam_record();
+        record.observable = power;
+        assert!(record.validate().is_err());
+
+        record.detection_channel = DetectionChannel::Calorimetry;
+        assert!(record.validate().is_ok());
+    }
+
+    #[test]
+    fn model_output_requires_model_and_revision_identity() {
+        let mut record = beam_record();
+        record.evidence_class = EvidenceClass::ModelOutput;
+        assert!(record.validate().is_err());
+
+        record.producer_model = Some("example-screening-model".to_string());
+        record.producer_revision = Some("git:0123456789abcdef".to_string());
+        assert!(record.validate().is_ok());
     }
 
     #[test]
