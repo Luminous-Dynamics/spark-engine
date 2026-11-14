@@ -42,7 +42,7 @@ See [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) (also as
 [PDF](docs/TECHNICAL_REPORT.pdf), regenerate with `docs/render_pdf.sh`) for the full
 physics-honest assessment and
 [`docs/ANOMALY_INVESTIGATION_ROADMAP.md`](docs/ANOMALY_INVESTIGATION_ROADMAP.md)
-for the phased research plan this tool supports.
+for the phased research plan this tool supports. See also [REACTOR_FRONTIER_AND_BENCHMARK_PROGRAM_2026.md](docs/REACTOR_FRONTIER_AND_BENCHMARK_PROGRAM_2026.md) for the updated 2025–2026 literature, reactor architecture comparison, and proposed benchmark gates.
 
 ## Why this might matter to you
 
