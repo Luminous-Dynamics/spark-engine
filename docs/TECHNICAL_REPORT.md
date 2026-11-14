@@ -134,84 +134,59 @@ The rate comparison must be rebuilt from:
 
 Until those inputs are aligned, do not quote a single gap factor or gap-orders
 number.
-### 2.3 What Could Explain the Gap?
+### 2.3 Candidate mechanisms — no cumulative enhancement factors accepted
 
-| Enhancement Source | Factor | Cumulative |
-|--------------------|--------|------------|
-| Electron screening (309 eV) | 10²⁰⁰ | 10²⁰⁰ |
-| Phonon enhancement (2 modes) | 10² | 10²⁰² |
-| Hot spot (10× T) | 10¹⁰ | 10²¹² |
-| **Unexplained** | **10⁻¹⁷²** | 10⁴⁰ |
+No quantitative enhancement factor is assigned to screening, phonon coupling,
+transient heating or lattice-modified tunnelling in this report. The previous
+10²⁰⁰ screening / 10⁴⁰ cumulative-gap table is withdrawn: it was not reproducible
+from the current implementation and combined assumptions without a defensible
+joint probability or model.
 
-The combined known enhancements far exceed the gap, but each is applied at its theoretical maximum. In practice, these enhancements may not combine multiplicatively.
+Each candidate mechanism must be expressed as a separately testable model with:
+- an explicit reactant energy distribution and reference frame;
+- a measurable observable and competing null explanation;
+- a parameter prior and uncertainty;
+- a declared range of validity;
+- an independent dataset or reference calculation for qualification.
 
-> **Honesty caveat (added 2026-07-07):** this table's numbers could not be reproduced
-> from the current `screening_enhancement()` implementation (`physics.rs`) at any
-> physically relevant energy for this system — the function returns the trivial
-> value 1.0 below 10 eV collision energy by design, and is capped at 10⁶ above
-> that (added later, per `clippy::manual_clamp` cleanup 2026-07-07). The 10²⁰⁰
-> screening figure appears to be from an earlier, uncapped, illustrative
-> back-of-envelope exercise evaluated outside the function's intended domain,
-> not a live-computed result. Treat this table as **narrative intuition about
-> orders of magnitude, not a verified calculation** — which is consistent with
-> the original prose above already flagging the multiplicative-combination
-> assumption as questionable. Recomputing it rigorously (correct energy
-> convention, no artificial floor/ceiling) is open work, not done here.
+Enhancement factors must not be multiplied together unless a joint physical
+model demonstrates that the factors are independent or correctly coupled.
 
 ---
 
 ## 3. Hypothesis Evaluation
 
-### 3.1 Hot Spots (Most Plausible)
+### 3.1 Transient localized energy deposition (unranked hypothesis)
 
-**Mechanism:** X-ray absorption deposits energy in ~10 nm radius, creating transient regions with T >> T_bulk for ~0.1 ps.
+**Mechanism class:** A trigger deposits energy non-uniformly, potentially creating a non-Maxwellian local reactant distribution.
 
-**Predictions:**
-- Rate scales with X-ray intensity
-- Weak bulk temperature dependence
-- Burst structure following trigger pulses
+**Discriminating observables:** time-resolved local energy deposition, independently measured reactant energy distributions, trigger-correlated product timing, and controls for detector/electronic transients.
 
-**Required conditions:**
-- Peak temperature: ~3,500 K (12× room temp)
-- Cooling time: ~0.1 ps
-- Plausibility: **HIGH** - thermally achievable
+No peak temperature, duration, or fusion-rate enhancement is assumed by this hypothesis.
 
-### 3.2 Phonon Cascade (Possible)
+### 3.2 Phonon/material excitation (unranked hypothesis)
 
-**Mechanism:** Multiple optical phonons coherently add their energy (~56 meV each) to the D-D center-of-mass.
+**Mechanism class:** Material excitations may alter local energy transfer, screening or reaction-environment correlations.
 
-**Predictions:**
-- Rate increases with acoustic drive
-- Resonances at phonon frequencies
-- Strong temperature dependence
+**Discriminating observables:** measured phonon spectra, phase/microstructure dependence, isotope controls and held-out predictions across host materials.
 
-**Required conditions:**
-- Coherent phonons needed: >50
-- Plausibility: **LOW** - maintaining coherence of 50+ modes is difficult
+A phonon energy is not automatically available as directed centre-of-mass collision energy. Coupling and energy-distribution assumptions must be independently justified.
 
-### 3.3 Super-Screening (Unlikely)
+### 3.3 Dynamic screening and heterogeneous material environments (unranked hypothesis)
 
-**Mechanism:** Electron screening energy exceeds measured values due to collective effects at high loading.
+**Mechanism class:** Static beam-target screening parameters may not describe time-dependent, spatially heterogeneous electronic/ionic environments.
 
-**Predictions:**
-- Rate correlates with D/M loading
-- Should be observable in accelerator experiments
+**Discriminating observables:** screening inferred under matched collision conditions, sample-state lineage, energy-resolved yield, and out-of-material prediction.
 
-**Required conditions:**
-- Screening needed: ~100,000 eV (vs. measured 309 eV)
-- Plausibility: **VERY LOW** - 300× higher than any measurement
+Do not extrapolate a measured beam-target screening potential into a thermal Maxwellian without a kinetic model and validity argument.
 
-### 3.4 Measurement Error (Cannot Rule Out)
+### 3.4 Measurement and analysis systematics (mandatory null hypothesis)
 
-**Mechanism:** Signal is not from D-D fusion but from background, cosmic rays, or electronic noise.
+**Mechanism class:** Background, detector response, unfolding, efficiency correction, timing, selection effects or non-fusion nuclear channels may explain some or all of a reported signature.
 
-**Predictions:**
-- Signal persists with H instead of D
-- No correlation with trigger
+**Discriminating observables:** independent detector technologies, blinded reanalysis, calibrated response functions, hydrogen controls, source-location uncertainty and independent replication.
 
-**Required conditions:**
-- NASA's H control passed
-- Plausibility: **LOW** but independent replication needed
+A historical control is relevant evidence but does not remove the need for independent replication.
 
 ---
 
@@ -351,9 +326,9 @@ LCF advantage: No high voltage, no tritium, potentially very compact.
 
 1. **Physics is honest:** Standard Gamow gives Q ~ 10⁻⁵⁷ at room temperature. No energy gain is possible.
 
-2. **The anomaly is extraordinary:** A 40-order-of-magnitude gap requires either new physics, unrecognized enhancements, or systematic error.
+2. **A quantitative anomaly gap is not currently established:** the former rate comparison used an unqualified low-temperature extrapolation and inconsistent source/detector boundaries. Rebuild it only from matched, traceable data and a qualified model.
 
-3. **Hot spots are the most plausible explanation:** X-ray-induced local heating to ~3,500K could explain the observations without invoking new physics.
+3. **No mechanism is presently preferred:** localized energy deposition, phonon/material effects, dynamic screening and measurement-systematic explanations remain competing hypotheses.
 
 4. **Independent replication is critical:** The NASA result must be reproduced with proper controls before investing in scale-up.
 
