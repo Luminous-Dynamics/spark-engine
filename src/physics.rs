@@ -197,7 +197,13 @@ impl GamowIntegration {
 
         // Convert to <σv> in cm³/s
         let mu_amu: f64 = 1.007;
-        let prefactor: f64 = 3.727e-12 / (mu_amu.sqrt() * kt_kev.powf(1.5));
+        // Unit conversion for S(E) in keV·barn and E in keV:
+        // sqrt(8 / (π m_u)) × sqrt(1 keV in erg) × 1 barn
+        // = 4.956792115648147e-17 (cm³/s) / keV^(3/2).
+        // The previous 3.727e-12 coefficient was too large by ~7.5e4.
+        const REACTIVITY_PREFactor_CGS: f64 = 4.956_792_115_648_147e-17;
+        let prefactor: f64 =
+            REACTIVITY_PREFactor_CGS / (mu_amu.sqrt() * kt_kev.powf(1.5));
         let log_sigma_v = prefactor.ln() + log_integral;
         let sigma_v = log_sigma_v.exp();
 
@@ -430,6 +436,35 @@ impl QFactor {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bare_dd_reactivity_matches_nrl_formulary_within_constant_s_approximation() {
+        // NRL Plasma Formulary 2019, p. 45: total D-D Maxwellian reactivity
+        // (branches 1a + 1b). This implementation uses a constant low-energy
+        // S-factor and a finite Gamow window, so use a 35% envelope rather than
+        // claiming Bosch-Hale fit accuracy. Screening and phonons are disabled.
+        let reference = [
+            (1.0, 1.5e-22),
+            (2.0, 5.4e-21),
+            (5.0, 1.8e-19),
+            (10.0, 1.2e-18),
+            (20.0, 5.2e-18),
+        ];
+
+        for (temperature_kev, expected_cm3_s) in reference {
+            let temperature_k = temperature_kev / KB_KEV;
+            let result = GamowIntegration::dd_rate(temperature_k, 0.0, 0);
+            let relative_error =
+                (result.sigma_v_cm3_s - expected_cm3_s).abs() / expected_cm3_s;
+            assert!(
+                relative_error < 0.35,
+                "D-D reactivity at {temperature_kev} keV: got {:.6e}, NRL {:.6e}, relative error {:.1}%",
+                result.sigma_v_cm3_s,
+                expected_cm3_s,
+                relative_error * 100.0
+            );
+        }
+    }
 
     #[test]
     fn test_gamow_at_room_temperature() {
