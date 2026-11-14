@@ -138,6 +138,8 @@ pub enum UncertaintyKind {
     StandardUncertainty,
     StandardDeviation,
     ExpandedUncertainty,
+    /// A source-reported interval whose coverage factor is stated separately or left unknown.
+    ReportedInterval,
 }
 
 /// Explicit uncertainty metadata. The magnitude uses the same unit as its measurement.
@@ -262,8 +264,18 @@ impl Measurement {
                             ),
                         }
                     }
+                    UncertaintyKind::ReportedInterval => {
+                        if let Some(p) = uncertainty.coverage_probability
+                            && (!p.is_finite() || p <= 0.0 || p >= 1.0)
+                        {
+                            errors.push(
+                                "reported interval coverage probability must be in (0, 1)"
+                                    .to_string(),
+                            );
+                        }
+                    }
                     _ if uncertainty.coverage_probability.is_some() => errors.push(
-                        "coverage probability is only valid for expanded uncertainty".to_string(),
+                        "coverage probability is only valid for expanded uncertainty or a reported interval".to_string(),
                     ),
                     _ => {}
                 }
@@ -612,6 +624,53 @@ mod tests {
         }
     }
 
+    fn nasa_ts1575_source_rate_fixture() -> BenchmarkRecord {
+        BenchmarkRecord {
+            record_id: "nasa-steinetz-2020-ts1575-ej309-sample-location".to_string(),
+            evidence_class: EvidenceClass::ExternallyReported,
+            producer_model: None,
+            producer_revision: None,
+            experiment_class: ExperimentClass::XrayTriggeredLattice,
+            source: SourceReference {
+                citation: "Steinetz et al., Physical Review C 101, 044610 (2020)".to_string(),
+                doi: Some("10.1103/PhysRevC.101.044610".to_string()),
+                stable_url: Some(
+                    "https://harvest.aps.org/v2/journals/articles/10.1103/PhysRevC.101.044610/fulltext"
+                        .to_string(),
+                ),
+                source_locator: "Figure 5 caption; Section IV.A; Table V".to_string(),
+                content_sha256: None,
+                rights: DataRights::PaperOnly,
+            },
+            host_material: "ErD3".to_string(),
+            isotope_pair: "D-D".to_string(),
+            loading_state: LoadingState::Unknown,
+            detection_channel: DetectionChannel::Neutron,
+            // The paper's 2.9 MeV incident quantity is bremsstrahlung photon
+            // endpoint energy, not a deuteron collision energy; do not map it
+            // into the incident_energy field.
+            incident_energy: None,
+            observable: Measurement {
+                quantity: QuantityKind::NeutronSourceRate,
+                value: 1.5e3,
+                unit: MeasurementUnit::NeutronsPerSecond,
+                basis: ValueBasis::Absolute,
+                uncertainty_status: UncertaintyStatus::Reported,
+                uncertainty: Some(MeasurementUncertainty {
+                    magnitude: 0.3e3,
+                    kind: UncertaintyKind::ReportedInterval,
+                    coverage_probability: None,
+                }),
+                energy_frame: None,
+            },
+            rate_boundary: Some(RateBoundary::SampleLocationSource),
+            notes: Some(
+                "Externally reported source rate scaled to sample location. Figure 5 caption states uncertainty bars represent 3σ. Not a detector-plane count rate or an independent Spark replication."
+                    .to_string(),
+            ),
+        }
+    }
+
     fn beam_record() -> BenchmarkRecord {
         BenchmarkRecord {
             record_id: "fixture-pdd-relative-yield-001".to_string(),
@@ -667,6 +726,18 @@ mod tests {
         let mut record = beam_record();
         record.observable = incident_energy(Some(EnergyFrame::CenterOfMass));
         assert!(record.validate().is_err());
+    }
+
+    #[test]
+    fn nasa_ts1575_is_admitted_as_external_sample_location_source_rate() {
+        let record = nasa_ts1575_source_rate_fixture();
+        assert!(record.validate().is_ok());
+        assert_eq!(record.observable.quantity, QuantityKind::NeutronSourceRate);
+        assert_eq!(record.rate_boundary, Some(RateBoundary::SampleLocationSource));
+        assert_eq!(
+            record.observable.uncertainty.as_ref().map(|u| u.kind),
+            Some(UncertaintyKind::ReportedInterval)
+        );
     }
 
     #[test]
