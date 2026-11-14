@@ -103,7 +103,7 @@ pub use anomaly::{AnomalyAnalysis, AnomalyHypothesis};
 pub use bosch_hale::{
     BoschHaleError, DDBoschHaleReactivity, DDBranch, IntegratedReactivity,
     dd_branch_maxwellian_cm3_s, dd_cross_section_mb, dd_maxwellian_cm3_s,
-    integrate_dd_branch_maxwellian,
+    integrate_dd_branch_maxwellian, INTEGRATION_MIN_TEMPERATURE_KEV,
 };
 pub use bayesian::{ALL_HYPOTHESES, HypothesisBelief, ObservedOutcome, OutcomeClasses};
 pub use error::{Result, SparkError};
