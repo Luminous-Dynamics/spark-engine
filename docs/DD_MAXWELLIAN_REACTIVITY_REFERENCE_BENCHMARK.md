@@ -25,6 +25,8 @@ which evaluates to approximately `4.956792115648147e-17`. The previous coefficie
 
 A second convention error was that the code treated approximately 55 keV·barn as the total D-D S-factor and then divided the total reactivity between the two branches. The Bosch–Hale low-energy branch coefficients used by WarpX correspond to approximately 53.701 keV·barn for D(d,n)³He and 55.576 keV·barn for D(d,p)T. Their sum, approximately 109.277 keV·barn, is the constant-S approximation used for this benchmark. This is still an approximation; the full energy-dependent branch fits are more accurate.
 
+Because this kernel uses constant branch S-factors, its internally consistent branch fractions are also constant: 53.701/109.277 for D(d,n)³He and 55.576/109.277 for D(d,p)T. An empirical energy-dependent branching heuristic cannot be mixed into a constant-S total kernel: doing so makes branch production and branch-resolved power inconsistent with the total reactivity. Energy dependence belongs in the full branch-specific cross-section integration tracked in issue #5.
+
 ## Reference data
 
 The 2019 Naval Research Laboratory Plasma Formulary, p. 45, gives the following D-D Maxwellian reactivities for the sum of the two branches:
