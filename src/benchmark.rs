@@ -87,6 +87,7 @@ pub enum QuantityKind {
     AbsoluteYield,
     DetectorCountRate,
     ArealDetectorCountRate,
+    NeutronSourceRate,
     TotalReactionRate,
     VolumetricReactionRate,
     CalorimetricPower,
@@ -103,6 +104,7 @@ pub enum MeasurementUnit {
     EventsPerIncidentIon,
     CountsPerSecond,
     CountsPerSecondPerSquareCentimeter,
+    NeutronsPerSecond,
     ReactionsPerSecond,
     ReactionsPerSecondPerCubicCentimeter,
     Watt,
@@ -185,6 +187,9 @@ impl Measurement {
             }
             QuantityKind::ArealDetectorCountRate => {
                 self.unit == MeasurementUnit::CountsPerSecondPerSquareCentimeter
+            }
+            QuantityKind::NeutronSourceRate => {
+                self.unit == MeasurementUnit::NeutronsPerSecond
             }
             QuantityKind::TotalReactionRate => {
                 self.unit == MeasurementUnit::ReactionsPerSecond
@@ -274,6 +279,23 @@ impl Measurement {
     }
 }
 
+/// Boundary at which a rate or power quantity is defined.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RateBoundary {
+    /// Raw detector counts at the instrument location.
+    DetectorPlane,
+    /// Detector count rate normalized by detector area.
+    DetectorPlanePerArea,
+    /// Detector-corrected neutron source rate inferred at the sample location.
+    SampleLocationSource,
+    /// Total reaction/source rate for the declared sample or sample set.
+    SampleSetTotal,
+    /// Reaction rate normalized by active volume.
+    PerVolume,
+    /// Calorimetric power crossing the stated device boundary.
+    DeviceBoundary,
+}
+
 /// Stable publication/dataset provenance for a benchmark point.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SourceReference {
@@ -357,6 +379,9 @@ pub struct BenchmarkRecord {
     /// Required for beam-driven target experiments. The frame is carried by the measurement.
     pub incident_energy: Option<Measurement>,
     pub observable: Measurement,
+    /// Required for detector/source/rate/power values to identify where the quantity applies.
+    #[serde(default)]
+    pub rate_boundary: Option<RateBoundary>,
     pub notes: Option<String>,
 }
 
@@ -401,6 +426,7 @@ impl BenchmarkRecord {
             | QuantityKind::AbsoluteYield
             | QuantityKind::DetectorCountRate
             | QuantityKind::ArealDetectorCountRate
+            | QuantityKind::NeutronSourceRate
             | QuantityKind::TotalReactionRate
             | QuantityKind::VolumetricReactionRate
             | QuantityKind::EnhancementRatio => {
@@ -415,6 +441,31 @@ impl BenchmarkRecord {
                 "detection channel {:?} is incompatible with observable {:?}",
                 self.detection_channel, self.observable.quantity
             ));
+        }
+
+        let expected_boundary = match self.observable.quantity {
+            QuantityKind::DetectorCountRate => Some(RateBoundary::DetectorPlane),
+            QuantityKind::ArealDetectorCountRate => Some(RateBoundary::DetectorPlanePerArea),
+            QuantityKind::NeutronSourceRate => Some(RateBoundary::SampleLocationSource),
+            QuantityKind::TotalReactionRate => Some(RateBoundary::SampleSetTotal),
+            QuantityKind::VolumetricReactionRate => Some(RateBoundary::PerVolume),
+            QuantityKind::CalorimetricPower => Some(RateBoundary::DeviceBoundary),
+            _ => None,
+        };
+        match (expected_boundary, self.rate_boundary) {
+            (Some(expected), Some(actual)) if expected == actual => {}
+            (Some(expected), Some(actual)) => errors.push(format!(
+                "rate boundary {:?} is incompatible with observable {:?}; expected {:?}",
+                actual, self.observable.quantity, expected
+            )),
+            (Some(expected), None) => errors.push(format!(
+                "observable {:?} requires explicit rate boundary {:?}",
+                self.observable.quantity, expected
+            )),
+            (None, Some(_)) => errors.push(
+                "rate_boundary is only valid for rate or power observables".to_string(),
+            ),
+            (None, None) => {}
         }
 
         if let Err(source_errors) = self.source.validate(self.evidence_class) {
@@ -561,6 +612,7 @@ mod tests {
             detection_channel: DetectionChannel::Proton,
             incident_energy: Some(incident_energy(Some(EnergyFrame::CenterOfMass))),
             observable: relative_yield(),
+            rate_boundary: None,
             notes: Some("Synthetic schema fixture; not published experimental data.".to_string()),
         }
     }
@@ -594,6 +646,52 @@ mod tests {
         measurement.unit = MeasurementUnit::Dimensionless;
         measurement.basis = ValueBasis::Absolute;
         assert!(measurement.validate().is_err());
+    }
+
+    #[test]
+    fn neutron_source_rate_requires_sample_location_boundary() {
+        let mut record = beam_record();
+        record.observable = Measurement {
+            quantity: QuantityKind::NeutronSourceRate,
+            value: 1.5e3,
+            unit: MeasurementUnit::NeutronsPerSecond,
+            basis: ValueBasis::Absolute,
+            uncertainty_status: UncertaintyStatus::Reported,
+            uncertainty: Some(MeasurementUncertainty {
+                magnitude: 0.3e3,
+                kind: UncertaintyKind::StandardUncertainty,
+                coverage_probability: None,
+            }),
+            energy_frame: None,
+        };
+        record.detection_channel = DetectionChannel::Neutron;
+        assert!(record.validate().is_err());
+
+        record.rate_boundary = Some(RateBoundary::SampleLocationSource);
+        assert!(record.validate().is_ok());
+
+        record.rate_boundary = Some(RateBoundary::DetectorPlane);
+        assert!(record.validate().is_err());
+    }
+
+    #[test]
+    fn detector_count_rate_requires_detector_plane_boundary() {
+        let mut record = beam_record();
+        record.observable = Measurement {
+            quantity: QuantityKind::DetectorCountRate,
+            value: 20.0,
+            unit: MeasurementUnit::CountsPerSecond,
+            basis: ValueBasis::Absolute,
+            uncertainty_status: UncertaintyStatus::NotReported,
+            uncertainty: None,
+            energy_frame: None,
+        };
+        record.detection_channel = DetectionChannel::Neutron;
+        record.rate_boundary = Some(RateBoundary::SampleLocationSource);
+        assert!(record.validate().is_err());
+
+        record.rate_boundary = Some(RateBoundary::DetectorPlane);
+        assert!(record.validate().is_ok());
     }
 
     #[test]
