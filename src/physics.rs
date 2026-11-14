@@ -294,22 +294,16 @@ impl GamowIntegration {
         (prefactor * exponent.exp()).clamp(1.0, 1e6)
     }
 
-    /// Energy-dependent D-D branching ratio.
+    /// D-D branching fractions for the constant-S approximation.
     ///
-    /// At low energies (E < 100 keV), the branching is nearly 50/50.
-    /// There's a slight energy dependence: neutron fraction decreases at higher E.
-    ///
-    /// R_n(E) ≈ 0.5 × (1 - 0.003 × E_keV) for E < 100 keV
-    pub fn dd_branching_ratio(e_cm_kev: f64) -> (f64, f64) {
-        // Neutron fraction with weak energy dependence
-        let neutron_frac = if e_cm_kev < 100.0 {
-            0.5 * (1.0 - 0.003 * e_cm_kev)
-        } else {
-            0.35 // Asymptotic value at high energy
-        };
-        let neutron_frac = neutron_frac.clamp(0.35, 0.5);
-        let proton_frac = 1.0 - neutron_frac;
-        (neutron_frac, proton_frac)
+    /// The total kernel uses the sum of the two low-energy Bosch–Hale S(0)
+    /// constants. Its internally consistent branch split therefore uses the
+    /// same constants. Energy-dependent branch fractions belong to the full
+    /// branch-specific Bosch–Hale implementation tracked separately.
+    pub fn dd_branching_ratio(_e_cm_kev: f64) -> (f64, f64) {
+        let neutron_fraction = DD_S_FACTOR_NEUTRON / DD_S_FACTOR;
+        let proton_fraction = DD_S_FACTOR_PROTON / DD_S_FACTOR;
+        (neutron_fraction, proton_fraction)
     }
 
     /// Approximate branch allocation using the constant-S kernel's Gamow-peak heuristic.
@@ -570,24 +564,16 @@ mod tests {
     }
 
     #[test]
-    fn test_dd_branching_ratio() {
-        // At low energy, should be ~50/50
-        let (n_frac, p_frac) = GamowIntegration::dd_branching_ratio(1.0);
-        assert!(
-            (n_frac - 0.5).abs() < 0.01,
-            "Low energy should be ~50% neutron"
-        );
-        assert!(
-            (n_frac + p_frac - 1.0).abs() < 0.001,
-            "Fractions must sum to 1"
-        );
+    fn test_constant_s_branching_uses_the_same_branch_constants_as_total_kernel() {
+        let expected_neutron = DD_S_FACTOR_NEUTRON / DD_S_FACTOR;
+        let expected_proton = DD_S_FACTOR_PROTON / DD_S_FACTOR;
 
-        // At higher energy, neutron fraction decreases
-        let (n_frac_high, _) = GamowIntegration::dd_branching_ratio(50.0);
-        assert!(
-            n_frac_high < n_frac,
-            "Neutron fraction should decrease with energy"
-        );
+        for energy_kev in [0.0, 0.5, 1.0, 20.0, 100.0, 500.0] {
+            let (neutron, proton) = GamowIntegration::dd_branching_ratio(energy_kev);
+            assert!((neutron - expected_neutron).abs() < 1e-14);
+            assert!((proton - expected_proton).abs() < 1e-14);
+            assert!((neutron + proton - 1.0).abs() < 1e-14);
+        }
     }
 
     #[test]
