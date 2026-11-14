@@ -201,7 +201,7 @@ impl GamowIntegration {
         // sqrt(8 / (π m_u)) × sqrt(1 keV in erg) × 1 barn
         // = 4.956792115648147e-17 (cm³/s) / keV^(3/2).
         // The previous 3.727e-12 coefficient was too large by ~7.5e4.
-        const REACTIVITY_PREFactor_CGS: f64 = 4.956_792_115_648_147e-17;
+        const REACTIVITY_PREFACTOR_CGS: f64 = 4.956_792_115_648_147e-17;
         let prefactor: f64 =
             REACTIVITY_PREFactor_CGS / (mu_amu.sqrt() * kt_kev.powf(1.5));
         let log_sigma_v = prefactor.ln() + log_integral;
