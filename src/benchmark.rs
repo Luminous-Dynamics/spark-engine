@@ -337,14 +337,16 @@ impl SourceReference {
     }
 }
 
-/// One benchmark point. This is metadata plus a sourced value, not a solver result.
+/// One benchmark point: a sourced observation or identified model result, not a solver run receipt.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BenchmarkRecord {
     pub record_id: String,
     pub evidence_class: EvidenceClass,
     /// Required with an exact version/revision when evidence_class is ModelOutput.
+    #[serde(default)]
     pub producer_model: Option<String>,
     /// Model release, source revision, or immutable build identifier.
+    #[serde(default)]
     pub producer_revision: Option<String>,
     pub experiment_class: ExperimentClass,
     pub source: SourceReference,
@@ -688,7 +690,7 @@ mod tests {
     fn model_output_requires_model_and_revision_identity() {
         let mut record = beam_record();
         record.evidence_class = EvidenceClass::ModelOutput;
-        record.source.doi = Some("10.0000/example.model-output".to_string());
+        record.source.stable_url = Some("https://example.org/model-output-fixture".to_string());
         assert!(record.validate().is_err());
 
         record.producer_model = Some("example-screening-model".to_string());
