@@ -400,6 +400,13 @@ impl BenchmarkRecord {
             errors.push("isotope_pair must not be empty".to_string());
         }
 
+        if self.observable.quantity == QuantityKind::IncidentEnergy {
+            errors.push(
+                "observable must not be IncidentEnergy; use the incident_energy context field"
+                    .to_string(),
+            );
+        }
+
         match (
             self.evidence_class,
             self.producer_model.as_deref(),
@@ -646,6 +653,13 @@ mod tests {
         measurement.unit = MeasurementUnit::Dimensionless;
         measurement.basis = ValueBasis::Absolute;
         assert!(measurement.validate().is_err());
+    }
+
+    #[test]
+    fn incident_energy_is_context_not_the_primary_observable() {
+        let mut record = beam_record();
+        record.observable = incident_energy(Some(EnergyFrame::CenterOfMass));
+        assert!(record.validate().is_err());
     }
 
     #[test]
