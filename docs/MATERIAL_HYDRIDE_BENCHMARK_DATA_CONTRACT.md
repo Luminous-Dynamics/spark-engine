@@ -69,7 +69,7 @@ Every record carries:
 - experiment class, host material, isotope pair and loading state;
 - detection channel;
 - explicit uncertainty status (Reported, NotReported, NotApplicable);
-- uncertainty magnitude, interpretation and coverage probability where required.
+- uncertainty magnitude and interpretation; source-reported intervals preserve the quoted interval and any stated sigma convention without inventing a probability model.
 
 Unknown uncertainty remains unknown. It is not zero. A relative number is never admitted without its reference identifier. An incident energy is never admitted without its frame.
 
@@ -101,9 +101,24 @@ The Rust unit tests require the contract to reject:
 - raw dataset or digitized figure without a content digest;
 - non-finite values;
 - uncertainty payload/status disagreement;
+- source-reported uncertainty intervals whose source convention must be preserved separately from standard deviation or expanded-uncertainty assumptions;
 - incomplete expanded-uncertainty coverage metadata.
 
 The tests use synthetic fixtures only. Passing them validates the data contract, not the underlying physics model or a physical reactor.
+
+
+
+## NASA sample-location record fixture
+
+The Rust test corpus includes one externally reported record for Steinetz et al. (2020), sample TS1575 measured with EJ-309:
+- value: 1.5 × 10³ neutrons/s;
+- reported interval: ±0.3 × 10³ neutrons/s;
+- boundary: sample-location source rate, after detector-chain correction/scaling;
+- source locator: Figure 5 caption, Section IV.A and Table V;
+- experiment class: X-ray-triggered lattice;
+- evidence class: externally reported (not independently replicated by Spark).
+
+The paper's Figure 5 caption states that uncertainty bars represent 3σ. The schema stores this as a source-reported interval rather than silently converting it into a standard deviation or inventing a coverage probability. The 2.9 MeV beam endpoint is a bremsstrahlung photon energy, not a deuteron collision energy, so it is deliberately not mapped into the incident-deuteron-energy field.
 
 ## Next benchmark increments
 
