@@ -4,8 +4,9 @@
 //! # Spark Engine: Lattice Confinement Fusion Physics
 //!
 //! A physics-honest simulation framework for LCF research, focused on:
-//! - Rigorous Gamow integration with screening and phonon effects
-//! - Q factor calculation with honest assessment (Q << 1 at room temperature)
+//! - Bosch-Hale branch-resolved bare D-D reference fits plus an exploratory constant-S
+//!   Gamow kernel for screening/phonon sensitivity studies
+//! - Q factor accounting with explicit model and system-boundary limitations
 //! - Lattice lifetime modeling with DPA tracking
 //! - Anomaly investigation (Path C): Understanding observed vs predicted rates
 //! - Neutron source design (Path D): Compact neutron generator applications
