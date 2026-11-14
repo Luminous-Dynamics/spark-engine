@@ -112,3 +112,24 @@ For a plant boundary, account for energy inputs, energy outputs and change in st
 ## Claim boundary
 
 This document is a source-code and architecture audit. It does not report a physical experiment, a qualified digital twin, a validated reactor design, net energy production, or approval to manufacture or operate nuclear/radiation-producing equipment.
+
+
+## Competitive landscape and differentiation — checked 2026-11-14
+
+The industry is now explicitly investing in AI-enabled fusion digital twins. On 8 October 2026, Commonwealth Fusion Systems announced that it had been selected by the U.S. Department of Energy to lead the Phase II Genesis Mission project for an AI-enabled digital twin of its SPARC machine, with ten national laboratories, universities and industry partners. The DOE's final June 2026 Fusion Science and Technology Roadmap separately calls for an AI-Fusion Digital Convergence Platform to support burning-plasma science, materials discovery, fuel-cycle closure and fusion-energy systems integration.
+
+This means "AI for fusion" or "a fusion digital twin" is not, by itself, a defensible Luminous differentiator. We should not attempt to outbuild a national-laboratory consortium on a single tokamak's operations twin. Instead, pursue a complementary layer:
+
+1. **Cross-architecture evidence model:** one claim, provenance, unit, uncertainty and validation contract that can compare magnetic, inertial, pulsed, materials-mediated and industrial-plasma concepts without pretending their physics metrics are interchangeable.
+2. **Model-adequacy and open-world qualification:** detect when every registered model is wrong, preserve failed predictions, and select experiments for robust decision value rather than point expected information gain alone. Reuse Symthaea's existing model-adequacy and robust experiment-design work.
+3. **Whole-system boundary assurance:** distinguish reaction yield, target/plasma gain, driver wall-plug efficiency, gross heat/electric output, recirculating loads and net exported electricity. Reuse Symtropy's typed energy-port programme.
+4. **Materials-to-component evidence chain:** preserve specimen/lot lineage, microstructure, irradiation/thermal history, joining and inspection evidence, and model-transfer limits. Compose with Symthaea's materials/plasma-bond work and Symtropy's weld VVUQ instead of claiming a new materials solver.
+5. **Solver-neutral federation:** orchestrate external specialist solvers and compare them only where equations, boundary conditions and observables are compatible. Never relabel an internal visualization or synthetic projection as a validated field solution.
+
+These are proposed differentiators, not capabilities already demonstrated by Luminous. Our competitive benchmark should be: same frozen public case, same declared system boundary, same reference data and uncertainty; show better held-out prediction or more reliable decision/qualification outcomes, and publish the failed cases as well as the wins.
+
+References:
+- [CFS: AI-enabled SPARC digital twin, Genesis Mission Phase II, 8 October 2026](https://cfs.energy/news-and-media/commonwealth-fusion-systems-to-lead-ai-enabled-digital-twin-fusion-project-in-second-phase-of-genesis-mission/)
+- [DOE: Final Fusion Science and Technology Roadmap, 9 June 2026](https://www.energy.gov/articles/energy-department-releases-finalized-fusion-science-and-technology-roadmap-accelerate)
+- [LLNL: NIF repeated ignition; 7.9 MJ and target gain ~3.8, 20 June 2026](https://lmf.llnl.gov/science/achieving-fusion-ignition)
+- [Wendelstein 7-X: triple product result, *Physical Review E* (2026)](https://doi.org/10.1103/q59k-8m26)
