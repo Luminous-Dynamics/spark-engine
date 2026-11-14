@@ -44,6 +44,21 @@ physics-honest assessment and
 [`docs/ANOMALY_INVESTIGATION_ROADMAP.md`](docs/ANOMALY_INVESTIGATION_ROADMAP.md)
 for the phased research plan this tool supports.
 
+## Materials-mediated benchmark corpus
+
+Spark includes a provenance- and unit-aware record contract for the 2025–2026
+metal-hydride D–D literature. It keeps beam-driven metal-target observations,
+X-ray-triggered lattice experiments, electrochemical loading controls, relative
+yields, model-relative enhancement ratios, total versus areal detector
+rates, sample-location neutron source rates, total versus volumetric reaction
+rates, calorimetric power, explicit rate boundaries, energy frames, uncertainty
+status, model revision identity and source rights distinct. The schema foundation is in
+[`src/benchmark.rs`](src/benchmark.rs); its admission rules are described in
+[`docs/MATERIAL_HYDRIDE_BENCHMARK_DATA_CONTRACT.md`](docs/MATERIAL_HYDRIDE_BENCHMARK_DATA_CONTRACT.md).
+
+This does not yet ingest pointwise experimental data or validate a reactor.
+Synthetic unit-test fixtures validate only the data contract.
+
 ## Why this might matter to you
 
 If you're doing LCF/LENR-adjacent research and deciding what to fund or run next: the
