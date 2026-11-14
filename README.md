@@ -49,8 +49,9 @@ for the phased research plan this tool supports.
 Spark includes a provenance- and unit-aware record contract for the 2025–2026
 metal-hydride D–D literature. It keeps beam-driven metal-target observations,
 X-ray-triggered lattice experiments, electrochemical loading controls, relative
-yields, model-relative enhancement ratios, energy frames, uncertainty status,
-and source rights distinct. The schema foundation is in
+yields, model-relative enhancement ratios, total versus areal detector
+rates, total versus volumetric reaction rates, calorimetric power, energy
+frames, uncertainty status, model revision identity and source rights distinct. The schema foundation is in
 [`src/benchmark.rs`](src/benchmark.rs); its admission rules are described in
 [`docs/MATERIAL_HYDRIDE_BENCHMARK_DATA_CONTRACT.md`](docs/MATERIAL_HYDRIDE_BENCHMARK_DATA_CONTRACT.md).
 
