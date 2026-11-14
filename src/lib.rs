@@ -126,8 +126,12 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Physics constants used throughout
 pub mod constants {
     /// Low-energy D-D neutron-branch S-factor at E→0 (keV·barn), Bosch-Hale.
+    /// Value is 53,701 millibarn·keV converted to 53.701 barn·keV.
+    /// Reference implementation coefficients: WarpX BoschHaleFusionCrossSection.
     pub const DD_S_FACTOR_NEUTRON: f64 = 53.701;
     /// Low-energy D-D proton-branch S-factor at E→0 (keV·barn), Bosch-Hale.
+    /// Value is 55,576 millibarn·keV converted to 55.576 barn·keV.
+    /// Reference implementation coefficients: WarpX BoschHaleFusionCrossSection.
     pub const DD_S_FACTOR_PROTON: f64 = 55.576;
     /// Approximate total D-D S-factor (both branches; keV·barn).
     ///
