@@ -688,6 +688,7 @@ mod tests {
     fn model_output_requires_model_and_revision_identity() {
         let mut record = beam_record();
         record.evidence_class = EvidenceClass::ModelOutput;
+        record.source.doi = Some("10.0000/example.model-output".to_string());
         assert!(record.validate().is_err());
 
         record.producer_model = Some("example-screening-model".to_string());
