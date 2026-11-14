@@ -7,14 +7,14 @@
 **Package:** [`spark-engine`](https://crates.io/crates/spark-engine) on crates.io ·
 [github.com/Luminous-Dynamics/spark-engine](https://github.com/Luminous-Dynamics/spark-engine)
 
-> **Revision note (2026-07-07):** this report was updated to reflect the current
-> codebase (99 tests, up from 42) and two capabilities added since the original
-> draft — a Bayesian belief model over the five candidate hypotheses
-> (`bayesian.rs`) and an expected-information-gain experiment ranker
-> (`optimal_experiment.rs`). Section 5's static priority table is now superseded
-> by a regenerable, decision-theoretic ranking — see §5.1. One numeric table from
-> the original draft (§2.3) is flagged as illustrative rather than verified; see
-> the caveat there. No conclusion about the physics itself has changed.
+> **Revision note (2026-11-14):** the former absolute room-temperature reactivity,
+> Q and 40-order anomaly-gap figures are withdrawn pending a separately validated
+> sub-keV model and matched experiment boundary. A unit-conversion defect in the
+> Maxwellian prefactor and a one-branch/total-branch S-factor mismatch were found.
+> The corrected constant-S bare D-D kernel is now regression checked against the
+> 2019 NRL Plasma Formulary at 1–20 keV with a 35% approximation envelope. See
+> docs/DD_MAXWELLIAN_REACTIVITY_REFERENCE_BENCHMARK.md. The 300 K lattice/beam
+> regime is outside that reference domain and remains an extrapolation.
 
 ---
 
@@ -22,15 +22,15 @@
 
 This report presents a rigorous, physics-honest analysis of Lattice Confinement Fusion (LCF) using the Spark Engine simulation framework. Our key findings:
 
-1. **Standard Gamow physics predicts Q << 1** at room temperature. LCF cannot produce net energy under known physics.
+1. **The present evidence does not establish net energy production.** Room-temperature Q remains below unity under the modelled assumptions, but its absolute numerical value is not a validated physical result.
 
-2. **A 40-order-of-magnitude gap exists** between NASA's observed neutron rate (~10³ n/s) and Gamow predictions (~10⁻³⁸ n/s).
+2. **The prior 40-order anomaly-gap figure is withdrawn.** The bare Maxwellian kernel had a unit-conversion defect; the low-temperature beam/lattice comparison also mixed model and experiment boundaries. A matched, qualified 300 K prediction is still open work.
 
-3. **The most plausible explanation** is transient hot spots from X-ray absorption, which could locally achieve temperatures of ~3,500K.
+3. **No lattice mechanism is currently selected as the explanation.** Hot-spot, screening, phonon and measurement/systematic hypotheses remain competing explanations, not established mechanisms.
 
-4. **LCF may still be valuable** as a compact neutron source, even without energy gain.
+4. **Any neutron-source application remains conditional on independent replication, calibrated source-rate measurements, material qualification, safety review and regulatory approval.**
 
-5. **(New, 2026-07-07) The single best next experiment, by expected information gain per dollar, is the Hydrogen Control** (~$10K, 1 month) — not the Temperature Mapping study this report originally emphasized. See §5.1.
+5. **The expected-information-gain experiment ranking remains a software-generated research aid**, conditional on its priors, likelihoods, costs and candidate set; it is not a physical validation result.
 
 ---
 
@@ -41,7 +41,7 @@ This report presents a rigorous, physics-honest analysis of Lattice Confinement 
 The D-D fusion rate is calculated using the full Gamow integral:
 
 ```
-<σv> = √(8/πμ) · (kT)^(-3/2) · ∫ σ(E) · E · exp(-E/kT - E_G/√E + U_e/kT) dE
+<σv> = √(8/πμ) · (kT)^(-3/2) · ∫ σ_bare(E) · E · exp(-E/kT) dE
 ```
 
 Where:
@@ -49,28 +49,48 @@ Where:
 - E_G = Gamow energy = 31.38 keV^0.5 for D-D
 - U_e = electron screening energy
 
-### 1.2 Room Temperature Results
+### 1.2 Reference benchmark and validity envelope
 
-| Parameter | Value | Unit |
-|-----------|-------|------|
-| Temperature | 300 | K |
-| Screening (Pd) | 309 | eV |
-| <σv> | 5.3 × 10⁻⁹⁰ | cm³/s |
-| Gamow peak | 5.0 | eV |
-| Q factor | 1.8 × 10⁻⁵⁷ | - |
+The previous 300 K table (including the quoted 5.3 × 10⁻⁹⁰ cm³/s and Q value)
+is withdrawn. It was generated with an incorrect integration prefactor and
+a branch S-factor used as though it represented both D-D branches. Further,
+the NRL/Bosch–Hale reference data do not qualify an extrapolation down to room
+temperature or a solid-lattice beam-target environment.
 
-**Conclusion:** At room temperature, <σv> is negligible. Standard physics predicts essentially zero fusion.
+The corrected bare, two-branch, constant-S approximation is regression checked
+against the NRL Plasma Formulary (2019, p. 45):
 
-### 1.3 Temperature Dependence
+| Ion temperature | NRL reference <σv> | Corrected Spark approximation | Difference |
+|---:|---:|---:|---:|
+| 1 keV | 1.5 × 10⁻²² cm³/s | 1.93 × 10⁻²² cm³/s | +28.7% |
+| 2 keV | 5.4 × 10⁻²¹ cm³/s | 5.91 × 10⁻²¹ cm³/s | +9.5% |
+| 5 keV | 1.8 × 10⁻¹⁹ cm³/s | 1.65 × 10⁻¹⁹ cm³/s | −8.6% |
+| 10 keV | 1.2 × 10⁻¹⁸ cm³/s | 1.01 × 10⁻¹⁸ cm³/s | −15.8% |
+| 20 keV | 5.2 × 10⁻¹⁸ cm³/s | 3.89 × 10⁻¹⁸ cm³/s | −25.1% |
 
-| Temperature (K) | <σv> (cm³/s) | Q Factor |
-|-----------------|--------------|----------|
-| 300 | 5.3 × 10⁻⁹⁰ | 10⁻⁵⁷ |
-| 1,000 | 2.9 × 10⁻⁶⁴ | 10⁻³¹ |
-| 10,000 | 2.6 × 10⁻²⁹ | 10⁺⁴ |
-| 100,000 | 1.2 × 10⁻¹⁶ | 10¹⁷ |
+The 35% acceptance envelope is for this simplified constant-S regression
+only. It is not an uncertainty band on the physical reaction rate. A
+full energy-dependent Bosch–Hale branch implementation is the next accuracy
+upgrade.
 
-The rate increases by ~25 orders of magnitude per factor of 10 in temperature. Q > 1 requires T > 10⁷ K under standard physics.
+### 1.3 Room-temperature and lattice regime
+
+300 K corresponds to approximately 2.6 × 10⁻⁵ keV, far below the 1–20 keV
+regression cases above. The GamowIntegration::dd_rate result at 300 K,
+especially with screening and phonon shifts enabled, is an extrapolated model
+output. It is not a benchmark-validated thermonuclear reactivity, an
+experimental rate, or proof of lattice confinement fusion.
+
+Electron-screening data inferred from beam-target collision measurements
+cannot be inserted into a thermal Maxwellian model without a clearly stated
+kinetic model and validity argument. Likewise, a phenomenological phonon
+energy shift is a hypothesis parameter, not a measured increase in the
+reactant Maxwellian temperature.
+
+The Q-factor test that room-temperature output is below unity remains a
+useful fail-closed invariant. The numerical Q value and the high-temperature
+break-even temperature must be recomputed after the full energy-dependent
+branch reference and the complete input-power boundary have been qualified.
 
 ---
 
@@ -78,24 +98,42 @@ The rate increases by ~25 orders of magnitude per factor of 10 in temperature. Q
 
 ### 2.1 Observation Summary
 
-NASA Glenn Research Center (Steinetz et al., 2020, Phys. Rev. C) reported:
+Steinetz et al., *Physical Review C* 101, 044610 (2020), report 2.45-MeV
+neutrons consistent with the D(d,n)³He channel in bremsstrahlung-irradiated
+ErD₃ and TiD₂ samples. The paper describes deuteron photodissociation and
+neutron-mediated kinetic-energy transfer as part of its interpretation.
 
-- **Neutron rate:** ~10³ n/s
-- **Neutron energy:** 2.45 MeV (consistent with D-D)
-- **Host material:** ErD₂ on TiD₂
-- **Trigger:** 12 keV bremsstrahlung X-rays
-- **Controls:** H control showed no signal
+For two samples, fusion-energy neutron counts corrected for the experimental
+detector chain and scaled back to the sample location were reported as:
+- TS1575: 1.5 ± 0.3 × 10³ neutrons/s (EJ-309).
+- TS1576: 1.6 ± 0.3 × 10³ neutrons/s (EJ-309).
 
-### 2.2 Gap Analysis
+The paper separately reports a calculated rate of 1.2 × 10³ neutrons/s for all
+16 samples. The absolute EJ-309 and stilbene detector efficiencies in Table V
+are approximately 7 × 10⁻⁶ and 2 × 10⁻⁶ respectively for that specific
+geometry and analysis chain. The source-location numbers are not raw detector
+counts and are not areal rates. These efficiencies must not be generalized to
+other detectors or geometries.
 
-| Metric | Value |
-|--------|-------|
-| Observed rate | 10³ n/s |
-| Gamow predicted | 4.3 × 10⁻³⁸ n/s |
-| **Gap factor** | **2.3 × 10⁴⁰** |
-| Gap orders | 40 |
-| Classification | Extraordinary |
+The experimental interpretation is published evidence, not an independent
+replication by Spark and not a demonstrated energy-producing device.
+### 2.2 Rate comparison status
 
+A quantitative anomaly gap is **not currently publishable from the old defaults**.
+The prior predicted value (4.3 × 10⁻³⁸ n/s) used an unqualified low-temperature
+extrapolation, a model boundary that was not matched to the sample-location
+source rate, and an incorrect numerical prefactor/branch normalization.
+
+The rate comparison must be rebuilt from:
+1. a source-qualified experimental record and sample/volume geometry;
+2. a declared detector-to-source correction with its uncertainty and calibration;
+3. a bare Maxwellian, beam-target or lattice-specific model appropriate to the
+   actual reactant energy distribution;
+4. separate total, areal, volumetric and detector-count quantities;
+5. an uncertainty interval that carries model and geometry uncertainty.
+
+Until those inputs are aligned, do not quote a single gap factor or gap-orders
+number.
 ### 2.3 What Could Explain the Gap?
 
 | Enhancement Source | Factor | Cumulative |
