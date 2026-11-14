@@ -195,7 +195,7 @@ impl Measurement {
             QuantityKind::EnhancementRatio => {
                 matches!(&self.basis, ValueBasis::EnhancementVsModel { model_id } if !model_id.trim().is_empty())
             }
-            _ => matches!(self.basis, ValueBasis::Absolute),
+            _ => matches!(&self.basis, ValueBasis::Absolute),
         };
         if !basis_matches {
             errors.push(format!(
