@@ -1,9 +1,11 @@
 // Copyright (C) 2024-2026 Tristan Stoltz / Luminous Dynamics
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Commercial licensing: see COMMERCIAL_LICENSE.md at repository root
-//! # Core Physics: Gamow Integration and Q Factor
+//! # Core Physics: Exploratory Constant-S Gamow Kernel and Q Factor
 //!
-//! Rigorous D-D fusion physics with honest Q factor assessment.
+//! The bare-nucleus reference path is in bosch_hale.rs. The kernel in this file
+//! is an exploratory constant-S sensitivity model with optional phenomenological
+//! screening and phonon shifts; it is not a qualified lattice reaction model.
 
 use crate::constants::*;
 use serde::{Deserialize, Serialize};
@@ -126,15 +128,18 @@ impl GamowResult {
 pub struct GamowIntegration;
 
 impl GamowIntegration {
-    /// Full Gamow peak thermal integration for D-D.
+    /// Evaluate the constant-S Gamow sensitivity kernel for D-D.
     ///
-    /// Uses 200-point trapezoidal integration in log-space to handle
-    /// the astronomically small values at room temperature.
+    /// This 200-interval trapezoidal integration is retained for exploratory
+    /// screening/phonon sensitivity. For the bare-nucleus D-D reference within
+    /// published fit domains, use crate::bosch_hale::dd_maxwellian_cm3_s.
+    /// This method does not validate solid-lattice reaction rates.
     ///
     /// # Arguments
     /// * `t_k` - Lattice temperature (K)
-    /// * `ue_ev` - Screening energy (eV), use 309 for Pd
-    /// * `phonon_modes` - Number of coherent phonon modes (0-5)
+    /// * `ue_ev` - Phenomenological screening-energy hypothesis parameter (eV).
+    ///   Beam-target values are not automatically transferable to Maxwellian plasmas.
+    /// * `phonon_modes` - Exploratory phonon-shift parameter (0-5), not a measured rate enhancement.
     pub fn dd_rate(t_k: f64, ue_ev: f64, phonon_modes: u32) -> GamowResult {
         let kt_kev = KB_KEV * t_k;
 
@@ -307,10 +312,11 @@ impl GamowIntegration {
         (neutron_frac, proton_frac)
     }
 
-    /// Full D-D branching calculation with all products.
+    /// Approximate branch allocation using the constant-S kernel's Gamow-peak heuristic.
     ///
-    /// Returns detailed breakdown of neutron/proton channels,
-    /// product rates, and power distribution.
+    /// For branch-resolved bare Maxwellian reactivities, use
+    /// crate::bosch_hale::dd_maxwellian_cm3_s. This legacy helper is not the
+    /// Bosch-Hale reference.
     pub fn dd_branched(t_k: f64, ue_ev: f64, phonon_modes: u32, n_d_cm3: f64) -> DDBranchingResult {
         let gamow = Self::dd_rate(t_k, ue_ev, phonon_modes);
 
