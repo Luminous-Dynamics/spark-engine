@@ -4,24 +4,36 @@ A physics-honest Rust toolkit for investigating **Lattice Confinement Fusion (LC
 the anomalous neutron production NASA Glenn Research Center reported from deuterium-loaded
 metal lattices under X-ray triggering (Steinetz et al. 2020, *Phys. Rev. C*).
 
-**This is a research tool, not a power source.** Under standard Gamow physics, D-D fusion
-at 300 K gives `<σv>` ≈ 5×10⁻⁹⁰ cm³/s and Q ≈ 10⁻⁵⁷ — no net energy gain is possible. The
-code enforces this: `QFactor` computes and flags Q < 1 explicitly, it does not let you
-assert otherwise. What's real and unexplained is a **~40-to-50-order-of-magnitude gap**
-between that prediction and the ~10³ n/s NASA observed. This crate exists to investigate
-that gap rigorously — and, if it's confirmed, to design toward the credible application: a
-**compact neutron source**, not an energy device.
+**This is a research tool, not a power source.** Spark now includes a branch-resolved
+Bosch–Hale bare-nucleus reference fit for D–D cross-sections and Maxwellian reactivities,
+with independent numerical integration checks within published fit domains. The
+constant-S Gamow kernel remains an exploratory screening/phonon sensitivity model.
+The 300 K solid-lattice regime lies outside the thermonuclear fit domains: absolute
+room-temperature rates are extrapolations, not validated standard reactivities. Do
+not treat a beam-target screening potential as a measured Maxwellian plasma correction.
+`QFactor` continues to flag Q < 1 in modelled room-temperature scenarios; absolute
+low-temperature values remain model-dependent.
+
+NASA Glenn reported detector-efficiency-corrected fusion-energy neutron rates scaled to
+the sample location of 1.5 ± 0.3 × 10³ and 1.6 ± 0.3 × 10³ neutrons/s for two samples.
+These are inferred source rates, not raw detector counts or counts per square centimetre.
+The mechanism and reproducibility of lattice-mediated results remain research questions.
+Spark's goal is to separate these hypotheses, measurements and model predictions rigorously
+before any application or scale-up claim.
 
 ## What's here
 
-- **Literature-validated core physics** — full Gamow integration (electron screening,
-  phonon-enhanced tunneling, D-D multi-channel branching), Q-factor enforcement, DPA-based
-  lattice-lifetime/degradation modeling. Parameters checked against ENDF/B-VIII.0, Miracle
-  & Senkov (HEA review), and standard radiation-damage references.
-- **Anomaly investigation** — `rate_gap` quantifies the observed/predicted gap and its
-  possible explanations; `hypothesis_models` implements four candidate mechanisms (transient
-  hot spots, coherent phonon cascade, super-screening, lattice-modified tunneling) plus
-  measurement error as the skeptical null.
+- **Branch-resolved Bosch–Hale reference physics** — separate D(d,n)³He and D(d,p)T
+  energy-dependent cross-sections, analytic Maxwellian reactivities, and an independent
+  cross-section integration check within the published fit domains. The older constant-S
+  Gamow kernel remains a screening-sensitivity approximation, not the authoritative bare
+  reference. Screening/phonon hypotheses remain unvalidated model assumptions. See
+  [Bosch–Hale branch benchmark](docs/BOSCH_HALE_DD_BRANCH_BENCHMARK.md) and
+  [constant-S unit benchmark](docs/DD_MAXWELLIAN_REACTIVITY_REFERENCE_BENCHMARK.md).
+- **Anomaly investigation** — `rate_gap` and `hypothesis_models` provide exploratory comparison
+  tools for competing hypotheses and measurement-systematic nulls. A quantitative gap is
+  publishable only after observed and predicted rates share the same experiment class,
+  geometry, source/detector boundary, energy distribution, units and uncertainty chain.
 - **Bayesian experiment design** — `bayesian` maintains a probability distribution over
   those five hypotheses and updates it from experimental outcomes; `optimal_experiment`
   ranks candidate experiments by **expected information gain per dollar** and derives a
@@ -35,8 +47,8 @@ that gap rigorously — and, if it's confirmed, to design toward the credible ap
 
 - **Uncertainty quantification** — Monte Carlo propagation, Morris screening, tornado
   diagrams, break-even/feasibility analysis.
-- **Neutron source design** — shielding calculations and compact-generator specs, for the
-  scenario where the anomaly turns out to be real and controllable.
+- **Neutron-source research** — legacy conceptual modelling only. No construction package,
+  operational specification, radiation-safety case or qualified source is provided.
 
 See [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) (also as
 [PDF](docs/TECHNICAL_REPORT.pdf), regenerate with `docs/render_pdf.sh`) for the full

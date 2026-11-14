@@ -7,14 +7,18 @@
 **Package:** [`spark-engine`](https://crates.io/crates/spark-engine) on crates.io ·
 [github.com/Luminous-Dynamics/spark-engine](https://github.com/Luminous-Dynamics/spark-engine)
 
-> **Revision note (2026-07-07):** this report was updated to reflect the current
-> codebase (99 tests, up from 42) and two capabilities added since the original
-> draft — a Bayesian belief model over the five candidate hypotheses
-> (`bayesian.rs`) and an expected-information-gain experiment ranker
-> (`optimal_experiment.rs`). Section 5's static priority table is now superseded
-> by a regenerable, decision-theoretic ranking — see §5.1. One numeric table from
-> the original draft (§2.3) is flagged as illustrative rather than verified; see
-> the caveat there. No conclusion about the physics itself has changed.
+> **Revision note (2026-11-14):** the former absolute room-temperature reactivity,
+> Q and 40-order anomaly-gap figures are withdrawn pending a separately validated
+> sub-keV model and matched experiment boundary. A unit-conversion defect in the
+> Maxwellian prefactor and a one-branch/total-branch S-factor mismatch were found.
+> The legacy constant-S kernel has an NRL 1–20 keV regression check, but it is
+> not the bare-nucleus authority. A new branch-resolved Bosch-Hale module now
+> implements D(d,n)³He and D(d,p)T cross-sections, analytic Maxwellian reactivities,
+> and a numerical cross-section integration cross-check within published domains.
+> A second correction fixes identical-reactant rate density from n_D²<σv>/4 to
+> n_D²<σv>/2, with branch fractions applied separately. Tests are written but
+> not executed here; see docs/BOSCH_HALE_DD_BRANCH_BENCHMARK.md. The 300 K
+> lattice/beam regime remains outside these thermonuclear fit domains.
 
 ---
 
@@ -22,15 +26,15 @@
 
 This report presents a rigorous, physics-honest analysis of Lattice Confinement Fusion (LCF) using the Spark Engine simulation framework. Our key findings:
 
-1. **Standard Gamow physics predicts Q << 1** at room temperature. LCF cannot produce net energy under known physics.
+1. **The present evidence does not establish net energy production.** Room-temperature Q remains below unity under the modelled assumptions, but its absolute numerical value is not a validated physical result.
 
-2. **A 40-order-of-magnitude gap exists** between NASA's observed neutron rate (~10³ n/s) and Gamow predictions (~10⁻³⁸ n/s).
+2. **The prior 40-order anomaly-gap figure is withdrawn.** The bare Maxwellian kernel had a unit-conversion defect; the low-temperature beam/lattice comparison also mixed model and experiment boundaries. A matched, qualified 300 K prediction is still open work.
 
-3. **The most plausible explanation** is transient hot spots from X-ray absorption, which could locally achieve temperatures of ~3,500K.
+3. **No lattice mechanism is currently selected as the explanation.** Hot-spot, screening, phonon and measurement/systematic hypotheses remain competing explanations, not established mechanisms.
 
-4. **LCF may still be valuable** as a compact neutron source, even without energy gain.
+4. **Any neutron-source application remains conditional on independent replication, calibrated source-rate measurements, material qualification, safety review and regulatory approval.**
 
-5. **(New, 2026-07-07) The single best next experiment, by expected information gain per dollar, is the Hydrogen Control** (~$10K, 1 month) — not the Temperature Mapping study this report originally emphasized. See §5.1.
+5. **The expected-information-gain experiment ranking remains a software-generated research aid**, conditional on its priors, likelihoods, costs and candidate set; it is not a physical validation result.
 
 ---
 
@@ -41,7 +45,7 @@ This report presents a rigorous, physics-honest analysis of Lattice Confinement 
 The D-D fusion rate is calculated using the full Gamow integral:
 
 ```
-<σv> = √(8/πμ) · (kT)^(-3/2) · ∫ σ(E) · E · exp(-E/kT - E_G/√E + U_e/kT) dE
+<σv> = √(8/πμ) · (kT)^(-3/2) · ∫ σ_bare(E) · E · exp(-E/kT) dE
 ```
 
 Where:
@@ -49,28 +53,73 @@ Where:
 - E_G = Gamow energy = 31.38 keV^0.5 for D-D
 - U_e = electron screening energy
 
-### 1.2 Room Temperature Results
+### 1.2 Reference benchmark and validity envelope
 
-| Parameter | Value | Unit |
-|-----------|-------|------|
-| Temperature | 300 | K |
-| Screening (Pd) | 309 | eV |
-| <σv> | 5.3 × 10⁻⁹⁰ | cm³/s |
-| Gamow peak | 5.0 | eV |
-| Q factor | 1.8 × 10⁻⁵⁷ | - |
+The previous 300 K table (including the quoted 5.3 × 10⁻⁹⁰ cm³/s and Q value)
+is withdrawn. It was generated with an incorrect integration prefactor and
+a branch S-factor used as though it represented both D-D branches. Further,
+the NRL/Bosch–Hale reference data do not qualify an extrapolation down to room
+temperature or a solid-lattice beam-target environment.
 
-**Conclusion:** At room temperature, <σv> is negligible. Standard physics predicts essentially zero fusion.
+The corrected bare, two-branch, constant-S approximation is regression checked
+against the NRL Plasma Formulary (2019, p. 45):
 
-### 1.3 Temperature Dependence
+| Ion temperature | NRL reference <σv> | Corrected Spark approximation | Difference |
+|---:|---:|---:|---:|
+| 1 keV | 1.5 × 10⁻²² cm³/s | 1.93 × 10⁻²² cm³/s | +28.7% |
+| 2 keV | 5.4 × 10⁻²¹ cm³/s | 5.91 × 10⁻²¹ cm³/s | +9.5% |
+| 5 keV | 1.8 × 10⁻¹⁹ cm³/s | 1.65 × 10⁻¹⁹ cm³/s | −8.6% |
+| 10 keV | 1.2 × 10⁻¹⁸ cm³/s | 1.01 × 10⁻¹⁸ cm³/s | −15.8% |
+| 20 keV | 5.2 × 10⁻¹⁸ cm³/s | 3.89 × 10⁻¹⁸ cm³/s | −25.1% |
 
-| Temperature (K) | <σv> (cm³/s) | Q Factor |
-|-----------------|--------------|----------|
-| 300 | 5.3 × 10⁻⁹⁰ | 10⁻⁵⁷ |
-| 1,000 | 2.9 × 10⁻⁶⁴ | 10⁻³¹ |
-| 10,000 | 2.6 × 10⁻²⁹ | 10⁺⁴ |
-| 100,000 | 1.2 × 10⁻¹⁶ | 10¹⁷ |
+The 35% acceptance envelope is for this simplified constant-S regression
+only. It is not an uncertainty band on the physical reaction rate. This
+constant-S path remains useful for transparent sensitivity experiments but is
+not the authoritative bare-nucleus reference.
 
-The rate increases by ~25 orders of magnitude per factor of 10 in temperature. Q > 1 requires T > 10⁷ K under standard physics.
+### 1.3 Branch-resolved Bosch-Hale reference
+
+The new module, src/bosch_hale.rs, implements two separate reference models:
+- Energy-dependent D(d,n)³He and D(d,p)T cross-sections using the Bosch-Hale
+  polynomial fits, returned in millibarns versus centre-of-mass energy.
+- Analytic Maxwellian reactivities for each branch, returned in cm³/s over
+  0.2 < T_i < 100 keV.
+
+A separate adaptive-Simpson integration evaluates each branch cross-section
+over the Maxwellian relative-energy distribution. Its 1–100 keV conservative
+validation interval avoids integrating below the published 0.5 keV
+cross-section-fit boundary. The numerical integration and analytic rate fit
+agree within approximately 2% in an independent Python check over 1–50 keV;
+the Rust regression suite uses a 2.5% envelope and is not yet executed.
+
+The implementation is checked against the MIT Magnetic Fusion Energy
+Formulary (2014), §§9.7–9.8, including tabulated cross-sections and branch
+rates. The 2019 NRL total-rate table is retained as a separate comparison;
+its low-temperature values differ from the Bosch-Hale total and should not be
+treated as an exact branch-resolved Bosch-Hale oracle. See
+docs/BOSCH_HALE_DD_BRANCH_BENCHMARK.md.
+
+The 0.2–100 keV analytic-fit range is a thermonuclear reference domain, not
+a justification for extrapolating to 300 K or a deuterated solid lattice.
+
+### 1.4 Room-temperature and lattice regime
+
+300 K corresponds to approximately 2.6 × 10⁻⁵ keV, far below the 1–20 keV
+regression cases above. The GamowIntegration::dd_rate result at 300 K,
+especially with screening and phonon shifts enabled, is an extrapolated model
+output. It is not a benchmark-validated thermonuclear reactivity, an
+experimental rate, or proof of lattice confinement fusion.
+
+Electron-screening data inferred from beam-target collision measurements
+cannot be inserted into a thermal Maxwellian model without a clearly stated
+kinetic model and validity argument. Likewise, a phenomenological phonon
+energy shift is a hypothesis parameter, not a measured increase in the
+reactant Maxwellian temperature.
+
+The Q-factor test that room-temperature output is below unity remains a
+useful fail-closed invariant. The numerical Q value and the high-temperature
+break-even temperature must be recomputed after the full energy-dependent
+branch reference and the complete input-power boundary have been qualified.
 
 ---
 
@@ -78,102 +127,95 @@ The rate increases by ~25 orders of magnitude per factor of 10 in temperature. Q
 
 ### 2.1 Observation Summary
 
-NASA Glenn Research Center (Steinetz et al., 2020, Phys. Rev. C) reported:
+Steinetz et al., *Physical Review C* 101, 044610 (2020), report 2.45-MeV
+neutrons consistent with the D(d,n)³He channel in bremsstrahlung-irradiated
+ErD₃ and TiD₂ samples. The paper describes deuteron photodissociation and
+neutron-mediated kinetic-energy transfer as part of its interpretation.
 
-- **Neutron rate:** ~10³ n/s
-- **Neutron energy:** 2.45 MeV (consistent with D-D)
-- **Host material:** ErD₂ on TiD₂
-- **Trigger:** 12 keV bremsstrahlung X-rays
-- **Controls:** H control showed no signal
+For two samples, fusion-energy neutron counts corrected for the experimental
+detector chain and scaled back to the sample location were reported as:
+- TS1575: 1.5 ± 0.3 × 10³ neutrons/s (EJ-309).
+- TS1576: 1.6 ± 0.3 × 10³ neutrons/s (EJ-309).
 
-### 2.2 Gap Analysis
+The paper separately reports a calculated rate of 1.2 × 10³ neutrons/s for all
+16 samples. The absolute EJ-309 and stilbene detector efficiencies in Table V
+are approximately 7 × 10⁻⁶ and 2 × 10⁻⁶ respectively for that specific
+geometry and analysis chain. The source-location numbers are not raw detector
+counts and are not areal rates. These efficiencies must not be generalized to
+other detectors or geometries.
 
-| Metric | Value |
-|--------|-------|
-| Observed rate | 10³ n/s |
-| Gamow predicted | 4.3 × 10⁻³⁸ n/s |
-| **Gap factor** | **2.3 × 10⁴⁰** |
-| Gap orders | 40 |
-| Classification | Extraordinary |
+The experimental interpretation is published evidence, not an independent
+replication by Spark and not a demonstrated energy-producing device.
+### 2.2 Rate comparison status
 
-### 2.3 What Could Explain the Gap?
+A quantitative anomaly gap is **not currently publishable from the old defaults**.
+The prior predicted value (4.3 × 10⁻³⁸ n/s) used an unqualified low-temperature
+extrapolation, a model boundary that was not matched to the sample-location
+source rate, and an incorrect numerical prefactor/branch normalization.
 
-| Enhancement Source | Factor | Cumulative |
-|--------------------|--------|------------|
-| Electron screening (309 eV) | 10²⁰⁰ | 10²⁰⁰ |
-| Phonon enhancement (2 modes) | 10² | 10²⁰² |
-| Hot spot (10× T) | 10¹⁰ | 10²¹² |
-| **Unexplained** | **10⁻¹⁷²** | 10⁴⁰ |
+The rate comparison must be rebuilt from:
+1. a source-qualified experimental record and sample/volume geometry;
+2. a declared detector-to-source correction with its uncertainty and calibration;
+3. a bare Maxwellian, beam-target or lattice-specific model appropriate to the
+   actual reactant energy distribution;
+4. separate total, areal, volumetric and detector-count quantities;
+5. an uncertainty interval that carries model and geometry uncertainty.
 
-The combined known enhancements far exceed the gap, but each is applied at its theoretical maximum. In practice, these enhancements may not combine multiplicatively.
+Until those inputs are aligned, do not quote a single gap factor or gap-orders
+number.
+### 2.3 Candidate mechanisms — no cumulative enhancement factors accepted
 
-> **Honesty caveat (added 2026-07-07):** this table's numbers could not be reproduced
-> from the current `screening_enhancement()` implementation (`physics.rs`) at any
-> physically relevant energy for this system — the function returns the trivial
-> value 1.0 below 10 eV collision energy by design, and is capped at 10⁶ above
-> that (added later, per `clippy::manual_clamp` cleanup 2026-07-07). The 10²⁰⁰
-> screening figure appears to be from an earlier, uncapped, illustrative
-> back-of-envelope exercise evaluated outside the function's intended domain,
-> not a live-computed result. Treat this table as **narrative intuition about
-> orders of magnitude, not a verified calculation** — which is consistent with
-> the original prose above already flagging the multiplicative-combination
-> assumption as questionable. Recomputing it rigorously (correct energy
-> convention, no artificial floor/ceiling) is open work, not done here.
+No quantitative enhancement factor is assigned to screening, phonon coupling,
+transient heating or lattice-modified tunnelling in this report. The previous
+10²⁰⁰ screening / 10⁴⁰ cumulative-gap table is withdrawn: it was not reproducible
+from the current implementation and combined assumptions without a defensible
+joint probability or model.
+
+Each candidate mechanism must be expressed as a separately testable model with:
+- an explicit reactant energy distribution and reference frame;
+- a measurable observable and competing null explanation;
+- a parameter prior and uncertainty;
+- a declared range of validity;
+- an independent dataset or reference calculation for qualification.
+
+Enhancement factors must not be multiplied together unless a joint physical
+model demonstrates that the factors are independent or correctly coupled.
 
 ---
 
 ## 3. Hypothesis Evaluation
 
-### 3.1 Hot Spots (Most Plausible)
+### 3.1 Transient localized energy deposition (unranked hypothesis)
 
-**Mechanism:** X-ray absorption deposits energy in ~10 nm radius, creating transient regions with T >> T_bulk for ~0.1 ps.
+**Mechanism class:** A trigger deposits energy non-uniformly, potentially creating a non-Maxwellian local reactant distribution.
 
-**Predictions:**
-- Rate scales with X-ray intensity
-- Weak bulk temperature dependence
-- Burst structure following trigger pulses
+**Discriminating observables:** time-resolved local energy deposition, independently measured reactant energy distributions, trigger-correlated product timing, and controls for detector/electronic transients.
 
-**Required conditions:**
-- Peak temperature: ~3,500 K (12× room temp)
-- Cooling time: ~0.1 ps
-- Plausibility: **HIGH** - thermally achievable
+No peak temperature, duration, or fusion-rate enhancement is assumed by this hypothesis.
 
-### 3.2 Phonon Cascade (Possible)
+### 3.2 Phonon/material excitation (unranked hypothesis)
 
-**Mechanism:** Multiple optical phonons coherently add their energy (~56 meV each) to the D-D center-of-mass.
+**Mechanism class:** Material excitations may alter local energy transfer, screening or reaction-environment correlations.
 
-**Predictions:**
-- Rate increases with acoustic drive
-- Resonances at phonon frequencies
-- Strong temperature dependence
+**Discriminating observables:** measured phonon spectra, phase/microstructure dependence, isotope controls and held-out predictions across host materials.
 
-**Required conditions:**
-- Coherent phonons needed: >50
-- Plausibility: **LOW** - maintaining coherence of 50+ modes is difficult
+A phonon energy is not automatically available as directed centre-of-mass collision energy. Coupling and energy-distribution assumptions must be independently justified.
 
-### 3.3 Super-Screening (Unlikely)
+### 3.3 Dynamic screening and heterogeneous material environments (unranked hypothesis)
 
-**Mechanism:** Electron screening energy exceeds measured values due to collective effects at high loading.
+**Mechanism class:** Static beam-target screening parameters may not describe time-dependent, spatially heterogeneous electronic/ionic environments.
 
-**Predictions:**
-- Rate correlates with D/M loading
-- Should be observable in accelerator experiments
+**Discriminating observables:** screening inferred under matched collision conditions, sample-state lineage, energy-resolved yield, and out-of-material prediction.
 
-**Required conditions:**
-- Screening needed: ~100,000 eV (vs. measured 309 eV)
-- Plausibility: **VERY LOW** - 300× higher than any measurement
+Do not extrapolate a measured beam-target screening potential into a thermal Maxwellian without a kinetic model and validity argument.
 
-### 3.4 Measurement Error (Cannot Rule Out)
+### 3.4 Measurement and analysis systematics (mandatory null hypothesis)
 
-**Mechanism:** Signal is not from D-D fusion but from background, cosmic rays, or electronic noise.
+**Mechanism class:** Background, detector response, unfolding, efficiency correction, timing, selection effects or non-fusion nuclear channels may explain some or all of a reported signature.
 
-**Predictions:**
-- Signal persists with H instead of D
-- No correlation with trigger
+**Discriminating observables:** independent detector technologies, blinded reanalysis, calibrated response functions, hydrogen controls, source-location uncertainty and independent replication.
 
-**Required conditions:**
-- NASA's H control passed
-- Plausibility: **LOW** but independent replication needed
+A historical control is relevant evidence but does not remove the need for independent replication.
 
 ---
 
@@ -313,9 +355,9 @@ LCF advantage: No high voltage, no tritium, potentially very compact.
 
 1. **Physics is honest:** Standard Gamow gives Q ~ 10⁻⁵⁷ at room temperature. No energy gain is possible.
 
-2. **The anomaly is extraordinary:** A 40-order-of-magnitude gap requires either new physics, unrecognized enhancements, or systematic error.
+2. **A quantitative anomaly gap is not currently established:** the former rate comparison used an unqualified low-temperature extrapolation and inconsistent source/detector boundaries. Rebuild it only from matched, traceable data and a qualified model.
 
-3. **Hot spots are the most plausible explanation:** X-ray-induced local heating to ~3,500K could explain the observations without invoking new physics.
+3. **No mechanism is presently preferred:** localized energy deposition, phonon/material effects, dynamic screening and measurement-systematic explanations remain competing hypotheses.
 
 4. **Independent replication is critical:** The NASA result must be reproduced with proper controls before investing in scale-up.
 

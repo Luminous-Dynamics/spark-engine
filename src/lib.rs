@@ -4,16 +4,28 @@
 //! # Spark Engine: Lattice Confinement Fusion Physics
 //!
 //! A physics-honest simulation framework for LCF research, focused on:
-//! - Rigorous Gamow integration with screening and phonon effects
-//! - Q factor calculation with honest assessment (Q << 1 at room temperature)
+//! - Bosch-Hale branch-resolved bare D-D reference fits plus an exploratory constant-S
+//!   Gamow kernel for screening/phonon sensitivity studies
+//! - Q factor accounting with explicit model and system-boundary limitations
 //! - Lattice lifetime modeling with DPA tracking
 //! - Anomaly investigation (Path C): Understanding observed vs predicted rates
 //! - Neutron source design (Path D): Compact neutron generator applications
 //!
-//! ## Key Finding
+//! ## Numerical baseline qualification
 //!
-//! Standard Gamow physics predicts `<σv>` ~ 10⁻⁵⁰ cm³/s at room temperature,
-//! yet NASA observed ~10³ neutrons/s. This gap is the central mystery.
+//! The bare-nucleus reference is branch-resolved Bosch-Hale cross-sections
+//! and Maxwellian reactivities in bosch_hale.rs, with numerical integration
+//! cross-checks and explicit published validity domains. The legacy constant-S
+//! Gamow kernel in physics.rs remains an exploratory screening/phonon sensitivity
+//! model; its 1–20 keV NRL comparison has a 35% approximation envelope. The
+//! 300 K / beam-lattice regime is outside both thermonuclear fit domains: results
+//! there are extrapolations, not validated reactivities or measured LCF rates.
+//!
+//! NASA Glenn reported detector-efficiency-corrected fusion-energy neutron
+//! rates scaled to the sample location of 1.5 ± 0.3 × 10³ and
+//! 1.6 ± 0.3 × 10³ neutrons/s for two samples. These are inferred source
+//! rates, not raw detector count rates (Steinetz et al., Phys. Rev. C 101,
+//! 044610 (2020), DOI 10.1103/PhysRevC.101.044610).
 //!
 //! ## Modules
 //!
@@ -37,21 +49,26 @@
 //! use spark_engine::physics::{GamowIntegration, QFactor, QFactorParams};
 //! use spark_engine::anomaly::AnomalyAnalysis;
 //!
-//! // Standard physics calculation
+//! // Model-screening example only; 300 K is outside the independent
+//! // 1–20 keV reactivity regression domain.
 //! let gamow = GamowIntegration::dd_rate(300.0, 309.0, 2);
 //! let (q, achievable) = QFactor::compute(&gamow, &QFactorParams::lcf_typical());
-//! assert!(q < 1.0, "Q < 1 at room temperature - physics is honest");
+//! assert!(q < 1.0, "Q remains below unity in this modelled scenario");
 //!
-//! // Anomaly investigation
-//! let observed = 1e3; // NASA neutron rate
-//! let n_d = 4.8e22; // D atoms/cm³
-//! let volume = 0.01; // cm³
-//! let predicted = gamow.to_neutron_rate(n_d, volume);
-//! let gap = AnomalyAnalysis::compute_gap(observed, predicted);
+//! // API illustration with synthetic, boundary-matched rates only.
+//! // Do not substitute a published source-location rate until its sample
+//! // geometry, detector correction, energy distribution and model domain match.
+//! let synthetic_observed_source_rate = 100.0;
+//! let synthetic_predicted_source_rate = 1.0;
+//! let gap = AnomalyAnalysis::compute_gap(
+//!     synthetic_observed_source_rate,
+//!     synthetic_predicted_source_rate,
+//! );
 //! ```
 
 // Core physics modules
 pub mod anomaly;
+pub mod bosch_hale;
 pub mod error;
 pub mod lattice;
 pub mod neutron_source;
@@ -106,13 +123,31 @@ pub use literature::{
 };
 pub use rate_gap::{ExperimentalConditions, RateGapAnalysis, RateGapCalculator};
 
+// Bosch-Hale bare-nucleus reference models (kept separate from lattice hypotheses).
+pub use bosch_hale::{
+    BoschHaleError, DDBoschHaleReactivity, DDBranch, IntegratedReactivity,
+    dd_branch_maxwellian_cm3_s, dd_cross_section_mb, dd_maxwellian_cm3_s,
+    integrate_dd_branch_maxwellian, INTEGRATION_MIN_TEMPERATURE_KEV,
+};
+
 /// Spark Engine version
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Physics constants used throughout
 pub mod constants {
-    /// D-D astrophysical S-factor (keV·barn)
-    pub const DD_S_FACTOR: f64 = 55.0;
+    /// Low-energy D-D neutron-branch S-factor at E→0 (keV·barn), Bosch-Hale.
+    /// Value is 53,701 millibarn·keV converted to 53.701 barn·keV.
+    /// Reference implementation coefficients: WarpX BoschHaleFusionCrossSection.
+    pub const DD_S_FACTOR_NEUTRON: f64 = 53.701;
+    /// Low-energy D-D proton-branch S-factor at E→0 (keV·barn), Bosch-Hale.
+    /// Value is 55,576 millibarn·keV converted to 55.576 barn·keV.
+    /// Reference implementation coefficients: WarpX BoschHaleFusionCrossSection.
+    pub const DD_S_FACTOR_PROTON: f64 = 55.576;
+    /// Approximate total D-D S-factor (both branches; keV·barn).
+    ///
+    /// The constant-S integration is a screening baseline/approximation, not a
+    /// substitute for the energy-dependent Bosch-Hale branch fits.
+    pub const DD_S_FACTOR: f64 = DD_S_FACTOR_NEUTRON + DD_S_FACTOR_PROTON;
 
     /// D-D Gamow constant (keV^0.5)
     pub const DD_GAMOW_CONSTANT: f64 = 31.38;
@@ -141,7 +176,17 @@ pub mod constants {
     /// Boltzmann constant (keV/K)
     pub const KB_KEV: f64 = 8.617e-8;
 
-    /// NASA observed neutron rate (n/s per cm²)
+    /// NASA Steinetz TS1575 detector-efficiency-corrected source rate at sample location (n/s).
+    /// Source: Steinetz et al., Phys. Rev. C 101, 044610 (2020), Table/Results text.
+    pub const NASA_STEINETZ_TS1575_RATE_S: f64 = 1.5e3;
+    /// Reported standard uncertainty for the TS1575 source rate (n/s).
+    pub const NASA_STEINETZ_TS1575_RATE_UNCERTAINTY_S: f64 = 0.3e3;
+    /// NASA Steinetz TS1576 detector-efficiency-corrected source rate at sample location (n/s).
+    pub const NASA_STEINETZ_TS1576_RATE_S: f64 = 1.6e3;
+    /// Reported standard uncertainty for the TS1576 source rate (n/s).
+    pub const NASA_STEINETZ_TS1576_RATE_UNCERTAINTY_S: f64 = 0.3e3;
+    /// Legacy rounded sample-location source-rate placeholder (n/s).
+    /// Not an areal detector count rate; prefer the sample-specific constants above.
     pub const NASA_OBSERVED_RATE: f64 = 1e3;
 
     /// Pd density (g/cm³)

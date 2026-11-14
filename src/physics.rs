@@ -1,9 +1,11 @@
 // Copyright (C) 2024-2026 Tristan Stoltz / Luminous Dynamics
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Commercial licensing: see COMMERCIAL_LICENSE.md at repository root
-//! # Core Physics: Gamow Integration and Q Factor
+//! # Core Physics: Exploratory Constant-S Gamow Kernel and Q Factor
 //!
-//! Rigorous D-D fusion physics with honest Q factor assessment.
+//! The bare-nucleus reference path is in bosch_hale.rs. The kernel in this file
+//! is an exploratory constant-S sensitivity model with optional phenomenological
+//! screening and phonon shifts; it is not a qualified lattice reaction model.
 
 use crate::constants::*;
 use serde::{Deserialize, Serialize};
@@ -88,27 +90,37 @@ pub struct GamowResult {
     pub phonon_modes: u32,
 }
 
+/// Total D-D reaction-rate density for identical deuterons.
+///
+/// The Maxwellian reactivity is defined for a pair collision. Since the two
+/// reactants are the same species, each physical pair is counted once:
+/// R = n_D^2 * <sigma v> / 2. A branch fraction is applied separately.
+#[inline]
+fn dd_reaction_rate_density(n_d_cm3: f64, sigma_v_cm3_s: f64) -> f64 {
+    0.5 * n_d_cm3.powi(2) * sigma_v_cm3_s
+}
+
 impl GamowResult {
-    /// Convert reaction rate to neutron production rate.
+    /// Convert total D-D reactivity to neutron production rate.
     ///
     /// `n_d_cm3`: Deuterium number density (atoms/cm³)
     /// `volume_cm3`: Active volume (cm³)
     pub fn to_neutron_rate(&self, n_d_cm3: f64, volume_cm3: f64) -> f64 {
-        // Reaction rate density: R = n² × <σv> / 4 (factor of 4 for identical particles)
-        let reaction_rate_density = n_d_cm3.powi(2) * self.sigma_v_cm3_s / 4.0;
-
-        // Total reactions per second
-        let total_rate = reaction_rate_density * volume_cm3;
-
-        // ~50% go to neutron channel
-        total_rate * 0.5
+        // Identical-reactant symmetry is 1/2; the neutron branch fraction is
+        // a separate factor and must not be folded into that symmetry term.
+        let total_rate_density = dd_reaction_rate_density(n_d_cm3, self.sigma_v_cm3_s);
+        let (neutron_fraction, _) =
+            GamowIntegration::dd_branching_ratio(self.gamow_peak_kev);
+        total_rate_density * neutron_fraction * volume_cm3
     }
 
     /// Compute fusion power density (W/cm³).
     pub fn fusion_power_density(&self, n_d_cm3: f64) -> f64 {
-        let reaction_rate_density = n_d_cm3.powi(2) * self.sigma_v_cm3_s / 4.0;
-        let e_fusion_j = DD_Q_AVERAGE * 1.602e-13; // MeV to J
-        reaction_rate_density * e_fusion_j
+        let total_rate_density = dd_reaction_rate_density(n_d_cm3, self.sigma_v_cm3_s);
+        let (neutron_fraction, proton_fraction) =
+            GamowIntegration::dd_branching_ratio(self.gamow_peak_kev);
+        let mean_q_mev = neutron_fraction * DD_Q_NEUTRON + proton_fraction * DD_Q_PROTON;
+        total_rate_density * mean_q_mev * 1.602e-13 // MeV to J
     }
 }
 
@@ -116,15 +128,18 @@ impl GamowResult {
 pub struct GamowIntegration;
 
 impl GamowIntegration {
-    /// Full Gamow peak thermal integration for D-D.
+    /// Evaluate the constant-S Gamow sensitivity kernel for D-D.
     ///
-    /// Uses 200-point trapezoidal integration in log-space to handle
-    /// the astronomically small values at room temperature.
+    /// This 200-interval trapezoidal integration is retained for exploratory
+    /// screening/phonon sensitivity. For the bare-nucleus D-D reference within
+    /// published fit domains, use crate::bosch_hale::dd_maxwellian_cm3_s.
+    /// This method does not validate solid-lattice reaction rates.
     ///
     /// # Arguments
     /// * `t_k` - Lattice temperature (K)
-    /// * `ue_ev` - Screening energy (eV), use 309 for Pd
-    /// * `phonon_modes` - Number of coherent phonon modes (0-5)
+    /// * `ue_ev` - Phenomenological screening-energy hypothesis parameter (eV).
+    ///   Beam-target values are not automatically transferable to Maxwellian plasmas.
+    /// * `phonon_modes` - Exploratory phonon-shift parameter (0-5), not a measured rate enhancement.
     pub fn dd_rate(t_k: f64, ue_ev: f64, phonon_modes: u32) -> GamowResult {
         let kt_kev = KB_KEV * t_k;
 
@@ -197,7 +212,13 @@ impl GamowIntegration {
 
         // Convert to <σv> in cm³/s
         let mu_amu: f64 = 1.007;
-        let prefactor: f64 = 3.727e-12 / (mu_amu.sqrt() * kt_kev.powf(1.5));
+        // Unit conversion for S(E) in keV·barn and E in keV:
+        // sqrt(8 / (π m_u)) × sqrt(1 keV in erg) × 1 barn
+        // = 4.956792115648147e-17 (cm³/s) / keV^(3/2).
+        // The previous 3.727e-12 coefficient was too large by ~7.5e4.
+        const REACTIVITY_PREFACTOR_CGS: f64 = 4.956_792_115_648_147e-17;
+        let prefactor: f64 =
+            REACTIVITY_PREFACTOR_CGS / (mu_amu.sqrt() * kt_kev.powf(1.5));
         let log_sigma_v = prefactor.ln() + log_integral;
         let sigma_v = log_sigma_v.exp();
 
@@ -273,41 +294,36 @@ impl GamowIntegration {
         (prefactor * exponent.exp()).clamp(1.0, 1e6)
     }
 
-    /// Energy-dependent D-D branching ratio.
+    /// D-D branching fractions for the constant-S approximation.
     ///
-    /// At low energies (E < 100 keV), the branching is nearly 50/50.
-    /// There's a slight energy dependence: neutron fraction decreases at higher E.
-    ///
-    /// R_n(E) ≈ 0.5 × (1 - 0.003 × E_keV) for E < 100 keV
-    pub fn dd_branching_ratio(e_cm_kev: f64) -> (f64, f64) {
-        // Neutron fraction with weak energy dependence
-        let neutron_frac = if e_cm_kev < 100.0 {
-            0.5 * (1.0 - 0.003 * e_cm_kev)
-        } else {
-            0.35 // Asymptotic value at high energy
-        };
-        let neutron_frac = neutron_frac.clamp(0.35, 0.5);
-        let proton_frac = 1.0 - neutron_frac;
-        (neutron_frac, proton_frac)
+    /// The total kernel uses the sum of the two low-energy Bosch–Hale S(0)
+    /// constants. Its internally consistent branch split therefore uses the
+    /// same constants. Energy-dependent branch fractions belong to the full
+    /// branch-specific Bosch–Hale implementation tracked separately.
+    pub fn dd_branching_ratio(_e_cm_kev: f64) -> (f64, f64) {
+        let neutron_fraction = DD_S_FACTOR_NEUTRON / DD_S_FACTOR;
+        let proton_fraction = DD_S_FACTOR_PROTON / DD_S_FACTOR;
+        (neutron_fraction, proton_fraction)
     }
 
-    /// Full D-D branching calculation with all products.
+    /// Approximate branch allocation using the constant-S S(0) branch fractions.
     ///
-    /// Returns detailed breakdown of neutron/proton channels,
-    /// product rates, and power distribution.
+    /// For branch-resolved bare Maxwellian reactivities, use
+    /// crate::bosch_hale::dd_maxwellian_cm3_s. This legacy helper is not the
+    /// Bosch-Hale reference.
     pub fn dd_branched(t_k: f64, ue_ev: f64, phonon_modes: u32, n_d_cm3: f64) -> DDBranchingResult {
         let gamow = Self::dd_rate(t_k, ue_ev, phonon_modes);
 
-        // Branching at Gamow peak energy
+        // Constant-S branch fractions; this is not the energy-dependent Bosch-Hale split.
         let (neutron_frac, proton_frac) = Self::dd_branching_ratio(gamow.gamow_peak_kev);
 
         let neutron_sigma_v = gamow.sigma_v_cm3_s * neutron_frac;
         let proton_sigma_v = gamow.sigma_v_cm3_s * proton_frac;
 
-        // Reaction rate density: R = n² × <σv> / 4
-        let _total_rate_density = n_d_cm3.powi(2) * gamow.sigma_v_cm3_s / 4.0;
-        let neutron_rate_density = n_d_cm3.powi(2) * neutron_sigma_v / 4.0;
-        let proton_rate_density = n_d_cm3.powi(2) * proton_sigma_v / 4.0;
+        // Apply identical-reactant symmetry once per branch; branch
+        // reactivities already encode the neutron/proton split.
+        let neutron_rate_density = dd_reaction_rate_density(n_d_cm3, neutron_sigma_v);
+        let proton_rate_density = dd_reaction_rate_density(n_d_cm3, proton_sigma_v);
 
         // Product rates
         let neutron_rate_per_cm3 = neutron_rate_density; // 1 neutron per reaction
@@ -432,6 +448,77 @@ mod tests {
     use super::*;
 
     #[test]
+    fn bare_dd_reactivity_matches_nrl_formulary_within_constant_s_approximation() {
+        // NRL Plasma Formulary 2019, p. 45: total D-D Maxwellian reactivity
+        // (branches 1a + 1b). This implementation uses a constant low-energy
+        // S-factor and a finite Gamow window, so use a 35% envelope rather than
+        // claiming Bosch-Hale fit accuracy. Screening and phonons are disabled.
+        let reference = [
+            (1.0, 1.5e-22),
+            (2.0, 5.4e-21),
+            (5.0, 1.8e-19),
+            (10.0, 1.2e-18),
+            (20.0, 5.2e-18),
+        ];
+
+        for (temperature_kev, expected_cm3_s) in reference {
+            let temperature_k = temperature_kev / KB_KEV;
+            let result = GamowIntegration::dd_rate(temperature_k, 0.0, 0);
+            let relative_error =
+                (result.sigma_v_cm3_s - expected_cm3_s).abs() / expected_cm3_s;
+            assert!(
+                relative_error < 0.35,
+                "D-D reactivity at {temperature_kev} keV: got {:.6e}, NRL {:.6e}, relative error {:.1}%",
+                result.sigma_v_cm3_s,
+                expected_cm3_s,
+                relative_error * 100.0
+            );
+        }
+    }
+
+    #[test]
+    fn test_dd_identical_reactant_symmetry_factor() {
+        // R = n_D^2 <sigma v> / 2 for identical D + D reactants.
+        assert_eq!(dd_reaction_rate_density(2.0, 3.0), 6.0);
+    }
+
+    #[test]
+    fn test_neutron_rate_applies_branch_fraction_separately() {
+        let result = GamowResult {
+            sigma_v_cm3_s: 2.0,
+            gamow_peak_kev: 5.0,
+            gamow_width_kev: 1.0,
+            screening_enhancement: 1.0,
+            phonon_enhancement: 1.0,
+            temperature_k: 0.0,
+            screening_ev: 0.0,
+            phonon_modes: 0,
+        };
+        let n_d_cm3 = 2.0;
+        let volume_cm3 = 3.0;
+        let neutron_fraction = GamowIntegration::dd_branching_ratio(5.0).0;
+        let expected = 0.5 * n_d_cm3.powi(2) * result.sigma_v_cm3_s
+            * neutron_fraction * volume_cm3;
+        let actual = result.to_neutron_rate(n_d_cm3, volume_cm3);
+        assert!((actual - expected).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_branched_rates_sum_to_identical_particle_total() {
+        let temperature_k = 5.0 / KB_KEV;
+        let n_d_cm3 = 2.0;
+        let result = GamowIntegration::dd_branched(temperature_k, 0.0, 0, n_d_cm3);
+        let expected_total = 0.5 * n_d_cm3.powi(2) * result.total_sigma_v_cm3_s;
+        let actual_total = result.neutron_rate_per_cm3 + result.tritium_rate_per_cm3;
+        assert!(expected_total > 0.0);
+        assert!((actual_total - expected_total).abs() / expected_total < 1e-12);
+
+        let expected_power = result.neutron_rate_per_cm3 * DD_Q_NEUTRON * 1.602e-13
+            + result.tritium_rate_per_cm3 * DD_Q_PROTON * 1.602e-13;
+        assert!((result.power_density_w_cm3 - expected_power).abs() / expected_power < 1e-12);
+    }
+
+    #[test]
     fn test_gamow_at_room_temperature() {
         let result = GamowIntegration::dd_rate(300.0, SCREENING_PD_EV, 2);
 
@@ -477,24 +564,16 @@ mod tests {
     }
 
     #[test]
-    fn test_dd_branching_ratio() {
-        // At low energy, should be ~50/50
-        let (n_frac, p_frac) = GamowIntegration::dd_branching_ratio(1.0);
-        assert!(
-            (n_frac - 0.5).abs() < 0.01,
-            "Low energy should be ~50% neutron"
-        );
-        assert!(
-            (n_frac + p_frac - 1.0).abs() < 0.001,
-            "Fractions must sum to 1"
-        );
+    fn test_constant_s_branching_uses_the_same_branch_constants_as_total_kernel() {
+        let expected_neutron = DD_S_FACTOR_NEUTRON / DD_S_FACTOR;
+        let expected_proton = DD_S_FACTOR_PROTON / DD_S_FACTOR;
 
-        // At higher energy, neutron fraction decreases
-        let (n_frac_high, _) = GamowIntegration::dd_branching_ratio(50.0);
-        assert!(
-            n_frac_high < n_frac,
-            "Neutron fraction should decrease with energy"
-        );
+        for energy_kev in [0.0, 0.5, 1.0, 20.0, 100.0, 500.0] {
+            let (neutron, proton) = GamowIntegration::dd_branching_ratio(energy_kev);
+            assert!((neutron - expected_neutron).abs() < 1e-14);
+            assert!((proton - expected_proton).abs() < 1e-14);
+            assert!((neutron + proton - 1.0).abs() < 1e-14);
+        }
     }
 
     #[test]

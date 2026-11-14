@@ -3,8 +3,9 @@
 // Commercial licensing: see COMMERCIAL_LICENSE.md at repository root
 //! # Anomaly Investigation (Path C)
 //!
-//! The central mystery: NASA observed ~10³ n/s while Gamow predicts ~10⁻⁵⁰.
-//! This module provides tools to investigate potential explanations.
+//! Compare reported neutron source rates with explicitly scoped model outputs.
+//! A numerical gap is not interpretable until rate units, source/detector
+//! boundary, sample geometry, and model validity domain are aligned.
 
 use crate::constants::*;
 use crate::physics::GamowResult;
