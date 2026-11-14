@@ -86,7 +86,6 @@ pub enum QuantityKind {
     HydrideToMetalYieldRatio,
     AbsoluteYield,
     DetectorCountRate,
-    FusionPower,
     LoadingRatio,
     EnhancementRatio,
 }
@@ -99,7 +98,6 @@ pub enum MeasurementUnit {
     KiloElectronVolt,
     EventsPerIncidentIon,
     CountsPerSecond,
-    Watt,
     DeuteriumPerHostAtom,
 }
 
@@ -177,7 +175,6 @@ impl Measurement {
             QuantityKind::DetectorCountRate => {
                 self.unit == MeasurementUnit::CountsPerSecond
             }
-            QuantityKind::FusionPower => self.unit == MeasurementUnit::Watt,
             QuantityKind::LoadingRatio => {
                 self.unit == MeasurementUnit::DeuteriumPerHostAtom
             }
