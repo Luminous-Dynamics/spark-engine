@@ -402,6 +402,13 @@ impl BenchmarkRecord {
 
         if self.observable.quantity == QuantityKind::IncidentEnergy {
             errors.push(
+                "incident energy is contextual metadata; use incident_energy rather than observable"
+                    .to_string(),
+            );
+        }
+
+        if self.observable.quantity == QuantityKind::IncidentEnergy {
+            errors.push(
                 "observable must not be IncidentEnergy; use the incident_energy context field"
                     .to_string(),
             );
