@@ -31,7 +31,11 @@ These cannot be combined into one undifferentiated "LCF yield" dataset. In parti
 | Relative yield | Dimensionless | Named normalization reference |
 | Hydride-to-metal yield ratio | Dimensionless | Named control |
 | Absolute yield | Events per incident ion | Absolute |
-| Detector count rate | Counts per second | Absolute |
+| Total detector count rate | Counts per second | Absolute |
+| Areal detector count rate | Counts per second per cm² | Absolute |
+| Total reaction rate | Reactions per second | Absolute |
+| Volumetric reaction rate | Reactions per second per cm³ | Absolute |
+| Calorimetric power | Watt | Absolute; calorimetry channel only |
 | Loading ratio | Deuterium per host atom | Absolute |
 | Enhancement ratio | Dimensionless | Named model/reference calculation |
 
@@ -67,6 +71,10 @@ The Rust unit tests require the contract to reject:
 - relative yield without a named normalization reference;
 - hydride-to-metal ratio without a named control;
 - model-relative enhancement represented as a power unit;
+- areal detector count rate confused with total detector count rate;
+- volumetric reaction rate confused with total reaction rate;
+- calorimetric power assigned to a particle detector channel;
+- model output without explicit model/revision identity;
 - raw dataset or digitized figure without a content digest;
 - non-finite values;
 - uncertainty payload/status disagreement;
