@@ -22,16 +22,17 @@ before any application or scale-up claim.
 
 ## What's here
 
-- **Reference-benchmarked core physics** — total two-branch constant-S D-D Maxwellian
-  Gamow integration with unit conversion regression checks against the NRL Plasma Formulary
-  at 1–20 keV; optional screening/phonon hypotheses remain model assumptions and are not
-  established reactor mechanisms. Q-factor enforcement and DPA-based lattice-lifetime
-  modelling remain separate, model-qualified workstreams. See
-  [the D-D reactivity benchmark](docs/DD_MAXWELLIAN_REACTIVITY_REFERENCE_BENCHMARK.md).
-- **Anomaly investigation** — `rate_gap` quantifies the observed/predicted gap and its
-  possible explanations; `hypothesis_models` implements four candidate mechanisms (transient
-  hot spots, coherent phonon cascade, super-screening, lattice-modified tunneling) plus
-  measurement error as the skeptical null.
+- **Branch-resolved Bosch–Hale reference physics** — separate D(d,n)³He and D(d,p)T
+  energy-dependent cross-sections, analytic Maxwellian reactivities, and an independent
+  cross-section integration check within the published fit domains. The older constant-S
+  Gamow kernel remains a screening-sensitivity approximation, not the authoritative bare
+  reference. Screening/phonon hypotheses remain unvalidated model assumptions. See
+  [Bosch–Hale branch benchmark](docs/BOSCH_HALE_DD_BRANCH_BENCHMARK.md) and
+  [constant-S unit benchmark](docs/DD_MAXWELLIAN_REACTIVITY_REFERENCE_BENCHMARK.md).
+- **Anomaly investigation** — `rate_gap` and `hypothesis_models` provide exploratory comparison
+  tools for competing hypotheses and measurement-systematic nulls. A quantitative gap is
+  publishable only after observed and predicted rates share the same experiment class,
+  geometry, source/detector boundary, energy distribution, units and uncertainty chain.
 - **Bayesian experiment design** — `bayesian` maintains a probability distribution over
   those five hypotheses and updates it from experimental outcomes; `optimal_experiment`
   ranks candidate experiments by **expected information gain per dollar** and derives a
@@ -45,8 +46,8 @@ before any application or scale-up claim.
 
 - **Uncertainty quantification** — Monte Carlo propagation, Morris screening, tornado
   diagrams, break-even/feasibility analysis.
-- **Neutron source design** — shielding calculations and compact-generator specs, for the
-  scenario where the anomaly turns out to be real and controllable.
+- **Neutron-source research** — legacy conceptual modelling only. No construction package,
+  operational specification, radiation-safety case or qualified source is provided.
 
 See [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) (also as
 [PDF](docs/TECHNICAL_REPORT.pdf), regenerate with `docs/render_pdf.sh`) for the full
