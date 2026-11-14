@@ -89,6 +89,9 @@ The Rust unit tests require the contract to reject:
 - relative yield without a named normalization reference;
 - hydride-to-metal ratio without a named control;
 - model-relative enhancement represented as a power unit;
+- incident energy incorrectly supplied as the primary observable rather than contextual metadata;
+- sample-location neutron source rate confused with detector count rate;
+- rate/power records missing or carrying an incompatible measurement boundary;
 - sample-location neutron source rate confused with detector count rate;
 - rate/power records missing or carrying an incompatible measurement boundary;
 - areal detector count rate confused with total detector count rate;
