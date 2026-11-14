@@ -98,6 +98,7 @@ pub enum MeasurementUnit {
     KiloElectronVolt,
     EventsPerIncidentIon,
     CountsPerSecond,
+    Watt,
     DeuteriumPerHostAtom,
 }
 
