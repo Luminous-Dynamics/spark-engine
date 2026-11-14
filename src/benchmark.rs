@@ -583,6 +583,26 @@ mod tests {
     }
 
     #[test]
+    fn digitized_figure_requires_a_content_digest() {
+        let mut record = beam_record();
+        record.evidence_class = EvidenceClass::DigitizedFigure;
+        record.source = source(EvidenceClass::DigitizedFigure);
+        assert!(record.validate().is_err());
+
+        record.source.content_sha256 = Some("b".repeat(64));
+        assert!(record.validate().is_ok());
+    }
+
+    #[test]
+    fn malformed_content_digest_is_rejected() {
+        let mut record = beam_record();
+        record.evidence_class = EvidenceClass::RawDataset;
+        record.source = source(EvidenceClass::RawDataset);
+        record.source.content_sha256 = Some("z".repeat(64));
+        assert!(record.validate().is_err());
+    }
+
+    #[test]
     fn electrochemical_control_cannot_be_relabelled_as_beam_driven() {
         let mut record = beam_record();
         record.experiment_class = ExperimentClass::ElectrochemicalLoadingControl;
