@@ -203,7 +203,7 @@ impl GamowIntegration {
         // The previous 3.727e-12 coefficient was too large by ~7.5e4.
         const REACTIVITY_PREFACTOR_CGS: f64 = 4.956_792_115_648_147e-17;
         let prefactor: f64 =
-            REACTIVITY_PREFactor_CGS / (mu_amu.sqrt() * kt_kev.powf(1.5));
+            REACTIVITY_PREFACTOR_CGS / (mu_amu.sqrt() * kt_kev.powf(1.5));
         let log_sigma_v = prefactor.ln() + log_integral;
         let sigma_v = log_sigma_v.exp();
 
