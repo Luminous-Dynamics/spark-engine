@@ -111,8 +111,15 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Physics constants used throughout
 pub mod constants {
-    /// D-D astrophysical S-factor (keV·barn)
-    pub const DD_S_FACTOR: f64 = 55.0;
+    /// Low-energy D-D neutron-branch S-factor at E→0 (keV·barn), Bosch-Hale.
+    pub const DD_S_FACTOR_NEUTRON: f64 = 53.701;
+    /// Low-energy D-D proton-branch S-factor at E→0 (keV·barn), Bosch-Hale.
+    pub const DD_S_FACTOR_PROTON: f64 = 55.576;
+    /// Approximate total D-D S-factor (both branches; keV·barn).
+    ///
+    /// The constant-S integration is a screening baseline/approximation, not a
+    /// substitute for the energy-dependent Bosch-Hale branch fits.
+    pub const DD_S_FACTOR: f64 = DD_S_FACTOR_NEUTRON + DD_S_FACTOR_PROTON;
 
     /// D-D Gamow constant (keV^0.5)
     pub const DD_GAMOW_CONSTANT: f64 = 31.38;
