@@ -306,7 +306,7 @@ impl GamowIntegration {
         (neutron_fraction, proton_fraction)
     }
 
-    /// Approximate branch allocation using the constant-S kernel's Gamow-peak heuristic.
+    /// Approximate branch allocation using the constant-S S(0) branch fractions.
     ///
     /// For branch-resolved bare Maxwellian reactivities, use
     /// crate::bosch_hale::dd_maxwellian_cm3_s. This legacy helper is not the
@@ -314,7 +314,7 @@ impl GamowIntegration {
     pub fn dd_branched(t_k: f64, ue_ev: f64, phonon_modes: u32, n_d_cm3: f64) -> DDBranchingResult {
         let gamow = Self::dd_rate(t_k, ue_ev, phonon_modes);
 
-        // Branching at Gamow peak energy
+        // Constant-S branch fractions; this is not the energy-dependent Bosch-Hale split.
         let (neutron_frac, proton_frac) = Self::dd_branching_ratio(gamow.gamow_peak_kev);
 
         let neutron_sigma_v = gamow.sigma_v_cm3_s * neutron_frac;
