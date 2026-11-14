@@ -521,6 +521,10 @@ mod tests {
             dd_branch_maxwellian_cm3_s(DDBranch::Proton, 100.0),
             Err(BoschHaleError::TemperatureOutOfRange { .. })
         ));
+        assert!(matches!(
+            integrate_dd_branch_maxwellian(DDBranch::Neutron, 0.5, 1.0e-8),
+            Err(BoschHaleError::TemperatureOutOfRange { .. })
+        ));
     }
 
     #[test]
