@@ -34,9 +34,7 @@ impl ReactionChannel {
     /// Ordered reactants. Order is explicit so input species cannot be swapped silently.
     pub const fn reactants(self) -> (Species, Species) {
         match self {
-            Self::DdNeutron | Self::DdProton => {
-                (Species::Deuterium, Species::Deuterium)
-            }
+            Self::DdNeutron | Self::DdProton => (Species::Deuterium, Species::Deuterium),
             Self::Dt => (Species::Deuterium, Species::Tritium),
             Self::DHe3 => (Species::Deuterium, Species::Helium3),
             Self::PB11 => (Species::Proton, Species::Boron11),
@@ -50,8 +48,7 @@ impl ReactionChannel {
         let (first, second) = self.reactants();
         matches!(
             (first, second),
-            (Species::Deuterium, Species::Deuterium)
-                | (Species::Helium3, Species::Helium3)
+            (Species::Deuterium, Species::Deuterium) | (Species::Helium3, Species::Helium3)
         )
     }
 }
@@ -209,8 +206,7 @@ pub fn account_channel(
         }
     };
 
-    let event_rate = density_product * reactivity.value()
-        / f64::from(symmetry_denominator);
+    let event_rate = density_product * reactivity.value() / f64::from(symmetry_denominator);
     let power_density = event_rate * q_value.value() * MEV_TO_JOULE;
 
     if !event_rate.is_finite() || !power_density.is_finite() {
@@ -300,12 +296,7 @@ mod tests {
         }
     }
 
-    fn distinct(
-        first: Species,
-        n_first: f64,
-        second: Species,
-        n_second: f64,
-    ) -> ReactantDensities {
+    fn distinct(first: Species, n_first: f64, second: Species, n_second: f64) -> ReactantDensities {
         ReactantDensities::Distinct {
             first_species: first,
             first_density: density(n_first).unwrap(),
@@ -359,15 +350,13 @@ mod tests {
     fn dd_total_is_sum_of_branch_event_rates_and_powers() {
         let n = density(2.0e20).unwrap();
         let result = account_dd_total(n, dd_inputs()).unwrap();
-        let expected_rate = n.value().powi(2)
-            * (2.0e-24 + 3.0e-24)
-            / 2.0;
-        let expected_power = n.value().powi(2)
-            * (2.0e-24 * 3.269 + 3.0e-24 * 4.033)
-            / 2.0
-            * MEV_TO_JOULE;
+        let expected_rate = n.value().powi(2) * (2.0e-24 + 3.0e-24) / 2.0;
+        let expected_power =
+            n.value().powi(2) * (2.0e-24 * 3.269 + 3.0e-24 * 4.033) / 2.0 * MEV_TO_JOULE;
         assert!((result.total_event_rate.value() - expected_rate).abs() <= expected_rate * 1.0e-14);
-        assert!((result.total_power_density.value() - expected_power).abs() <= expected_power * 1.0e-14);
+        assert!(
+            (result.total_power_density.value() - expected_power).abs() <= expected_power * 1.0e-14
+        );
     }
 
     #[test]
@@ -419,7 +408,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(result.symmetry_denominator, 2);
-        assert_eq!(result.event_rate.value(), 4.0e19_f64.powi(2) * 8.0e-24 / 2.0);
+        assert_eq!(
+            result.event_rate.value(),
+            4.0e19_f64.powi(2) * 8.0e-24 / 2.0
+        );
     }
 
     #[test]
@@ -472,8 +464,8 @@ mod tests {
     #[test]
     fn dd_branch_sum_is_not_multiplied_by_another_branch_fraction() {
         let result = account_dd_total(density(1.0e20).unwrap(), dd_inputs()).unwrap();
-        let branch_sum = result.neutron_branch.event_rate.value()
-            + result.proton_branch.event_rate.value();
+        let branch_sum =
+            result.neutron_branch.event_rate.value() + result.proton_branch.event_rate.value();
         let incorrectly_halved = branch_sum * 0.5;
         assert!((result.total_event_rate.value() - branch_sum).abs() <= branch_sum * 1.0e-14);
         assert!((result.total_event_rate.value() - incorrectly_halved).abs() > branch_sum * 0.1);
@@ -598,32 +590,38 @@ mod tests {
                     identical_d(Species::Deuterium, 2.0e20),
                     sv(2.0e-24).unwrap(),
                     q(3.269).unwrap(),
-                ).map(|_| ()),
+                )
+                .map(|_| ()),
                 "dd_proton" => account_channel(
                     ReactionChannel::DdProton,
                     identical_d(Species::Deuterium, 2.0e20),
                     sv(3.0e-24).unwrap(),
                     q(4.033).unwrap(),
-                ).map(|_| ()),
-                "dd_total" => account_dd_total(density(2.0e20).unwrap(), dd_inputs()).map(|_| ()),
+                )
+                .map(|_| ()),
+                "dd_total" => account_dd_total(density(2.0e20).unwrap(), dd_inputs())
+                .map(|_| ()),
                 "dt" => account_channel(
                     ReactionChannel::Dt,
                     distinct(Species::Deuterium, 1.0e20, Species::Tritium, 1.0e20),
                     sv(1.0e-22).unwrap(),
                     q(17.6).unwrap(),
-                ).map(|_| ()),
+                )
+                .map(|_| ()),
                 "dhe3" => account_channel(
                     ReactionChannel::DHe3,
                     distinct(Species::Deuterium, 1.0e20, Species::Helium3, 1.0e20),
                     sv(1.0e-23).unwrap(),
                     q(18.3).unwrap(),
-                ).map(|_| ()),
+                )
+                .map(|_| ()),
                 "pb11" => account_channel(
                     ReactionChannel::PB11,
                     distinct(Species::Proton, 1.0e20, Species::Boron11, 1.0e20),
                     sv(1.0e-25).unwrap(),
                     q(8.7).unwrap(),
-                ).map(|_| ()),
+                )
+                .map(|_| ()),
                 "he3he3" => account_channel(
                     ReactionChannel::He3He3,
                     identical_d(Species::Helium3, 1.0e20),
@@ -631,45 +629,75 @@ mod tests {
                     q(12.9).unwrap(),
                 ).map(|_| ()),
                 "unlike_scale" => {
-                    let base = account_channel(ReactionChannel::Dt,
+                    let base = account_channel(
+                        ReactionChannel::Dt,
                         distinct(Species::Deuterium, 1.0e20, Species::Tritium, 1.0e20),
-                        sv(1.0e-22).unwrap(), q(17.6).unwrap()).unwrap();
-                    let doubled = account_channel(ReactionChannel::Dt,
+                        sv(1.0e-22).unwrap(),
+                        q(17.6).unwrap(),
+                    )
+                    .unwrap();
+                    let doubled = account_channel(
+                        ReactionChannel::Dt,
                         distinct(Species::Deuterium, 2.0e20, Species::Tritium, 1.0e20),
-                        sv(1.0e-22).unwrap(), q(17.6).unwrap()).unwrap();
+                        sv(1.0e-22).unwrap(),
+                        q(17.6).unwrap(),
+                    )
+                    .unwrap();
                     assert_eq!(doubled.event_rate.value(), 2.0 * base.event_rate.value());
                     Ok(())
                 }
                 "identical_scale" => {
-                    let base = account_channel(ReactionChannel::DdNeutron,
-                        identical_d(Species::Deuterium, 1.0e20), sv(1.0e-24).unwrap(),
-                        q(3.269).unwrap()).unwrap();
-                    let doubled = account_channel(ReactionChannel::DdNeutron,
-                        identical_d(Species::Deuterium, 2.0e20), sv(1.0e-24).unwrap(),
-                        q(3.269).unwrap()).unwrap();
+                    let base = account_channel(
+                        ReactionChannel::DdNeutron,
+                        identical_d(Species::Deuterium, 1.0e20),
+                        sv(1.0e-24).unwrap(),
+                        q(3.269).unwrap(),
+                    )
+                    .unwrap();
+                    let doubled = account_channel(
+                        ReactionChannel::DdNeutron,
+                        identical_d(Species::Deuterium, 2.0e20),
+                        sv(1.0e-24).unwrap(),
+                        q(3.269).unwrap(),
+                    )
+                    .unwrap();
                     assert_eq!(doubled.event_rate.value(), 4.0 * base.event_rate.value());
                     Ok(())
                 }
                 "branch_q" => {
                     let result = account_dd_total(density(1.0e20).unwrap(), dd_inputs()).unwrap();
-                    let expected_power = 1.0e40 * (2.0e-24 * 3.269 + 3.0e-24 * 4.033)
-                        / 2.0 * MEV_TO_JOULE;
-                    assert!((result.total_power_density.value() - expected_power).abs() < expected_power * 1.0e-14);
+                    let expected_power =
+                        1.0e40 * (2.0e-24 * 3.269 + 3.0e-24 * 4.033) / 2.0 * MEV_TO_JOULE;
+                    assert!(
+                        (result.total_power_density.value() - expected_power).abs()
+                            < expected_power * 1.0e-14
+                    );
                     Ok(())
                 }
                 "branch_sum" => {
                     let result = account_dd_total(density(1.0e20).unwrap(), dd_inputs()).unwrap();
-                    assert_eq!(result.total_event_rate.value(),
-                        result.neutron_branch.event_rate.value() + result.proton_branch.event_rate.value());
+                    assert_eq!(
+                        result.total_event_rate.value(),
+                        result.neutron_branch.event_rate.value()
+                            + result.proton_branch.event_rate.value()
+                    );
                     Ok(())
                 }
                 "quarter_factor" => {
-                    let identical = account_channel(ReactionChannel::DdNeutron,
-                        identical_d(Species::Deuterium, 1.0e20), sv(1.0e-24).unwrap(),
-                        q(3.269).unwrap()).unwrap();
-                    let unlike = account_channel(ReactionChannel::Dt,
+                    let identical = account_channel(
+                        ReactionChannel::DdNeutron,
+                        identical_d(Species::Deuterium, 1.0e20),
+                        sv(1.0e-24).unwrap(),
+                        q(3.269).unwrap(),
+                    )
+                    .unwrap();
+                    let unlike = account_channel(
+                        ReactionChannel::Dt,
                         distinct(Species::Deuterium, 1.0e20, Species::Tritium, 1.0e20),
-                        sv(1.0e-24).unwrap(), q(17.6).unwrap()).unwrap();
+                        sv(1.0e-24).unwrap(),
+                        q(17.6).unwrap(),
+                    )
+                    .unwrap();
                     assert_ne!(identical.event_rate.value(), 1.0e40 * 1.0e-24 / 4.0);
                     assert_ne!(unlike.event_rate.value(), 1.0e40 * 1.0e-24 / 4.0);
                     Ok(())
@@ -684,12 +712,20 @@ mod tests {
                 "zero_q" => q(0.0).map(|_| ()),
                 "negative_q" => q(-1.0).map(|_| ()),
                 "nan_q" => q(f64::NAN).map(|_| ()),
-                "wrong_species" => account_channel(ReactionChannel::Dt,
+                "wrong_species" => account_channel(
+                    ReactionChannel::Dt,
                     distinct(Species::Tritium, 1.0e20, Species::Deuterium, 1.0e20),
-                    sv(1.0e-22).unwrap(), q(17.6).unwrap()).map(|_| ()),
-                "wrong_shape" => account_channel(ReactionChannel::DdNeutron,
+                    sv(1.0e-22).unwrap(),
+                    q(17.6).unwrap(),
+                )
+                .map(|_| ()),
+                "wrong_shape" => account_channel(
+                    ReactionChannel::DdNeutron,
                     distinct(Species::Deuterium, 1.0e20, Species::Deuterium, 1.0e20),
-                    sv(1.0e-24).unwrap(), q(3.269).unwrap()).map(|_| ()),
+                    sv(1.0e-24).unwrap(),
+                    q(3.269).unwrap(),
+                )
+                .map(|_| ()),
                 other => panic!("unknown oracle corpus mutation {other} for {case_id}"),
             };
 
