@@ -1,0 +1,42 @@
+name: Reaction accounting oracle
+
+on:
+  pull_request:
+    paths:
+      - "research/reaction-accounting-oracle-v0-1/**"
+      - ".github/workflows/reaction-accounting-oracle.yml"
+  push:
+    branches:
+      - main
+      - research/reaction-accounting-oracle-v0-1
+    paths:
+      - "research/reaction-accounting-oracle-v0-1/**"
+      - ".github/workflows/reaction-accounting-oracle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  oracle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust and quality tools
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Format check
+        run: cargo fmt --manifest-path research/reaction-accounting-oracle-v0-1/Cargo.toml -- --check
+
+      - name: Unit and documentation tests
+        run: cargo test --manifest-path research/reaction-accounting-oracle-v0-1/Cargo.toml
+
+      - name: Strict Clippy
+        run: cargo clippy --manifest-path research/reaction-accounting-oracle-v0-1/Cargo.toml --all-targets -- -D warnings
+
+      - name: Independent corpus inventory
+        run: cargo run --manifest-path research/reaction-accounting-oracle-v0-1/Cargo.toml --bin verify_reaction_corpus

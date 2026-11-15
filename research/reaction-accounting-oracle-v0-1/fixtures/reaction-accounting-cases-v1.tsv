@@ -1,0 +1,26 @@
+# Synthetic analytical fixtures; no row is a measured or simulated plasma result.
+case_id|expected|mutation
+dd-neutron-known-answer|ACCEPT|dd_neutron
+dd-proton-known-answer|ACCEPT|dd_proton
+dd-branch-total|ACCEPT|dd_total
+dt-unlike-reactants|ACCEPT|dt
+dhe3-unlike-reactants|ACCEPT|dhe3
+pb11-unlike-reactants|ACCEPT|pb11
+he3he3-identical-reactants|ACCEPT|he3he3
+unlike-density-linear-scaling|ACCEPT|unlike_scale
+identical-density-quadratic-scaling|ACCEPT|identical_scale
+branch-specific-q-not-average|ACCEPT|branch_q
+branch-sum-not-double-fractioned|ACCEPT|branch_sum
+universal-quarter-factor-control|ACCEPT|quarter_factor
+negative-density|REJECT|negative_density
+zero-density|REJECT|zero_density
+nan-density|REJECT|nan_density
+infinite-density|REJECT|infinite_density
+zero-reactivity|REJECT|zero_reactivity
+negative-reactivity|REJECT|negative_reactivity
+nan-reactivity|REJECT|nan_reactivity
+zero-q-value|REJECT|zero_q
+negative-q-value|REJECT|negative_q
+nan-q-value|REJECT|nan_q
+wrong-reactant-species|REJECT|wrong_species
+wrong-density-shape|REJECT|wrong_shape
