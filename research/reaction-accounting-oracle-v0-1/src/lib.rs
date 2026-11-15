@@ -599,8 +599,7 @@ mod tests {
                     q(4.033).unwrap(),
                 )
                 .map(|_| ()),
-                "dd_total" => account_dd_total(density(2.0e20).unwrap(), dd_inputs())
-                .map(|_| ()),
+                "dd_total" => account_dd_total(density(2.0e20).unwrap(), dd_inputs()).map(|_| ()),
                 "dt" => account_channel(
                     ReactionChannel::Dt,
                     distinct(Species::Deuterium, 1.0e20, Species::Tritium, 1.0e20),
@@ -627,7 +626,8 @@ mod tests {
                     identical_d(Species::Helium3, 1.0e20),
                     sv(1.0e-24).unwrap(),
                     q(12.9).unwrap(),
-                ).map(|_| ()),
+                )
+                .map(|_| ()),
                 "unlike_scale" => {
                     let base = account_channel(
                         ReactionChannel::Dt,
