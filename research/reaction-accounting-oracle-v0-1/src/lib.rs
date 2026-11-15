@@ -496,7 +496,7 @@ mod tests {
     }
 
     #[test]
-    fn meV_to_joule_conversion_has_exact_declared_constant() {
+    fn me_v_to_joule_conversion_has_exact_declared_constant() {
         assert_eq!(MEV_TO_JOULE, 1.602_176_634e-13);
         let result = account_channel(
             ReactionChannel::Dt,
