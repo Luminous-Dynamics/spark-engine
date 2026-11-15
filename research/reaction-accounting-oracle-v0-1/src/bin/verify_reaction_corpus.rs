@@ -35,8 +35,13 @@ const REQUIRED: [&str; 24] = [
 fn main() -> ExitCode {
     match audit() {
         Ok((accept, reject)) => {
-            println!("PASS: {} rows; ACCEPT={accept}, REJECT={reject}", REQUIRED.len());
-            println!("SCOPE: corpus inventory only; oracle behavior and physical correctness are not evaluated");
+            println!(
+                "PASS: {} rows; ACCEPT={accept}, REJECT={reject}",
+                REQUIRED.len()
+            );
+            println!(
+                "SCOPE: corpus inventory only; oracle behavior and physical correctness are not evaluated"
+            );
             ExitCode::SUCCESS
         }
         Err(error) => {
@@ -73,7 +78,11 @@ fn audit() -> Result<(usize, usize), String> {
         }
     }
     if ids.len() != REQUIRED.len() {
-        return Err(format!("expected {} rows, found {}", REQUIRED.len(), ids.len()));
+        return Err(format!(
+            "expected {} rows, found {}",
+            REQUIRED.len(),
+            ids.len()
+        ));
     }
     for id in REQUIRED {
         if !ids.contains(id) {
@@ -81,7 +90,9 @@ fn audit() -> Result<(usize, usize), String> {
         }
     }
     if accept != 12 || reject != 12 {
-        return Err(format!("unexpected disposition counts: ACCEPT={accept}, REJECT={reject}"));
+        return Err(format!(
+            "unexpected disposition counts: ACCEPT={accept}, REJECT={reject}"
+        ));
     }
     Ok((accept, reject))
 }
