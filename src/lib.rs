@@ -71,6 +71,9 @@ pub mod bridge;
 // Explicit plant power boundary and first-order economics
 pub mod plant_energy_balance;
 
+// Evidence-aware sub-keV metallic hydride yield models
+pub mod sub_kev_yield;
+
 // Extended fusion physics (D-T, p-B11, muon-catalyzed)
 pub mod reactions;
 
@@ -100,6 +103,13 @@ pub use physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
 pub use plant_energy_balance::{
     PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
     calculate_lcoe, calculate_plant_power_balance,
+};
+pub use sub_kev_yield::{
+    DatasetAvailability, DetectionChannel, HomogeneousScreeningFit, LoadingCondition,
+    RelativeYieldPoint, RelativeYieldSeries, ScreeningParameterStatus, SubKevHostMaterial,
+    YieldDataOrigin, YieldProvenance, alr_screening_enhancement,
+    equivalent_homogeneous_screening_kev, published_high_energy_fits,
+    two_environment_enhancement,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 
