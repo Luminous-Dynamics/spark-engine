@@ -290,6 +290,8 @@ That is a national-scale programme with access to major facilities, data, comput
 The new `project_finance` module begins a separate annual cash-flow layer. It consumes explicit year-indexed production and realized-price assumptions, other-product revenue, salvage, working-capital investments/releases and a complete cost schedule. Each year must provide one entry for each of 13 categories, including explicit zero amounts where appropriate:
 construction, component replacement, fixed O&M, variable O&M, fuel cycle, targets/consumables, remote maintenance, hot-cell/cask operations, waste disposition, insurance/licensing, interest during construction, decommissioning and taxes.
 
+The annual realized electricity price may be negative, allowing negative energy revenue where the plant delivers under negative-price or must-run conditions. Production itself must remain non-negative. This does not model dispatch or curtailment decisions.
+
 The first release calculates:
 - annual energy and other-product revenue, total costs and net project cash flow;
 - NPV at a caller-supplied discount rate consistent with the declared real/nominal currency basis and currency year;
