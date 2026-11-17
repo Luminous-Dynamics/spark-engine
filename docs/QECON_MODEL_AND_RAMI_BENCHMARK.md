@@ -121,6 +121,55 @@ Report calendar availability, productive utilization, planned/unplanned outage f
 - Preserve data licensing, code/model versions, calibration, source hashes, holdout identities, negative results and exact-head test evidence in each evaluation receipt.
 
 
+
+## Decision exploration: sensitivity and correlated uncertainty
+
+The 2026 Q_econ paper separates two questions:
+
+1. **Where is the viability boundary?** The Q_econ equations define the region where `Q_econ >= 1`.
+2. **Which intervention is the least difficult path to that boundary?** A weighted distance/projection problem encodes the different cost or difficulty of changing each parameter.
+
+The weights must not change the viability boundary. They express stakeholder assumptions about intervention difficulty. A unitless sensitivity ranking and an intervention-cost ranking are therefore different products and must not be conflated.
+
+### Implemented local sensitivity analysis
+
+The new `src/qecon_exploration.rs` module provides finite-difference sensitivities for all ten controlling parameters. It reports:
+- derivative in the native parameter unit;
+- dimensionless local elasticity where the base parameter and Q_econ are nonzero;
+- the finite-difference step and whether a central, forward or backward estimate was used;
+- a ranking by absolute elasticity, with undefined elasticities kept visible at the end.
+
+This is a local derivative around one declared scenario. It is not a global sensitivity analysis, Sobol index, intervention-cost ranking or causal estimate. Zero-valued parameters retain a native-unit derivative while their relative elasticity is withheld.
+
+### Implemented seeded uncertainty propagation
+
+The module also provides seeded Monte Carlo with:
+- triangular marginal distributions (minimum, mode, maximum) for all ten parameters;
+- a positive-definite latent Gaussian correlation matrix;
+- a Gaussian-copula transform that preserves the supplied triangular marginals while imposing dependence;
+- deterministic ChaCha8 sampling from a caller-supplied seed;
+- Q_econ, surface-utilization and net-economic-rate distribution summaries;
+- estimated probabilities `P(Q_econ >= 1)` and `P(Q_econ >= 1.5)`;
+- retention of every complete sampled input and output for inspection and replay.
+
+The correlation matrix is defined for latent standard-normal variables in the fixed `QeconParameter::ALL` order. It is **not** a Pearson correlation matrix of the transformed physical/economic parameters. The caller must provide and justify the triangular ranges, modes and dependence assumptions.
+
+This is not a calibrated forecast. No distribution is inferred automatically from the literature, and no narrow uncertainty is assigned to poorly constrained material lifetime, availability or cost parameters. The outputs are conditional on the supplied scenario assumptions.
+
+### Validation and next increment
+
+The module has tests for all-ten-parameter coverage, expected sensitivity signs, fixed-seed replay, marginal bounds, positive correlation propagation, invalid/incomplete matrices and sample-count limits. It is added in a separate stacked draft PR so it can be reviewed independently of the deterministic kernel.
+
+The next economics increment is a weighted closest-viable-design solver faithful to the paper's positive box-constrained log-space formulation. It must:
+- keep the Q_econ viability surface independent of weights;
+- expose separate scale factors and stakeholder-supplied intervention-difficulty weights;
+- reject infeasible bounds and invalid weights;
+- compare solver output against an independent numerical optimizer / KKT residual;
+- demonstrate multiple-start convergence and sensitivity to stakeholder weights;
+- preserve a Pareto view where no single weighting is endorsed as objectively correct.
+
+Do not label the finite-difference ranking as the paper's weighted projection. Do not claim a globally closest viable design until the constrained optimization and independent oracle are implemented and validated.
+
 ## Quantitative benchmark scoreboard
 
 The numbers below are **qualification targets**, not results achieved by Spark. Comparisons must preserve the same task definition, dataset version, device/shot split, warning horizon, event threshold, units and uncertainty treatment.
