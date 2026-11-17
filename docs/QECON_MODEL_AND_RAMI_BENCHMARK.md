@@ -131,6 +131,15 @@ The 2026 Q_econ paper separates two questions:
 
 The weights must not change the viability boundary. They express stakeholder assumptions about intervention difficulty. A unitless sensitivity ranking and an intervention-cost ranking are therefore different products and must not be conflated.
 
+### Asymptotic economic ceiling
+
+Spark now exposes the paper's analytic high-power-density limit for Q_econ. The model separates:
+- a finite mathematical Q_econ ceiling, when target cost, surface replacement cost or replacement downtime impose a positive asymptotic cost coefficient;
+- an unbounded mathematical Q_econ limit (`None` in the API), when the supplied assumptions remove every power-proportional cost term while leaving positive energy value;
+- whether `Q_econ >= 1` can be reached at any finite positive power density under the supplied assumptions.
+
+The ceiling is a mathematical property of the simplified steady-state model, **not** a physical operating target. The paper's illustration approaches Q_econ of roughly 3 only at extremely high areal fusion power densities where utilization falls below 0.5, while cooling/heat-exhaust limits may already be exceeded. A finite mathematical ceiling does not mean it is physically achievable.
+
 ### Implemented local sensitivity analysis
 
 The new `src/qecon_exploration.rs` module provides finite-difference sensitivities for all ten controlling parameters. It reports:
