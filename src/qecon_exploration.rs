@@ -385,6 +385,10 @@ pub struct QeconUncertaintyResult {
     pub exploration_revision: String,
     pub seed: u64,
     pub sample_count: u32,
+    /// Complete caller-supplied distributions and dependence assumptions.
+    pub uncertainty_input: QeconUncertaintyInput,
+    /// These are scenario-analysis assumptions, not calibrated probabilities.
+    pub assumptions: Vec<String>,
     pub q_econ: QeconScalarStatistics,
     pub utilization_fraction: QeconScalarStatistics,
     pub net_economic_rate_musd_per_m2_year: QeconScalarStatistics,
@@ -438,8 +442,11 @@ pub fn propagate_qecon_uncertainty(
         for parameter in QeconParameter::ALL {
             let latent = correlated_normals[parameter.index()];
             let uniform = standard_normal_cdf(latent).clamp(1e-12, 1.0 - 1e-12);
-            let sampled_value =
+            let mut sampled_value =
                 ordered_marginals[parameter.index()].inverse_cdf(uniform);
+            if parameter == QeconParameter::PlantLifetime {
+                sampled_value = sampled_value.round();
+            }
             sampled_input = parameter.with_value(&sampled_input, sampled_value)?;
         }
 
@@ -467,6 +474,13 @@ pub fn propagate_qecon_uncertainty(
         exploration_revision: QECON_EXPLORATION_REVISION.to_string(),
         seed: uncertainty.seed,
         sample_count: uncertainty.sample_count,
+        uncertainty_input: uncertainty.clone(),
+        assumptions: vec![
+            "Marginal parameter distributions are caller-supplied triangular assumptions.".to_string(),
+            "Dependence is imposed through a Gaussian copula using the supplied latent correlation matrix.".to_string(),
+            "The latent correlation matrix is not a Pearson correlation matrix of transformed physical parameters.".to_string(),
+            "This seeded ensemble is conditional scenario analysis, not a calibrated forecast or empirical confidence interval.".to_string(),
+        ],
         q_econ: scalar_statistics(&q_values)?,
         utilization_fraction: scalar_statistics(&utilization_values)?,
         net_economic_rate_musd_per_m2_year: scalar_statistics(&net_rate_values)?,
@@ -793,6 +807,8 @@ mod tests {
         assert!(find(QeconParameter::SurfaceEnergyFluenceLimit) > 0.0);
         assert!(find(QeconParameter::NetEnergyConversionEfficiency) > 0.0);
         assert!(find(QeconParameter::NetPriceOfEnergy) > 0.0);
+        assert!(find(QeconParameter::SurfaceReplacementTime) < 0.0);
+        assert!(find(QeconParameter::TargetCostPerEnergyYield) < 0.0);
         assert!(find(QeconParameter::SurfaceReplacementCost) < 0.0);
         assert!(find(QeconParameter::PlantArealCost) < 0.0);
         assert!(find(QeconParameter::RealInterestRate) < 0.0);
@@ -806,6 +822,8 @@ mod tests {
         let second = propagate_qecon_uncertainty(&input(), &scenario).unwrap();
         assert_eq!(first, second);
         assert_eq!(first.samples.len(), 128);
+        assert_eq!(first.uncertainty_input, scenario);
+        assert!(first.assumptions.len() >= 3);
         assert!((0.0..=1.0).contains(&first.probability_q_econ_at_least_one));
         assert!(
             first.probability_q_econ_at_least_one_point_five
@@ -821,6 +839,10 @@ mod tests {
                 let value = marginal.parameter.value(&sample.input);
                 assert!(value >= marginal.minimum && value <= marginal.maximum);
             }
+            assert!(
+                sample.input.design.plant_lifetime_years >= 20
+                    && sample.input.design.plant_lifetime_years <= 40
+            );
         }
     }
 
