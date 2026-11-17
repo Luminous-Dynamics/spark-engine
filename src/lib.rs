@@ -120,16 +120,16 @@ pub use plant_energy_balance::{
     PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
     calculate_lcoe, calculate_plant_power_balance,
 };
-pub use qecon_exploration::{
-    DifferenceMethod, QeconParameter, QeconScalarStatistics, QeconSensitivityEstimate,
-    QeconTriangularMarginal, QeconUncertaintyInput, QeconUncertaintyResult,
-    QeconUncertaintySample, QECON_EXPLORATION_REVISION, QECON_PARAMETER_COUNT,
-    MAX_QECON_UNCERTAINTY_SAMPLES, propagate_qecon_uncertainty, rank_qecon_sensitivities,
-};
 pub use qecon::{
     QECON_MODEL_REVISION, QeconDesignParameters, QeconEvidenceClass, QeconInput, QeconResult,
     QeconScenario, QeconScenarioResult, calculate_qecon, calculate_qecon_scenario,
     net_electric_efficiency_from_power_balance, required_fusion_power_density_for_qecon,
+};
+pub use qecon_exploration::{
+    DifferenceMethod, MAX_QECON_UNCERTAINTY_SAMPLES, QECON_EXPLORATION_REVISION,
+    QECON_PARAMETER_COUNT, QeconParameter, QeconScalarStatistics, QeconSensitivityEstimate,
+    QeconTriangularMarginal, QeconUncertaintyInput, QeconUncertaintyResult, QeconUncertaintySample,
+    propagate_qecon_uncertainty, rank_qecon_sensitivities,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
