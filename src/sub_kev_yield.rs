@@ -7,20 +7,37 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum SubKevHostMaterial { Palladium, Titanium }
+pub enum SubKevHostMaterial {
+    Palladium,
+    Titanium,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum LoadingCondition { BeamOnly, BeamPlusElectrochemicalLoading }
+pub enum LoadingCondition {
+    BeamOnly,
+    BeamPlusElectrochemicalLoading,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum DetectionChannel { Proton, Neutron }
+pub enum DetectionChannel {
+    Proton,
+    Neutron,
+}
 
 /// Figure-digitized and synthetic values are intentionally not raw observations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum YieldDataOrigin { RawDataset, FigureDigitized, LiteratureReported, SyntheticTest }
+pub enum YieldDataOrigin {
+    RawDataset,
+    FigureDigitized,
+    LiteratureReported,
+    SyntheticTest,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum DatasetAvailability { Embargoed { release_date: String }, Released }
+pub enum DatasetAvailability {
+    Embargoed { release_date: String },
+    Released,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct YieldProvenance {
@@ -40,14 +57,20 @@ impl YieldProvenance {
         if self.publication_doi.trim().is_empty() || self.dataset_doi.trim().is_empty() {
             return Err("publication_doi and dataset_doi must be non-empty".into());
         }
-        if self.dataset_version.as_ref().is_some_and(|v| v.trim().is_empty()) {
+        if self
+            .dataset_version
+            .as_ref()
+            .is_some_and(|v| v.trim().is_empty())
+        {
             return Err("dataset_version must not be empty when present".into());
         }
         if self.origin == YieldDataOrigin::RawDataset {
             if self.availability != DatasetAvailability::Released {
                 return Err("raw dataset cannot be ingested while the deposit is embargoed".into());
             }
-            let digest = self.source_artifact_sha256.as_deref()
+            let digest = self
+                .source_artifact_sha256
+                .as_deref()
                 .ok_or_else(|| "raw dataset requires a source SHA-256".to_string())?;
             if digest.len() != 64 || !digest.chars().all(|ch| ch.is_ascii_hexdigit()) {
                 return Err("source_artifact_sha256 must be 64 hexadecimal characters".into());
@@ -94,7 +117,10 @@ impl RelativeYieldSeries {
         if !self.reference_energy_cm_kev.is_finite() || self.reference_energy_cm_kev <= 0.0 {
             return Err("reference_energy_cm_kev must be finite and positive".into());
         }
-        if self.reference_relative_uncertainty.is_some_and(|u| !u.is_finite() || u < 0.0) {
+        if self
+            .reference_relative_uncertainty
+            .is_some_and(|u| !u.is_finite() || u < 0.0)
+        {
             return Err("reference uncertainty must be finite and non-negative".into());
         }
         if self.points.is_empty() {
@@ -103,16 +129,24 @@ impl RelativeYieldSeries {
         let mut previous = 0.0;
         for point in &self.points {
             if !point.energy_cm_kev.is_finite() || point.energy_cm_kev <= previous {
-                return Err("point energies must be finite, positive and strictly increasing".into());
+                return Err(
+                    "point energies must be finite, positive and strictly increasing".into(),
+                );
             }
             previous = point.energy_cm_kev;
             if !point.relative_yield.is_finite() || point.relative_yield <= 0.0 {
                 return Err("relative_yield must be finite and positive".into());
             }
-            if point.relative_uncertainty.is_some_and(|u| !u.is_finite() || u < 0.0) {
+            if point
+                .relative_uncertainty
+                .is_some_and(|u| !u.is_finite() || u < 0.0)
+            {
                 return Err("point uncertainty must be finite and non-negative".into());
             }
-            if point.live_time_s.is_some_and(|t| !t.is_finite() || t <= 0.0) {
+            if point
+                .live_time_s
+                .is_some_and(|t| !t.is_finite() || t <= 0.0)
+            {
                 return Err("live_time_s must be finite and positive".into());
             }
             if point.observation_id.trim().is_empty() {
@@ -124,7 +158,11 @@ impl RelativeYieldSeries {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ScreeningParameterStatus { PublishedFit, IndependentlyRefitted, ModelAssumption }
+pub enum ScreeningParameterStatus {
+    PublishedFit,
+    IndependentlyRefitted,
+    ModelAssumption,
+}
 
 /// High-energy constant-screening fit. It is a condition-specific fitted
 /// parameter, not a universal material constant or microscopic measurement.
@@ -155,10 +193,26 @@ pub fn published_high_energy_fits() -> [HomogeneousScreeningFit; 4] {
         parameter_status: ScreeningParameterStatus::PublishedFit,
     };
     [
-        make(SubKevHostMaterial::Palladium, LoadingCondition::BeamOnly, 0.8),
-        make(SubKevHostMaterial::Palladium, LoadingCondition::BeamPlusElectrochemicalLoading, 1.7),
-        make(SubKevHostMaterial::Titanium, LoadingCondition::BeamOnly, 0.3),
-        make(SubKevHostMaterial::Titanium, LoadingCondition::BeamPlusElectrochemicalLoading, 0.9),
+        make(
+            SubKevHostMaterial::Palladium,
+            LoadingCondition::BeamOnly,
+            0.8,
+        ),
+        make(
+            SubKevHostMaterial::Palladium,
+            LoadingCondition::BeamPlusElectrochemicalLoading,
+            1.7,
+        ),
+        make(
+            SubKevHostMaterial::Titanium,
+            LoadingCondition::BeamOnly,
+            0.3,
+        ),
+        make(
+            SubKevHostMaterial::Titanium,
+            LoadingCondition::BeamPlusElectrochemicalLoading,
+            0.9,
+        ),
     ]
 }
 
@@ -176,7 +230,9 @@ pub fn alr_screening_enhancement(
     gamow_energy_kev: f64,
 ) -> Result<f64, String> {
     validate_alr_inputs(energy_cm_kev, screening_potential_kev, gamow_energy_kev)?;
-    if screening_potential_kev == 0.0 { return Ok(1.0); }
+    if screening_potential_kev == 0.0 {
+        return Ok(1.0);
+    }
     let shifted = energy_cm_kev + screening_potential_kev;
     let log_value = 0.5 * (energy_cm_kev / shifted).ln()
         + (gamow_energy_kev / energy_cm_kev).sqrt()
@@ -205,13 +261,15 @@ pub fn two_environment_enhancement(
     if !bulk_screening_kev.is_finite() || bulk_screening_kev < 0.0 {
         return Err("bulk_screening_kev must be finite and non-negative".into());
     }
-    let surface = alr_screening_enhancement(
-        energy_cm_kev, surface_screening_kev, gamow_energy_kev)?;
-    let bulk = alr_screening_enhancement(
-        energy_cm_kev, bulk_screening_kev, gamow_energy_kev)?;
+    let surface =
+        alr_screening_enhancement(energy_cm_kev, surface_screening_kev, gamow_energy_kev)?;
+    let bulk = alr_screening_enhancement(energy_cm_kev, bulk_screening_kev, gamow_energy_kev)?;
     let value = surface_weight * surface + (1.0 - surface_weight) * bulk;
-    if value.is_finite() && value >= 1.0 { Ok(value) }
-    else { Err("two-environment enhancement is non-finite or below unity".into()) }
+    if value.is_finite() && value >= 1.0 {
+        Ok(value)
+    } else {
+        Err("two-environment enhancement is non-finite or below unity".into())
+    }
 }
 
 /// Numerically invert the homogeneous ALR expression. This returns an
@@ -226,7 +284,9 @@ pub fn equivalent_homogeneous_screening_kev(
     if !enhancement.is_finite() || enhancement < 1.0 {
         return Err("enhancement must be finite and at least 1".into());
     }
-    if (enhancement - 1.0).abs() <= f64::EPSILON { return Ok(0.0); }
+    if (enhancement - 1.0).abs() <= f64::EPSILON {
+        return Ok(0.0);
+    }
 
     let (mut low, mut high) = (0.0, 1.0);
     let mut found = false;
@@ -237,7 +297,9 @@ pub fn equivalent_homogeneous_screening_kev(
         }
         high *= 2.0;
     }
-    if !found { return Err("could not bracket equivalent screening potential".into()); }
+    if !found {
+        return Err("could not bracket equivalent screening potential".into());
+    }
     for _ in 0..128 {
         let middle = 0.5 * (low + high);
         if alr_screening_enhancement(energy_cm_kev, middle, gamow_energy_kev)? < enhancement {
@@ -245,15 +307,23 @@ pub fn equivalent_homogeneous_screening_kev(
         } else {
             high = middle;
         }
-        if high - low <= 1e-12 * high.max(1.0) { break; }
+        if high - low <= 1e-12 * high.max(1.0) {
+            break;
+        }
     }
     Ok(0.5 * (low + high))
 }
 
 fn validate_alr_inputs(e: f64, u: f64, eg: f64) -> Result<(), String> {
-    if !e.is_finite() || e <= 0.0 { return Err("energy_cm_kev must be finite and positive".into()); }
-    if !u.is_finite() || u < 0.0 { return Err("screening_potential_kev must be finite and non-negative".into()); }
-    if !eg.is_finite() || eg <= 0.0 { return Err("gamow_energy_kev must be finite and positive".into()); }
+    if !e.is_finite() || e <= 0.0 {
+        return Err("energy_cm_kev must be finite and positive".into());
+    }
+    if !u.is_finite() || u < 0.0 {
+        return Err("screening_potential_kev must be finite and non-negative".into());
+    }
+    if !eg.is_finite() || eg <= 0.0 {
+        return Err("gamow_energy_kev must be finite and positive".into());
+    }
     Ok(())
 }
 
@@ -267,7 +337,9 @@ mod tests {
             publication_doi: "10.1038/s41467-026-74421-1".into(),
             dataset_doi: "10.5281/zenodo.20435774".into(),
             dataset_version: Some("v1".into()),
-            availability: DatasetAvailability::Embargoed { release_date: "2026-12-01".into() },
+            availability: DatasetAvailability::Embargoed {
+                release_date: "2026-12-01".into(),
+            },
             origin,
             source_artifact_sha256: None,
             data_license: None,
@@ -276,7 +348,10 @@ mod tests {
 
     #[test]
     fn bare_limit_is_unity() {
-        assert_eq!(alr_screening_enhancement(0.25, 0.0, DD_GAMOW_ENERGY_KEV).unwrap(), 1.0);
+        assert_eq!(
+            alr_screening_enhancement(0.25, 0.0, DD_GAMOW_ENERGY_KEV).unwrap(),
+            1.0
+        );
     }
 
     #[test]
@@ -290,14 +365,26 @@ mod tests {
     fn two_environment_endpoints_equal_the_selected_component() {
         let surface = alr_screening_enhancement(0.5, 2.0, DD_GAMOW_ENERGY_KEV).unwrap();
         let bulk = alr_screening_enhancement(0.5, 0.4, DD_GAMOW_ENERGY_KEV).unwrap();
-        assert!((two_environment_enhancement(0.5, DD_GAMOW_ENERGY_KEV, 1.0, 2.0, 0.4).unwrap() - surface).abs() < 1e-12);
-        assert!((two_environment_enhancement(0.5, DD_GAMOW_ENERGY_KEV, 0.0, 2.0, 0.4).unwrap() - bulk).abs() < 1e-12);
+        assert!(
+            (two_environment_enhancement(0.5, DD_GAMOW_ENERGY_KEV, 1.0, 2.0, 0.4).unwrap()
+                - surface)
+                .abs()
+                < 1e-12
+        );
+        assert!(
+            (two_environment_enhancement(0.5, DD_GAMOW_ENERGY_KEV, 0.0, 2.0, 0.4).unwrap()
+                - bulk)
+                .abs()
+                < 1e-12
+        );
     }
 
     #[test]
     fn equivalent_screening_round_trips_two_environment_result() {
-        let combined = two_environment_enhancement(0.5, DD_GAMOW_ENERGY_KEV, 0.35, 2.8, 0.8).unwrap();
-        let equivalent = equivalent_homogeneous_screening_kev(0.5, combined, DD_GAMOW_ENERGY_KEV).unwrap();
+        let combined =
+            two_environment_enhancement(0.5, DD_GAMOW_ENERGY_KEV, 0.35, 2.8, 0.8).unwrap();
+        let equivalent =
+            equivalent_homogeneous_screening_kev(0.5, combined, DD_GAMOW_ENERGY_KEV).unwrap();
         let recovered = alr_screening_enhancement(0.5, equivalent, DD_GAMOW_ENERGY_KEV).unwrap();
         assert!((recovered / combined - 1.0).abs() < 1e-9);
     }
@@ -337,8 +424,22 @@ mod tests {
             reference_relative_uncertainty: Some(0.03),
             provenance: provenance(YieldDataOrigin::SyntheticTest),
             points: vec![
-                RelativeYieldPoint { energy_cm_kev: 0.25, relative_yield: 0.01, relative_uncertainty: Some(0.002), counts: None, live_time_s: None, observation_id: "synthetic-0".into() },
-                RelativeYieldPoint { energy_cm_kev: 6.5, relative_yield: 1.0, relative_uncertainty: Some(0.03), counts: None, live_time_s: None, observation_id: "synthetic-1".into() },
+                RelativeYieldPoint {
+                    energy_cm_kev: 0.25,
+                    relative_yield: 0.01,
+                    relative_uncertainty: Some(0.002),
+                    counts: None,
+                    live_time_s: None,
+                    observation_id: "synthetic-0".into(),
+                },
+                RelativeYieldPoint {
+                    energy_cm_kev: 6.5,
+                    relative_yield: 1.0,
+                    relative_uncertainty: Some(0.03),
+                    counts: None,
+                    live_time_s: None,
+                    observation_id: "synthetic-1".into(),
+                },
             ],
         };
         assert!(series.validate().is_ok());
@@ -350,7 +451,10 @@ mod tests {
     fn published_high_energy_fits_keep_material_loading_and_fit_window() {
         let fits = published_high_energy_fits();
         assert_eq!(fits.len(), 4);
-        assert!(fits.iter().all(|f| f.fit_energy_min_kev == 2.5 && f.fit_energy_max_kev == 6.5));
+        assert!(
+            fits.iter()
+                .all(|f| f.fit_energy_min_kev == 2.5 && f.fit_energy_max_kev == 6.5)
+        );
         assert!(fits.iter().all(|f| f.uncertainty_kev == 0.2));
         assert_eq!(fits[0].screening_potential_kev, 0.8);
         assert_eq!(fits[1].screening_potential_kev, 1.7);
