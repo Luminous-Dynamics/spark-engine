@@ -34,7 +34,7 @@ A significant new result was published in *Nature Communications* on 18 July 202
 
 - Karahadian et al., *Enhanced nuclear fusion in the sub-keV energy regime*, Nature Communications 17, 8845 (2026): https://doi.org/10.1038/s41467-026-74421-1
 - Full text: https://pmc.ncbi.nlm.nih.gov/articles/PMC13500673/
-- Public data: https://doi.org/10.5281/zenodo.20435774
+- Dataset record: https://doi.org/10.5281/zenodo.20435774 (**files embargoed until 1 December 2026**; the record is visible now, but the underlying files are not yet downloadable).
 
 The study combines a low-energy deuterium ion beam with electrochemical deuterium loading of 250 µm Pd and Ti foils. The center-of-mass beam-energy range is 0.25–6.5 keV. It reports a reproducible relative-yield plateau below approximately 2 keV and an enhancement approaching or exceeding 10^18 relative to a bare-nucleus model at 0.25 keV.
 
@@ -48,7 +48,7 @@ Important measurement boundaries:
 
 This is a separate evidence track from NASA's bremsstrahlung-triggered LCF work. The Nature study uses ion-beam excitation and electrochemical loading, with the beam providing the incident energy. It should not be represented as passive, self-sustaining room-temperature fusion or as evidence of net energy gain.
 
-**New Spark Engine priority:** reproduce the published relative-yield curves from the Zenodo data; reconstruct the stopping-weighted thick-target integral; compare constant-screening and heterogeneous-depth models; propagate beam-energy, stopping-power, charge-normalization and counting uncertainties; then test cross-material and loading-regime predictions on held-out data. Preserve the distinction between measured relative yield and the model-derived enhancement ratio.
+**New Spark Engine priority:** prepare the parser, schema, numerical reference and regression fixtures now from the paper's equations and reported results. The deposited dataset is embargoed until 1 December 2026, so raw-data reproduction must remain pending until the files are released. Once available, reproduce relative-yield curves; reconstruct the stopping-weighted thick-target integral; compare constant-screening and heterogeneous-depth models; propagate beam-energy, stopping-power, charge-normalization and counting uncertainties; then test cross-material and loading-regime predictions on held-out data. Until then, any curve digitized from a published figure must be labelled as figure-derived, not as raw data. Preserve the distinction between measured relative yield and the model-derived enhancement ratio.
 
 ### 2.3 Magnetic fusion and industry
 
