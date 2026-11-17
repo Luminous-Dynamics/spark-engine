@@ -50,6 +50,24 @@ This is a separate evidence track from NASA's bremsstrahlung-triggered LCF work.
 
 **New Spark Engine priority:** prepare the parser, schema, numerical reference and regression fixtures now from the paper's equations and reported results. The deposited dataset is embargoed until 1 December 2026, so raw-data reproduction must remain pending until the files are released. Once available, reproduce relative-yield curves; reconstruct the stopping-weighted thick-target integral; compare constant-screening and heterogeneous-depth models; propagate beam-energy, stopping-power, charge-normalization and counting uncertainties; then test cross-material and loading-regime predictions on held-out data. Until then, any curve digitized from a published figure must be labelled as figure-derived, not as raw data. Preserve the distinction between measured relative yield and the model-derived enhancement ratio.
 
+### 2.2.1 Spark implementation boundary
+
+The draft Spark implementation now contains `src/sub_kev_yield.rs`:
+
+- A yield-series schema distinguishes Pd/Ti, beam-only/electrochemically loaded conditions, and proton/neutron measurement channels.
+- Data origin is explicit: raw dataset, figure-digitized, literature-reported, or synthetic test. A raw-data record requires a released deposit and a verified SHA-256; an embargoed deposit cannot be represented as ingested raw data.
+- Relative-yield series retain the common 6.5 keV reference observation and its shared uncertainty separately. Treating all normalized energy points as statistically independent would understate covariance from the common denominator.
+- The ALR homogeneous-screening expression and the paper's surface/bulk weighted phenomenological expression are implemented as dimensionless enhancement functions.
+- The four high-energy fitted values are recorded with their material, loading condition, uncertainty and 2.5–6.5 keV fit window.
+
+This module intentionally does not contain the embargoed dataset points, a microscopic defect model, a fit to the raw observations, a thick-target stopping-power integration, or an absolute cross-section. It cannot produce an absolute reaction rate or power claim. Those are subsequent work after raw data and independently validated stopping-power inputs become available.
+
+Primary equations implemented:
+- Homogeneous ALR enhancement, paper Eq. 12.
+- Surface/bulk weighted mixture, paper Eq. 13.
+
+Paper methods and uncertainty treatment: https://pmc.ncbi.nlm.nih.gov/articles/PMC13500673/ (Eqs. 10–19).
+
 ### 2.3 Magnetic fusion and industry
 
 The DOE's finalized June 2026 Fusion Science and Technology Roadmap organizes common gaps across structural materials, plasma-facing components, confinement, fuel cycle/tritium processing, blankets, and plant engineering/system integration. It explicitly elevates AI, advanced computing, infrastructure and public/private coordination.
