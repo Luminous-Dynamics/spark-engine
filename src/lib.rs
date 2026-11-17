@@ -108,8 +108,7 @@ pub use sub_kev_yield::{
     DatasetAvailability, DetectionChannel, HomogeneousScreeningFit, LoadingCondition,
     RelativeYieldPoint, RelativeYieldSeries, ScreeningParameterStatus, SubKevHostMaterial,
     YieldDataOrigin, YieldProvenance, alr_screening_enhancement,
-    equivalent_homogeneous_screening_kev, published_high_energy_fits,
-    two_environment_enhancement,
+    equivalent_homogeneous_screening_kev, published_high_energy_fits, two_environment_enhancement,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 
