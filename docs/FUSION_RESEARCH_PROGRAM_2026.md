@@ -274,6 +274,27 @@ Report LCOE and sensitivity ranges, not one point estimate. Availability must be
 
 Spark Engine's initial calculate_lcoe model is deliberately first-order. It requires net export, availability, capital, fixed O&M, replacement cost, variable cost, fuel cost, discount rate and lifetime. It is not a bankable project-finance model and callers must include omitted cost classes.
 
+
+### 6.1 Surface economics and plant availability are separate models
+
+The Q_econ literature provides a surface-normalized economic design-window metric. Spark now has a distinct `src/qecon.rs` implementation of the published steady-state gain and cost rates, an analytic power-density threshold solver, a scenario wrapper with evidence class/source/digest/assumption metadata, and a helper that derives `eta_E = P_net/P_f` only from a complete electrical plant-power ledger.
+
+Q_econ's surface-utilization term covers the fluence-limited component operating/replacement cycle. It is **not** whole-plant calendar availability. Spark therefore also has an independent first-order `src/plant_availability.rs` screening module:
+- MTBF/(MTBF+MTTR) component availability;
+- heterogeneous N-of-M groups using a Poisson-binomial calculation;
+- series combination of required systems;
+- explicit planned-maintenance and common-cause availability factors;
+- withholding of total calendar availability when the critical-system boundary is incomplete.
+
+The availability model assumes independent component states and conditionally independent system-level factors. It does not represent event timelines, repair queueing, hot-cell throughput, remote-handling recovery, common-cause event trees or uncertainty distributions. These are follow-on requirements, not already solved capabilities.
+
+A separate September 2026 availability-centric paper defines `Q_ENG` as achievable operational availability divided by an Engineering Burden Index (EBI). Its terminology is distinct from conventional electrical gain, and its EBI reference bands are described as indicative/judgement-based rather than experimentally validated or community-standard. Do not use `Q_ENG` to mean net electrical gain and do not hard-code its indicative bands as physical constants.
+
+**References**
+- Whyte et al. (2026), *Criteria for the economic viability of fusion power plants*, Journal of Fusion Energy 45, 49. DOI: https://doi.org/10.1007/s10894-026-00577-9
+- Tesini (2026), *An availability-centric Q-metrics framework for assessing fusion power-plant engineering viability*, Fusion Engineering and Design 230, 115874. DOI: https://doi.org/10.1016/j.fusengdes.2026.115874
+- DOE, *Fusion Science and Technology Roadmap* (June 2026): https://www.energy.gov/documents/fusion-science-and-technology-roadmap
+
 ## 7. Cross-project division of responsibility
 
 | Project | Responsibility | Boundary |
