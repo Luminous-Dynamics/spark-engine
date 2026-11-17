@@ -524,6 +524,32 @@ mod tests {
         let break_even = required_fusion_power_density_for_qecon(&design, 1.0).unwrap();
         let q15 = required_fusion_power_density_for_qecon(&design, 1.5).unwrap();
 
+        let break_even_result = calculate_qecon(&QeconInput {
+            fusion_power_density_mw_per_m2: break_even,
+            design: design.clone(),
+        })
+        .unwrap();
+        let q15_result = calculate_qecon(&QeconInput {
+            fusion_power_density_mw_per_m2: q15,
+            design: design.clone(),
+        })
+        .unwrap();
+        assert!((break_even_result.q_econ - 1.0).abs() < 1e-10);
+        assert!((q15_result.q_econ - 1.5).abs() < 1e-10);
+
+        let baseline_q15 = q15;
+        let mut higher_replacement_cost = design.clone();
+        higher_replacement_cost.surface_replacement_cost_musd_per_m2 *= 2.0;
+        let cost_sensitive_q15 =
+            required_fusion_power_density_for_qecon(&higher_replacement_cost, 1.5).unwrap();
+        assert!(cost_sensitive_q15 > baseline_q15);
+
+        let mut lower_energy_value = design.clone();
+        lower_energy_value.net_price_of_energy_usd_per_mwh *= 0.8;
+        let price_sensitive_q15 =
+            required_fusion_power_density_for_qecon(&lower_energy_value, 1.5).unwrap();
+        assert!(price_sensitive_q15 > baseline_q15);
+
         // The paper's illustrative solution reports approximately 1.9 MW/m²
         // at break-even and approximately 3.7 MW/m² for Q_econ ~= 1.5.
         assert!((break_even - 1.9).abs() < 0.15);
