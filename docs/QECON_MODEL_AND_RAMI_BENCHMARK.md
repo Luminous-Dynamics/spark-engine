@@ -165,6 +165,14 @@ The correlation matrix is defined for latent standard-normal variables in the fi
 
 This is not a calibrated forecast. No distribution is inferred automatically from the literature, and no narrow uncertainty is assigned to poorly constrained material lifetime, availability or cost parameters. The outputs are conditional on the supplied scenario assumptions.
 
+
+
+### Sampling-error intervals for viability probabilities
+
+The uncertainty result now accompanies each Monte Carlo estimate of `P(Q_econ >= 1)` and `P(Q_econ >= 1.5)` with a Wilson 95% binomial interval. The interval quantifies finite sample-count error **conditional on the supplied model and distributions**. It does not include uncertainty in the marginal ranges, the copula, the Q_econ equations, missing physical processes or model discrepancy.
+
+For example, increasing sample count can narrow the Wilson interval, but it cannot make an unjustified fluence limit or market-price distribution more credible. Parameter/model uncertainty and Monte Carlo sampling error remain distinct.
+
 ### Validation and next increment
 
 The module has tests for all-ten-parameter coverage, expected sensitivity signs, fixed-seed replay, marginal bounds, positive correlation propagation, invalid/incomplete matrices and sample-count limits. It is added in a separate stacked draft PR so it can be reviewed independently of the deterministic kernel.
