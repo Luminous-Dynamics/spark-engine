@@ -8,7 +8,8 @@
 //! Each component's long-run availability is estimated as MTBF/(MTBF+MTTR).
 //! Within a group, component up/down states are treated as independent and the
 //! group is available when at least N of M components are online. Groups are
-//! then treated as a series system: every declared group must be available.
+//! combined as an independent series system: every declared group must be
+//! available. Cross-group common causes must be represented separately.
 //!
 //! Planned-maintenance and common-cause availability factors are explicit
 //! system-level factors. Multiplication assumes these factors are conditionally
@@ -191,7 +192,8 @@ pub fn calculate_plant_availability(
         assumptions: vec![
             "Steady-state component availability is MTBF/(MTBF+MTTR).".to_string(),
             "Component up/down states are independent within each N-of-M group.".to_string(),
-            "Every declared group is required; groups form a series system.".to_string(),
+            "Required group states are treated as independent when multiplied in series.".to_string(),
+            "Cross-group common causes must be represented by the explicit conditional common-cause factor.".to_string(),
             "Planned-maintenance and common-cause factors are explicit and conditionally independent of modelled component downtime and of each other.".to_string(),
             "The caller's critical-system-boundary declaration is not independently verified.".to_string(),
             "This deterministic screening model does not represent repair queues, time-dependent maintenance schedules, common-cause event trees, or uncertainty distributions.".to_string(),
