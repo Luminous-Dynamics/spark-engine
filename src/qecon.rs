@@ -186,8 +186,7 @@ pub fn calculate_qecon(input: &QeconInput) -> Result<QeconResult, String> {
     let design = &input.design;
     let surface_operating_interval_years =
         design.surface_energy_fluence_limit_mw_year_per_m2 / power_density;
-    let cycle_time_years =
-        surface_operating_interval_years + design.surface_replacement_time_years;
+    let cycle_time_years = surface_operating_interval_years + design.surface_replacement_time_years;
     let utilization_fraction = surface_operating_interval_years / cycle_time_years;
 
     let gain_rate_musd_per_m2_year = GAIN_RATE_CONVERSION
@@ -202,8 +201,7 @@ pub fn calculate_qecon(input: &QeconInput) -> Result<QeconResult, String> {
         * utilization_fraction;
 
     let surface_replacement_cost_rate_musd_per_m2_year =
-        design.surface_replacement_cost_musd_per_m2
-            * power_density
+        design.surface_replacement_cost_musd_per_m2 * power_density
             / design.surface_energy_fluence_limit_mw_year_per_m2
             * utilization_fraction;
 
@@ -221,8 +219,7 @@ pub fn calculate_qecon(input: &QeconInput) -> Result<QeconResult, String> {
         return Err("total modelled economic cost rate must be finite and positive".to_string());
     }
 
-    let net_economic_rate_musd_per_m2_year =
-        gain_rate_musd_per_m2_year - total_cost_rate;
+    let net_economic_rate_musd_per_m2_year = gain_rate_musd_per_m2_year - total_cost_rate;
     let q_econ = gain_rate_musd_per_m2_year / total_cost_rate;
     let effective_lcoe_usd_per_mwh = if q_econ > 0.0 {
         Some(design.net_price_of_energy_usd_per_mwh / q_econ)
@@ -279,7 +276,9 @@ pub fn net_electric_efficiency_from_power_balance(
         || !net_export_w.is_finite()
         || net_export_w < 0.0
     {
-        return Err("fusion power must be positive and net export must be non-negative".to_string());
+        return Err(
+            "fusion power must be positive and net export must be non-negative".to_string(),
+        );
     }
     let efficiency = net_export_w / balance.fusion_thermal_power_w;
     if !efficiency.is_finite() || !(0.0..=1.0).contains(&efficiency) {
@@ -305,8 +304,10 @@ pub fn required_fusion_power_density_for_qecon(
         return Err("target_q_econ must be finite and positive".to_string());
     }
 
-    let capital_recovery_factor =
-        capital_recovery_factor(design.real_interest_rate_percent, design.plant_lifetime_years)?;
+    let capital_recovery_factor = capital_recovery_factor(
+        design.real_interest_rate_percent,
+        design.plant_lifetime_years,
+    )?;
     let fixed_cost = design.plant_areal_cost_musd_per_m2 * capital_recovery_factor;
 
     let gain_coefficient = GAIN_RATE_CONVERSION
@@ -316,8 +317,8 @@ pub fn required_fusion_power_density_for_qecon(
         TARGET_RATE_CONVERSION * design.target_cost_per_energy_yield_usd_per_mj;
     let replacement_cost_coefficient = design.surface_replacement_cost_musd_per_m2
         / design.surface_energy_fluence_limit_mw_year_per_m2;
-    let replacement_time_coefficient = design.surface_replacement_time_years
-        / design.surface_energy_fluence_limit_mw_year_per_m2;
+    let replacement_time_coefficient =
+        design.surface_replacement_time_years / design.surface_energy_fluence_limit_mw_year_per_m2;
 
     let denominator = gain_coefficient
         - target_q_econ
@@ -338,9 +339,7 @@ pub fn required_fusion_power_density_for_qecon(
 }
 
 /// Calculate a scenario while preserving its evidence metadata.
-pub fn calculate_qecon_scenario(
-    scenario: &QeconScenario,
-) -> Result<QeconScenarioResult, String> {
+pub fn calculate_qecon_scenario(scenario: &QeconScenario) -> Result<QeconScenarioResult, String> {
     if scenario.scenario_id.trim().is_empty() {
         return Err("scenario_id must not be empty".to_string());
     }
@@ -353,10 +352,15 @@ pub fn calculate_qecon_scenario(
             .bytes()
             .all(|byte| byte.is_ascii_hexdigit())
     {
-        return Err("input_digest_sha256 must contain exactly 64 hexadecimal characters".to_string());
+        return Err(
+            "input_digest_sha256 must contain exactly 64 hexadecimal characters".to_string(),
+        );
     }
     if scenario.assumptions.is_empty()
-        || scenario.assumptions.iter().any(|item| item.trim().is_empty())
+        || scenario
+            .assumptions
+            .iter()
+            .any(|item| item.trim().is_empty())
     {
         return Err("scenario must preserve at least one non-empty assumption".to_string());
     }
@@ -368,7 +372,9 @@ pub fn calculate_qecon_scenario(
         .as_deref()
         .is_none_or(|locator| locator.trim().is_empty())
     {
-        return Err("measured and literature-reported scenarios require a source locator".to_string());
+        return Err(
+            "measured and literature-reported scenarios require a source locator".to_string(),
+        );
     }
 
     let result = calculate_qecon(&scenario.input)?;
@@ -441,7 +447,9 @@ fn validate_design(design: &QeconDesignParameters) -> Result<(), String> {
         }
     }
 
-    if !design.surface_energy_fluence_limit_mw_year_per_m2.is_finite()
+    if !design
+        .surface_energy_fluence_limit_mw_year_per_m2
+        .is_finite()
         || design.surface_energy_fluence_limit_mw_year_per_m2 <= 0.0
     {
         return Err(
@@ -458,8 +466,7 @@ fn validate_design(design: &QeconDesignParameters) -> Result<(), String> {
     {
         return Err("plant_areal_cost_musd_per_m2 must be finite and positive".to_string());
     }
-    if !design.real_interest_rate_percent.is_finite()
-        || design.real_interest_rate_percent <= -100.0
+    if !design.real_interest_rate_percent.is_finite() || design.real_interest_rate_percent <= -100.0
     {
         return Err("real_interest_rate_percent must be finite and greater than -100".to_string());
     }
@@ -514,8 +521,7 @@ mod tests {
     #[test]
     fn solves_break_even_and_qecon_one_point_five_thresholds() {
         let design = literature_example_design();
-        let break_even =
-            required_fusion_power_density_for_qecon(&design, 1.0).unwrap();
+        let break_even = required_fusion_power_density_for_qecon(&design, 1.0).unwrap();
         let q15 = required_fusion_power_density_for_qecon(&design, 1.5).unwrap();
 
         // The paper's illustrative solution reports approximately 1.9 MW/m²
@@ -564,10 +570,12 @@ mod tests {
             design: design.clone(),
         })
         .unwrap();
-        assert!((result.fixed_cost_rate_musd_per_m2_year
-            - design.plant_areal_cost_musd_per_m2 / f64::from(design.plant_lifetime_years))
-        .abs()
-            < 1e-12);
+        assert!(
+            (result.fixed_cost_rate_musd_per_m2_year
+                - design.plant_areal_cost_musd_per_m2 / f64::from(design.plant_lifetime_years))
+            .abs()
+                < 1e-12
+        );
     }
 
     #[test]
@@ -599,9 +607,7 @@ mod tests {
 
     #[test]
     fn derives_qecon_efficiency_only_from_complete_plant_power_balance() {
-        use crate::plant_energy_balance::{
-            PlantPowerBalanceInput, calculate_plant_power_balance,
-        };
+        use crate::plant_energy_balance::{PlantPowerBalanceInput, calculate_plant_power_balance};
 
         let complete = PlantPowerBalanceInput {
             fusion_thermal_power_w: 1_000_000_000.0,
