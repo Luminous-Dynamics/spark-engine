@@ -329,14 +329,10 @@ pub fn rank_qecon_global_associations(
             left.spearman_rank_correlation,
             right.spearman_rank_correlation,
         ) {
-            (Some(left_value), Some(right_value)) => {
-                right_value.abs().total_cmp(&left_value.abs())
-            }
+            (Some(left_value), Some(right_value)) => right_value.abs().total_cmp(&left_value.abs()),
             (Some(_), None) => std::cmp::Ordering::Less,
             (None, Some(_)) => std::cmp::Ordering::Greater,
-            (None, None) => {
-                left.parameter.index().cmp(&right.parameter.index())
-            }
+            (None, None) => left.parameter.index().cmp(&right.parameter.index()),
         }
     });
     Ok(associations)
@@ -350,9 +346,7 @@ fn average_ranks(values: &[f64]) -> Vec<f64> {
     while start < ordered_indices.len() {
         let first_value = values[ordered_indices[start]];
         let mut end = start + 1;
-        while end < ordered_indices.len()
-            && values[ordered_indices[end]] == first_value
-        {
+        while end < ordered_indices.len() && values[ordered_indices[end]] == first_value {
             end += 1;
         }
         // Ranks are 1-based; tied values receive their average rank.
@@ -390,7 +384,9 @@ fn pearson_correlation(left: &[f64], right: &[f64]) -> Option<f64> {
         return None;
     }
     let correlation = covariance / denominator;
-    correlation.is_finite().then_some(correlation.clamp(-1.0, 1.0))
+    correlation
+        .is_finite()
+        .then_some(correlation.clamp(-1.0, 1.0))
 }
 
 /// Triangular marginal distribution for one Q_econ parameter.
@@ -1068,8 +1064,12 @@ mod tests {
             }
         }));
         assert!(associations.iter().all(|entry| {
-            entry.pearson_correlation.is_none_or(|value| (-1.0..=1.0).contains(&value))
-                && entry.spearman_rank_correlation.is_none_or(|value| (-1.0..=1.0).contains(&value))
+            entry
+                .pearson_correlation
+                .is_none_or(|value| (-1.0..=1.0).contains(&value))
+                && entry
+                    .spearman_rank_correlation
+                    .is_none_or(|value| (-1.0..=1.0).contains(&value))
         }));
     }
 
@@ -1098,13 +1098,18 @@ mod tests {
             .iter()
             .find(|entry| entry.parameter == QeconParameter::SurfaceReplacementTime)
             .unwrap();
-        assert_eq!(replacement_time_association.spearman_rank_correlation, Some(-1.0));
-        assert!(associations.iter().filter(|entry| {
-            entry.parameter != QeconParameter::SurfaceReplacementTime
-        }).all(|entry| {
-            entry.pearson_correlation.is_none()
-                && entry.spearman_rank_correlation.is_none()
-        }));
+        assert_eq!(
+            replacement_time_association.spearman_rank_correlation,
+            Some(-1.0)
+        );
+        assert!(
+            associations
+                .iter()
+                .filter(|entry| { entry.parameter != QeconParameter::SurfaceReplacementTime })
+                .all(|entry| {
+                    entry.pearson_correlation.is_none() && entry.spearman_rank_correlation.is_none()
+                })
+        );
     }
 
     #[test]
@@ -1120,8 +1125,7 @@ mod tests {
         let result = propagate_qecon_uncertainty(&base, &scenario).unwrap();
         let associations = rank_qecon_global_associations(&result).unwrap();
         assert!(associations.iter().all(|entry| {
-            entry.pearson_correlation.is_none()
-                && entry.spearman_rank_correlation.is_none()
+            entry.pearson_correlation.is_none() && entry.spearman_rank_correlation.is_none()
         }));
     }
 
