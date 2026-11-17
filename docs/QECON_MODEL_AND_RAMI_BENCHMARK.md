@@ -174,7 +174,7 @@ This is not a calibrated forecast. No distribution is inferred automatically fro
 The module now includes a standard independent-input variance-based sensitivity design. It:
 - requires an explicit declaration that all ten input marginals are independent;
 - samples two independent base designs A/B and computes one hybrid A-with-column-i-from-B per parameter;
-- estimates first-order indices with the Saltelli covariance estimator;
+- estimates first-order indices with a mean-centered Saltelli covariance estimator to reduce finite-sample noise;
 - estimates total-order indices with the Jansen squared-difference estimator;
 - reports sample seed, number of model evaluations, output variance and the full marginal definitions;
 - leaves finite-sample excursions outside [0, 1] visible rather than clipping them.
