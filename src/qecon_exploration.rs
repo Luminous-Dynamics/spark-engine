@@ -462,10 +462,8 @@ pub fn propagate_qecon_scenario_uncertainty(
         );
     }
 
-    let result = propagate_qecon_uncertainty(
-        &scenario.base_scenario.input,
-        &scenario.uncertainty_input,
-    )?;
+    let result =
+        propagate_qecon_uncertainty(&scenario.base_scenario.input, &scenario.uncertainty_input)?;
     Ok(QeconUncertaintyScenarioResult {
         scenario_id: base_result.scenario_id,
         model_revision: base_result.model_revision,
@@ -1030,12 +1028,18 @@ mod tests {
         };
         let result = propagate_qecon_scenario_uncertainty(&scenario).unwrap();
         assert_eq!(result.scenario_id, "scenario-2026-a");
-        assert_eq!(result.evidence_class, QeconEvidenceClass::ScenarioAssumption);
+        assert_eq!(
+            result.evidence_class,
+            QeconEvidenceClass::ScenarioAssumption
+        );
         assert_eq!(result.base_input_digest_sha256, "a".repeat(64));
         assert_eq!(result.uncertainty_input_digest_sha256, "b".repeat(64));
         assert_eq!(result.result.seed, 0x5eed);
         assert_eq!(result.base_assumptions, scenario.base_scenario.assumptions);
-        assert_eq!(result.uncertainty_assumptions, scenario.uncertainty_assumptions);
+        assert_eq!(
+            result.uncertainty_assumptions,
+            scenario.uncertainty_assumptions
+        );
     }
 
     #[test]
