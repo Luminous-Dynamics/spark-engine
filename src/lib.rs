@@ -75,6 +75,9 @@ pub mod plant_energy_balance;
 // Q_econ surface-normalized fusion-plant economics
 pub mod qecon;
 
+// Evidence-aware comparison of Q_econ thresholds with declared engineering power-density limits
+pub mod qecon_feasibility;
+
 // Sensitivity, scenario sweeps and correlated uncertainty for Q_econ
 pub mod qecon_exploration;
 
@@ -125,6 +128,10 @@ pub use qecon::{
     QeconInput, QeconResult, QeconScenario, QeconScenarioResult, calculate_qecon,
     calculate_qecon_asymptotic_limits, calculate_qecon_scenario,
     net_electric_efficiency_from_power_balance, required_fusion_power_density_for_qecon,
+};
+pub use qecon_feasibility::{
+    QECON_FEASIBILITY_REVISION, QeconEnvelopeStatus, QeconFeasibilityResult,
+    QeconFeasibilityScenario, QeconPowerDensityEnvelope, evaluate_qecon_power_density_envelope,
 };
 pub use qecon_exploration::{
     DifferenceMethod, MAX_QECON_UNCERTAINTY_SAMPLES, QECON_EXPLORATION_REVISION,
