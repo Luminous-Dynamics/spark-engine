@@ -372,9 +372,7 @@ pub fn estimate_qecon_sobol_indices(
             let index = parameter.index();
             QeconSobolIndex {
                 parameter,
-                first_order_index: first_order_sums[index]
-                    / sample_count as f64
-                    / output_variance,
+                first_order_index: first_order_sums[index] / sample_count as f64 / output_variance,
                 total_order_index: total_order_sums[index]
                     / (2.0 * sample_count as f64)
                     / output_variance,
@@ -1251,9 +1249,7 @@ mod tests {
         let efficiency = design
             .marginals
             .iter_mut()
-            .find(|marginal| {
-                marginal.parameter == QeconParameter::NetEnergyConversionEfficiency
-            })
+            .find(|marginal| marginal.parameter == QeconParameter::NetEnergyConversionEfficiency)
             .unwrap();
         efficiency.minimum = 0.3;
         efficiency.mode = 0.4;
