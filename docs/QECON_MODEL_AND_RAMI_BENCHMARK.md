@@ -250,6 +250,12 @@ The numbers below are **qualification targets**, not results achieved by Spark. 
 
 For disruption prediction specifically, the DisruptionBench figures are baselines to reproduce before trying to beat them; the 0.90 AUC / 0.70 F2 figures above are our proposed stretch goals, not reported results. For neutronics, the current OpenMC-Fusion-Benchmarks proof-of-concept scope must not be represented as a fully mature fusion-plant benchmark suite. For hydride yield, raw-data reproduction must wait for the stated release date; the source paper's fitted values do not establish net energy production.
 
+## Project-finance extension beyond steady-state Q_econ
+
+Q_econ and its effective-LCOE proxy are steady-state design screens, not complete project-finance models. The 2026 Q_econ paper itself identifies omitted financing and lifecycle dimensions: working-capital swings around target procurement and surface replacement, interest during construction, ramp-up liquidity, covenant risk, decommissioning, waste-handling reserves and residual/salvage value.
+
+Spark tracks this separately in [issue #23](https://github.com/Luminous-Dynamics/spark-engine/issues/23). The eventual model should consume qualified component-life and outage distributions from RAMI, then time-phase construction drawdowns, inventory, replacement campaigns, production, restart/ramp-up and end-of-life liabilities. Its outputs should include NPV, project/equity IRR, liquidity trough, working-capital requirement and downside-tail exposure alongside—never substituted for—Q_econ and plant LCOE.
+
 ## External RAMI and remote-maintenance evidence (2025–2026)
 
 The engineering feasibility layer should be benchmarked against real published maintenance cases rather than a generic MTBF/MTTR toy model.
