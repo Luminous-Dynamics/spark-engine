@@ -349,11 +349,12 @@ pub fn required_fusion_power_density_for_qecon(
 pub struct QeconAsymptoticLimits {
     /// Finite Q_econ ceiling, or `None` if Q_econ grows without a finite bound.
     pub maximum_q_econ: Option<f64>,
-    /// Positive net economic rate ceiling, or `None` if it grows without a
-    /// finite bound. Units: MUSD/(m²·calendar year).
-    pub maximum_net_economic_rate_musd_per_m2_year: Option<f64>,
+    /// Whether Q_econ >= 1 is attainable at a finite positive power density
+    /// under the supplied mathematical assumptions.
+    pub finite_density_break_even_possible: bool,
     /// Marginal gain coefficient less the target and surface-replacement
-    /// coefficients, A = A1 - A2 - A3 in the paper.
+    /// coefficients, A = A1 - A2 - A3 in the paper. A must be positive for
+    /// finite-density economic break-even to be possible.
     pub marginal_economic_value_coefficient: f64,
 }
 
@@ -367,10 +368,9 @@ pub struct QeconAsymptoticLimits {
 /// - B = tau_rep / X_S
 /// - C_fixed = (MUSD/S)_FPP * CRF(i, tau_life)
 /// - Q_econ,max = A1 / (A2 + A3 + B*C_fixed)
-/// - C_net,max = (A1 - A2 - A3) / B - C_fixed
 ///
 /// A zero denominator with positive numerator represents an unbounded
-/// mathematical limit; it is returned as `None` rather than infinity.
+/// mathematical Q_econ ceiling; it is returned as `None` rather than infinity.
 pub fn calculate_qecon_asymptotic_limits(
     design: &QeconDesignParameters,
 ) -> Result<QeconAsymptoticLimits, String> {
@@ -405,6 +405,9 @@ pub fn calculate_qecon_asymptotic_limits(
         return Err("Q_econ asymptotic coefficients are not finite".to_string());
     }
 
+    if qecon_denominator < 0.0 {
+        return Err("Q_econ asymptotic cost coefficient must be non-negative".to_string());
+    }
     let maximum_q_econ = if qecon_denominator > 0.0 {
         Some(gain_coefficient / qecon_denominator)
     } else if gain_coefficient == 0.0 {
@@ -412,30 +415,15 @@ pub fn calculate_qecon_asymptotic_limits(
     } else {
         None
     };
-
-    let maximum_net_economic_rate_musd_per_m2_year =
-        if replacement_time_coefficient > 0.0 {
-            Some(
-                marginal_economic_value_coefficient / replacement_time_coefficient
-                    - fixed_cost,
-            )
-        } else if marginal_economic_value_coefficient <= 0.0 {
-            Some(f64::NEG_INFINITY)
-        } else {
-            None
-        };
-
-    if maximum_q_econ.is_some_and(|value| !value.is_finite())
-        || maximum_net_economic_rate_musd_per_m2_year
-            .is_some_and(|value| !value.is_finite())
-            && maximum_net_economic_rate_musd_per_m2_year != Some(f64::NEG_INFINITY)
-    {
-        return Err("Q_econ asymptotic limits are not finite".to_string());
+    if maximum_q_econ.is_some_and(|value| !value.is_finite()) {
+        return Err("Q_econ asymptotic ceiling is not finite".to_string());
     }
+    let finite_density_break_even_possible =
+        maximum_q_econ.is_none_or(|maximum| maximum > 1.0);
 
     Ok(QeconAsymptoticLimits {
         maximum_q_econ,
-        maximum_net_economic_rate_musd_per_m2_year,
+        finite_density_break_even_possible,
         marginal_economic_value_coefficient,
     })
 }
@@ -736,7 +724,8 @@ mod tests {
         let limits = calculate_qecon_asymptotic_limits(&design).unwrap();
         let maximum = limits.maximum_q_econ.unwrap();
         assert!(maximum > 3.0 && maximum < 3.3);
-        assert!(limits.maximum_net_economic_rate_musd_per_m2_year.unwrap() > 0.0);
+        assert!(limits.finite_density_break_even_possible);
+        assert!(limits.marginal_economic_value_coefficient > 0.0);
 
         let just_below_limit =
             required_fusion_power_density_for_qecon(&design, maximum * 0.99).unwrap();
@@ -752,7 +741,7 @@ mod tests {
         design.target_cost_per_energy_yield_usd_per_mj = 0.0;
         let limits = calculate_qecon_asymptotic_limits(&design).unwrap();
         assert_eq!(limits.maximum_q_econ, None);
-        assert_eq!(limits.maximum_net_economic_rate_musd_per_m2_year, None);
+        assert!(limits.finite_density_break_even_possible);
     }
 
     #[test]
