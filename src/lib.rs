@@ -81,6 +81,10 @@ pub mod qecon_exploration;
 // Conditional robust-viability assessment with independent validation ensemble
 pub mod qecon_robust;
 
+// Weighted deterministic and chance-constrained design projections
+pub mod qecon_projection;
+pub mod qecon_chance_projection;
+
 // First-order reliability/availability screening (not full RAMI)
 pub mod plant_availability;
 
@@ -137,6 +141,18 @@ pub use qecon_exploration::{
     QeconUncertaintySample, QeconUncertaintyScenario, QeconUncertaintyScenarioResult,
     estimate_qecon_sobol_indices, propagate_qecon_scenario_uncertainty,
     propagate_qecon_uncertainty, rank_qecon_global_associations, rank_qecon_sensitivities,
+};
+pub use qecon_projection::{
+    QECON_PROJECTION_MAX_LIFETIME_SPAN_YEARS, QECON_PROJECTION_REVISION,
+    QeconProjectionBound, QeconProjectionBoundState, QeconProjectionParameterResult,
+    QeconProjectionStatus, QeconWeightedProjectionInput, QeconWeightedProjectionResult,
+    project_qecon_to_viability,
+};
+pub use qecon_chance_projection::{
+    MAX_CHANCE_CANDIDATE_EVALUATIONS, MAX_CHANCE_COORDINATE_SWEEPS,
+    QECON_CHANCE_PROJECTION_REVISION, QeconChanceProjectionInput,
+    QeconChanceProjectionResult, QeconChanceProjectionSearchStatus,
+    project_qecon_to_chance_constrained_viability,
 };
 pub use qecon_robust::{
     QECON_ROBUST_ASSESSMENT_REVISION, QeconRobustAssessmentResult,
