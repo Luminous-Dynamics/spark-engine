@@ -77,7 +77,7 @@ The new `src/plant_availability.rs` module provides a deterministic steady-state
 - fail-closed withholding of total calendar availability when the critical-system boundary is incomplete;
 - versioned model identity and explicit assumptions in the result.
 
-This model is intentionally limited. It assumes independent component states within groups and conditionally independent system-level planned-maintenance/common-cause factors. It has no failure event timeline, repair queue, hot-cell bottleneck, remote-handling recovery model, common-cause event tree or uncertainty propagation. It must not be called a validated RAMI simulator or a Q_ENG implementation.
+This model is intentionally limited. The module assumes independent component states within each group and independent group states when required groups are multiplied in series. Planned-maintenance and common-cause factors are conditional system-level multipliers that must be independent of the component/group availability already modelled and of one another. It assumes independent component states within groups and conditionally independent system-level planned-maintenance/common-cause factors. It has no failure event timeline, repair queue, hot-cell bottleneck, remote-handling recovery model, common-cause event tree or uncertainty propagation. It must not be called a validated RAMI simulator or a Q_ENG implementation.
 
 Next increments should represent repair queues, multi-step maintenance and qualification, hot-cell throughput, spares, remote-handling tool recovery, common-cause event trees, correlated failures and seeded stochastic replay. A separate EBI-style score, if implemented at all, must remain a versioned, explainable rubric rather than a physical constant.
 
