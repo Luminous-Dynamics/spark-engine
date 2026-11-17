@@ -193,8 +193,8 @@ pub mod prelude {
     pub use crate::neutron_source::{NeutronSourceDesign, NeutronSourceDesigner, SourceSpec};
     pub use crate::physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
     pub use crate::plant_availability::{
-        AvailabilityGroup, ComponentRepairProfile, PlantAvailabilityInput,
-        PlantAvailabilityResult, calculate_plant_availability,
+        AvailabilityGroup, ComponentRepairProfile, PlantAvailabilityInput, PlantAvailabilityResult,
+        calculate_plant_availability,
     };
 
     pub use crate::plant_energy_balance::{
