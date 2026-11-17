@@ -78,6 +78,9 @@ pub mod qecon;
 // Sensitivity, scenario sweeps and correlated uncertainty for Q_econ
 pub mod qecon_exploration;
 
+// Weighted closest-viable-design projection for Q_econ
+pub mod qecon_projection;
+
 // First-order reliability/availability screening (not full RAMI)
 pub mod plant_availability;
 
@@ -125,6 +128,12 @@ pub use qecon::{
     QeconInput, QeconResult, QeconScenario, QeconScenarioResult, calculate_qecon,
     calculate_qecon_asymptotic_limits, calculate_qecon_scenario,
     net_electric_efficiency_from_power_balance, required_fusion_power_density_for_qecon,
+};
+pub use qecon_projection::{
+    QECON_PROJECTION_MAX_LIFETIME_SPAN_YEARS, QECON_PROJECTION_REVISION,
+    QeconProjectionBound, QeconProjectionBoundState, QeconProjectionParameterResult,
+    QeconProjectionStatus, QeconWeightedProjectionInput, QeconWeightedProjectionResult,
+    project_qecon_to_viability,
 };
 pub use qecon_exploration::{
     DifferenceMethod, MAX_QECON_UNCERTAINTY_SAMPLES, QECON_EXPLORATION_REVISION,
