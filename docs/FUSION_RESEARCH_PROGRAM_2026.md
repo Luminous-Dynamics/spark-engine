@@ -28,7 +28,29 @@ Primary sources:
 
 Implication: treat LCF as an anomaly and condensed-matter nuclear-reaction research programme. Do not describe it as an energy-producing reactor. Prioritize independent replication, detector/background controls, full spectra, isotopic controls, synchronized calorimetry and complete trigger-energy accounting before any scale-up claim.
 
-### 2.2 Magnetic fusion and industry
+### 2.2 Materials-assisted sub-keV D-D fusion (2026)
+
+A significant new result was published in *Nature Communications* on 18 July 2026:
+
+- Karahadian et al., *Enhanced nuclear fusion in the sub-keV energy regime*, Nature Communications 17, 8845 (2026): https://doi.org/10.1038/s41467-026-74421-1
+- Full text: https://pmc.ncbi.nlm.nih.gov/articles/PMC13500673/
+- Public data: https://doi.org/10.5281/zenodo.20435774
+
+The study combines a low-energy deuterium ion beam with electrochemical deuterium loading of 250 µm Pd and Ti foils. The center-of-mass beam-energy range is 0.25–6.5 keV. It reports a reproducible relative-yield plateau below approximately 2 keV and an enhancement approaching or exceeding 10^18 relative to a bare-nucleus model at 0.25 keV.
+
+Important measurement boundaries:
+- The reported values are **relative thick-target yields**, normalized to the 6.5 keV reference, and enhancement factors relative to a Bosch–Hale bare-nucleus yield model. They are not absolute reactor power or a calorimetric energy-gain measurement.
+- Proton spectra are the primary yield diagnostic below 3 keV. Neutron measurements provide an independent check in the overlapping higher-energy regime; do not imply low-energy neutron spectroscopy at every point.
+- The study reports more than 350 hours of stable background measurements, no fusion-like signal during electrochemical loading without ion-beam excitation, and greater than 98% gamma rejection in the neutron detector.
+- A constant homogeneous screening potential fitted in the 2.5–6.5 keV regime does not describe the lower-energy plateau. The authors use a phenomenological two-environment / energy-dependent effective-screening model; they explicitly state that this is not a unique microscopic explanation.
+- At high energy, the fitted effective screening potentials are Pd 0.8 ± 0.2 keV (beam-only) and 1.7 ± 0.2 keV (electrochemically loaded); Ti 0.3 ± 0.2 keV and 0.9 ± 0.2 keV, respectively. These are condition- and model-specific effective parameters, not universal constants for Pd or Ti.
+- The paper explicitly says condensed-matter fusion is not presently relevant for energy production.
+
+This is a separate evidence track from NASA's bremsstrahlung-triggered LCF work. The Nature study uses ion-beam excitation and electrochemical loading, with the beam providing the incident energy. It should not be represented as passive, self-sustaining room-temperature fusion or as evidence of net energy gain.
+
+**New Spark Engine priority:** reproduce the published relative-yield curves from the Zenodo data; reconstruct the stopping-weighted thick-target integral; compare constant-screening and heterogeneous-depth models; propagate beam-energy, stopping-power, charge-normalization and counting uncertainties; then test cross-material and loading-regime predictions on held-out data. Preserve the distinction between measured relative yield and the model-derived enhancement ratio.
+
+### 2.3 Magnetic fusion and industry
 
 The DOE's finalized June 2026 Fusion Science and Technology Roadmap organizes common gaps across structural materials, plasma-facing components, confinement, fuel cycle/tritium processing, blankets, and plant engineering/system integration. It explicitly elevates AI, advanced computing, infrastructure and public/private coordination.
 
