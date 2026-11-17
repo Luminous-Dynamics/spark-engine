@@ -130,8 +130,9 @@ pub use qecon_exploration::{
     DifferenceMethod, MAX_QECON_UNCERTAINTY_SAMPLES, QECON_EXPLORATION_REVISION,
     QECON_PARAMETER_COUNT, QeconParameter, QeconProbabilityEstimate, QeconScalarStatistics,
     QeconSensitivityEstimate, QeconTriangularMarginal, QeconUncertaintyInput,
-    QeconUncertaintyResult, QeconUncertaintySample, propagate_qecon_uncertainty,
-    rank_qecon_sensitivities,
+    QeconUncertaintyResult, QeconUncertaintySample, QeconUncertaintyScenario,
+    QeconUncertaintyScenarioResult, propagate_qecon_scenario_uncertainty,
+    propagate_qecon_uncertainty, rank_qecon_sensitivities,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
