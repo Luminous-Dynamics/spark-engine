@@ -111,7 +111,7 @@ pub use plant_energy_balance::{
 pub use qecon::{
     QECON_MODEL_REVISION, QeconDesignParameters, QeconEvidenceClass, QeconInput, QeconResult,
     QeconScenario, QeconScenarioResult, calculate_qecon, calculate_qecon_scenario,
-    required_fusion_power_density_for_qecon,
+    net_electric_efficiency_from_power_balance, required_fusion_power_density_for_qecon,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
@@ -189,7 +189,8 @@ pub mod prelude {
     };
     pub use crate::qecon::{
         QeconDesignParameters, QeconEvidenceClass, QeconInput, QeconResult, QeconScenario,
-        calculate_qecon, calculate_qecon_scenario, required_fusion_power_density_for_qecon,
+        calculate_qecon, calculate_qecon_scenario, net_electric_efficiency_from_power_balance,
+        required_fusion_power_density_for_qecon,
     };
     pub use crate::shielding::{NeutronShielding, ShieldingResult};
 
