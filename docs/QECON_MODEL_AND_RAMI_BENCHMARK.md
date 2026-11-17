@@ -65,7 +65,21 @@ A September 2026 paper, Tesini, *An availability-centric Q-metrics framework for
 
 **Important nomenclature warning:** that paper's Q_ENG is not the conventional electrical engineering gain ratio. It is an availability/engineering-burden construct. The same work distinguishes Q_GLOBAL from Q_PLANT. Spark must not use the name Q_ENG for net electric gain or merge these meanings.
 
-The Q_ENG/EBI paper is a useful research direction, but its published concept values and normalization bands are described as indicative and judgement-based, not experimentally validated or community-standard. Accordingly, Spark will not hard-code those bands as accepted engineering truth. We will implement independently auditable RAMI quantities first: component MTBF, MTTR, scheduled outage duration, parallel maintenance capacity, remote-handling recovery, common-cause failures, hot-cell throughput and uncertainty in outage duration. Any derived EBI-style score will be clearly labelled as a versioned assessment rubric, not a physical constant.
+The Q_ENG/EBI paper is a useful research direction, but its published concept values and normalization bands are described as indicative and judgement-based, not experimentally validated or community-standard. Spark will not hard-code those bands as accepted engineering truth.
+
+### Implemented first availability slice
+
+The new `src/plant_availability.rs` module provides a deterministic steady-state screening model:
+- MTBF/(MTBF+MTTR) component availability;
+- heterogeneous N-of-M component groups using a Poisson-binomial calculation;
+- series combination of required groups;
+- explicit planned-maintenance and common-cause availability factors;
+- fail-closed withholding of total calendar availability when the critical-system boundary is incomplete;
+- versioned model identity and explicit assumptions in the result.
+
+This model is intentionally limited. It assumes independent component states within groups and conditionally independent system-level planned-maintenance/common-cause factors. It has no failure event timeline, repair queue, hot-cell bottleneck, remote-handling recovery model, common-cause event tree or uncertainty propagation. It must not be called a validated RAMI simulator or a Q_ENG implementation.
+
+Next increments should represent repair queues, multi-step maintenance and qualification, hot-cell throughput, spares, remote-handling tool recovery, common-cause event trees, correlated failures and seeded stochastic replay. A separate EBI-style score, if implemented at all, must remain a versioned, explainable rubric rather than a physical constant.
 
 ## Benchmark programme
 
