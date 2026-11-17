@@ -628,16 +628,24 @@ fn wilson_probability_estimate(successes: u32, sample_count: u32) -> QeconProbab
     let z_squared = Z_95 * Z_95;
     let denominator = 1.0 + z_squared / n;
     let center = (observed + z_squared / (2.0 * n)) / denominator;
-    let half_width = Z_95 / denominator
-        * (observed * (1.0 - observed) / n
-            + z_squared / (4.0 * n * n))
-            .sqrt();
+    let half_width =
+        Z_95 / denominator * (observed * (1.0 - observed) / n + z_squared / (4.0 * n * n)).sqrt();
+    let lower = if successes == 0 {
+        0.0
+    } else {
+        (center - half_width).clamp(0.0, 1.0)
+    };
+    let upper = if successes == sample_count {
+        1.0
+    } else {
+        (center + half_width).clamp(0.0, 1.0)
+    };
     QeconProbabilityEstimate {
         successes,
         sample_count,
         probability_estimate: observed,
-        wilson_lower_95: (center - half_width).clamp(0.0, 1.0),
-        wilson_upper_95: (center + half_width).clamp(0.0, 1.0),
+        wilson_lower_95: lower,
+        wilson_upper_95: upper,
     }
 }
 
@@ -844,9 +852,8 @@ mod tests {
         assert_eq!(first.uncertainty_input, scenario);
         assert!(first.assumptions.len() >= 3);
         assert!(
-            (0.0..=1.0).contains(
-                &first.probability_q_econ_at_least_one.probability_estimate
-            )
+            (0.0..=1.0)
+                .contains(&first.probability_q_econ_at_least_one.probability_estimate)
         );
         assert!(
             first.probability_q_econ_at_least_one_point_five.probability_estimate
