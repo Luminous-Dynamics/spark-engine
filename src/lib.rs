@@ -104,13 +104,13 @@ pub use plant_energy_balance::{
     PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
     calculate_lcoe, calculate_plant_power_balance,
 };
+pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
     DatasetAvailability, DetectionChannel, HomogeneousScreeningFit, LoadingCondition,
     RelativeYieldPoint, RelativeYieldSeries, ScreeningParameterStatus, SubKevHostMaterial,
     YieldDataOrigin, YieldProvenance, alr_screening_enhancement,
     equivalent_homogeneous_screening_kev, published_high_energy_fits, two_environment_enhancement,
 };
-pub use shielding::{NeutronShielding, ShieldingResult};
 
 // Path C re-exports
 pub use experimental_design::{ExperimentDesign, ExperimentDesigner, ExperimentalProgram};
