@@ -207,9 +207,8 @@ fn probability_at_least_n_available(
     // represents exactly k components online after the processed inputs.
     let mut exactly_online = vec![0.0; component_availabilities.len() + 1];
     exactly_online[0] = 1.0;
-    let mut processed = 0_usize;
-
-    for availability in component_availabilities {
+    for (processed, availability) in component_availabilities.iter().enumerate() {
+        let availability = *availability;
         for count in (0..=processed + 1).rev() {
             let previous_same = if count <= processed {
                 exactly_online[count]
@@ -224,7 +223,6 @@ fn probability_at_least_n_available(
             exactly_online[count] =
                 previous_same * (1.0 - availability) + previous_one_fewer * availability;
         }
-        processed += 1;
     }
 
     exactly_online[minimum_online_components..]
@@ -292,8 +290,7 @@ fn validate_input(input: &PlantAvailabilityInput) -> Result<(), String> {
                     component.component_id
                 ));
             }
-            if !(component.mean_time_between_failures_hours
-                + component.mean_time_to_repair_hours)
+            if !(component.mean_time_between_failures_hours + component.mean_time_to_repair_hours)
                 .is_finite()
             {
                 return Err(format!(
@@ -410,7 +407,9 @@ mod tests {
         assert!(calculate_plant_availability(&scenario).is_err());
 
         let mut scenario = input();
-        scenario.required_groups[0].components.push(component("pump-a", 90.0, 10.0));
+        scenario.required_groups[0]
+            .components
+            .push(component("pump-a", 90.0, 10.0));
         assert!(calculate_plant_availability(&scenario).is_err());
 
         let mut scenario = input();
