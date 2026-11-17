@@ -304,6 +304,18 @@ This is conditional scenario analysis. The marginal ranges, modes and latent dep
 
 The sensitivity rank is a local dimensionless elasticity, not an intervention-cost rank. The weighted closest-viable-design projection from Whyte et al. is a separate optimization problem. A future implementation must keep the Q_econ viability boundary fixed while changing only stakeholder-supplied intervention weights, and should report a Pareto family rather than imply that one subjective weighting is uniquely correct.
 
+
+
+### 6.3 Q_econ global variance sensitivity
+
+Spark now distinguishes:
+- Local finite-difference elasticity around one reference point.
+- Pearson/Spearman descriptive associations over a supplied correlated ensemble.
+- Independent-input first-/total-order Sobol indices using Saltelli/Jansen estimators, guarded by an explicit independence declaration.
+- Planned dependent-input Shapley/Kucherenko attribution tracked in [Spark issue #20](https://github.com/Luminous-Dynamics/spark-engine/issues/20).
+
+No estimator should be applied outside its input-dependence assumptions. The dependent-input problem matters in the fusion economics domain because fluence limits, component replacement time, remote-handling access, repair duration and replacement cost may share common drivers. These associations must not be mistaken for causal effects or intervention-cost weights.
+
 ## 7. Cross-project division of responsibility
 
 | Project | Responsibility | Boundary |
