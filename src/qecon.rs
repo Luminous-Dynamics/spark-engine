@@ -385,23 +385,18 @@ pub fn calculate_qecon_asymptotic_limits(
         * design.net_energy_conversion_efficiency;
     let target_cost_coefficient =
         TARGET_RATE_CONVERSION * design.target_cost_per_energy_yield_usd_per_mj;
-    let replacement_cost_coefficient =
-        design.surface_replacement_cost_musd_per_m2
-            / design.surface_energy_fluence_limit_mw_year_per_m2;
+    let replacement_cost_coefficient = design.surface_replacement_cost_musd_per_m2
+        / design.surface_energy_fluence_limit_mw_year_per_m2;
     let replacement_time_coefficient =
-        design.surface_replacement_time_years
-            / design.surface_energy_fluence_limit_mw_year_per_m2;
+        design.surface_replacement_time_years / design.surface_energy_fluence_limit_mw_year_per_m2;
 
     let qecon_denominator = target_cost_coefficient
         + replacement_cost_coefficient
         + replacement_time_coefficient * fixed_cost;
-    let marginal_economic_value_coefficient = gain_coefficient
-        - target_cost_coefficient
-        - replacement_cost_coefficient;
+    let marginal_economic_value_coefficient =
+        gain_coefficient - target_cost_coefficient - replacement_cost_coefficient;
 
-    if !qecon_denominator.is_finite()
-        || !marginal_economic_value_coefficient.is_finite()
-    {
+    if !qecon_denominator.is_finite() || !marginal_economic_value_coefficient.is_finite() {
         return Err("Q_econ asymptotic coefficients are not finite".to_string());
     }
 
@@ -418,8 +413,7 @@ pub fn calculate_qecon_asymptotic_limits(
     if maximum_q_econ.is_some_and(|value| !value.is_finite()) {
         return Err("Q_econ asymptotic ceiling is not finite".to_string());
     }
-    let finite_density_break_even_possible =
-        maximum_q_econ.is_none_or(|maximum| maximum > 1.0);
+    let finite_density_break_even_possible = maximum_q_econ.is_none_or(|maximum| maximum > 1.0);
 
     Ok(QeconAsymptoticLimits {
         maximum_q_econ,
