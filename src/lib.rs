@@ -68,6 +68,9 @@ pub mod uncertainty;
 // Integration modules
 pub mod bridge;
 
+// Explicit plant power boundary and first-order economics
+pub mod plant_energy_balance;
+
 // Extended fusion physics (D-T, p-B11, muon-catalyzed)
 pub mod reactions;
 
@@ -94,6 +97,10 @@ pub use optimal_experiment::{
     greedy_sequence, rank_experiments, standard_candidate_experiments,
 };
 pub use physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
+pub use plant_energy_balance::{
+    PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
+    calculate_lcoe, calculate_plant_power_balance,
+};
 pub use shielding::{NeutronShielding, ShieldingResult};
 
 // Path C re-exports
@@ -158,6 +165,10 @@ pub mod prelude {
     pub use crate::lattice::{LatticeLifetime, LatticeState};
     pub use crate::neutron_source::{NeutronSourceDesign, NeutronSourceDesigner, SourceSpec};
     pub use crate::physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
+    pub use crate::plant_energy_balance::{
+        PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
+        calculate_lcoe, calculate_plant_power_balance,
+    };
     pub use crate::shielding::{NeutronShielding, ShieldingResult};
 
     // Path C: Anomaly investigation
