@@ -225,6 +225,25 @@ The next economics increment is a weighted closest-viable-design solver faithful
 
 Do not label the finite-difference ranking as the paper's weighted projection. Do not claim a globally closest viable design until the constrained optimization and independent oracle are implemented and validated.
 
+## Conditional robust-viability assessment
+
+A separate `qecon_robust` module now evaluates one nominal Q_econ candidate with two independent seeded ensembles:
+
+1. An optimization ensemble, whose seed can be reused across candidate designs to obtain common random numbers during comparisons.
+2. An untouched validation ensemble with a different seed, used only after the candidate has been selected.
+
+Uncertainty is expressed explicitly as multiplicative triangular factors or additive triangular offsets for each of the ten Q_econ parameters. This allows relative perturbations for fluence, efficiency, energy price and costs, and native-unit offsets for interest rates, target costs or integer plant lifetime. Zero nominal inputs need an additive uncertainty model if the zero itself is uncertain.
+
+The result reports Q_econ/utilization/net-rate distributions, P(Q_econ ≥ target), and Wilson 95% sampling intervals for both ensembles. A validation flag is set only when the independent validation ensemble's Wilson lower bound meets the caller's required probability threshold.
+
+### Interpretation and next step
+
+- This is a robust assessment of one candidate, not yet a chance-constrained design optimizer.
+- The probability is conditional on the supplied marginals, latent Gaussian dependence, Q_econ model and omitted-physics assumptions.
+- Wilson intervals quantify finite Monte Carlo sampling error only; they do not represent uncertainty in marginal assumptions, model discrepancy, heat exhaust or material physics.
+- Base scenario evidence class is inherited and never upgraded by sampling.
+- The follow-on [issue #27](https://github.com/Luminous-Dynamics/spark-engine/issues/27) covers chance-constrained weighted design projection, including separate optimization/validation seeds, common random numbers, sample-average approximation and held-out distribution stress tests.
+
 ## Quantitative benchmark scoreboard
 
 The numbers below are **qualification targets**, not results achieved by Spark. Comparisons must preserve the same task definition, dataset version, device/shot split, warning horizon, event threshold, units and uncertainty treatment.
