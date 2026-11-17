@@ -237,16 +237,17 @@ pub fn project_qecon_to_chance_constrained_viability(
                                 &mut candidate_evaluations,
                                 request.max_candidate_evaluations,
                             )?;
-                            if trial_estimate.as_ref().is_some_and(|estimate| {
-                                is_chance_feasible(
-                                    estimate,
-                                    robust.required_viability_probability,
-                                )
-                            }) {
-                                feasible_value = midpoint;
-                                feasible_estimate = trial_estimate.expect("checked some");
-                            } else {
-                                infeasible_value = midpoint;
+                            match trial_estimate {
+                                Some(estimate)
+                                    if is_chance_feasible(
+                                        &estimate,
+                                        robust.required_viability_probability,
+                                    ) =>
+                                {
+                                    feasible_value = midpoint;
+                                    feasible_estimate = estimate;
+                                }
+                                _ => infeasible_value = midpoint,
                             }
                             if (feasible_value - infeasible_value).abs()
                                 / feasible_value.abs().max(1e-12)
