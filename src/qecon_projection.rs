@@ -705,7 +705,6 @@ fn kkt_stationarity_residual(
     projected: &QeconInput,
     reference: &QeconInput,
     bounds: &[QeconProjectionBound; 10],
-    target: f64,
 ) -> Result<f64, String> {
     let values = input_values(projected);
     let mut objective_gradient = [0.0; 10];
@@ -824,12 +823,8 @@ fn build_projection_result(
             bound_state: bound_state(projected_value, bound),
         });
     }
-    let kkt_residual = kkt_stationarity_residual(
-        &projected_input,
-        &request.reference,
-        bounds,
-        request.target_q_econ,
-    )?;
+    let kkt_residual =
+        kkt_stationarity_residual(&projected_input, &request.reference, bounds)?;
 
     Ok(QeconWeightedProjectionResult {
         model_revision: QECON_MODEL_REVISION.to_string(),
@@ -840,7 +835,7 @@ fn build_projection_result(
         weighted_distance_squared: distance,
         kkt_stationarity_residual: kkt_residual,
         status,
-        integer_lifetime_candidates_examined,
+        integer_lifetime_candidates_examined: lifetime_candidates_examined,
         coordinate_sweeps,
         total_coordinate_sweeps,
         final_barrier_parameter,
@@ -893,7 +888,7 @@ mod tests {
                 let value = parameter.value(reference);
                 let (minimum, maximum, scale, difficulty_weight) =
                     if Some(parameter) == variable {
-                        let (minimum, maximum) = match parameter {
+                        let (minimum, maximum, scale) = match parameter {
                             QeconParameter::FusionPowerDensity => (value * 0.55, 6.0, 3.5),
                             QeconParameter::NetPriceOfEnergy => (value * 0.7, 250.0, 180.0),
                             _ => (value * 0.7, value * 1.5, value.max(1e-3)),
@@ -1087,9 +1082,6 @@ mod tests {
         let first = project_qecon_to_viability(&request).unwrap();
         let second = project_qecon_to_viability(&request).unwrap();
         assert_eq!(first, second);
-        assert_eq!(
-            first.projected_input.design.plant_lifetime_years.fract(),
-            0.0
-        );
+        assert_eq!(first.projected_input.design.plant_lifetime_years, 30);
     }
 }
