@@ -75,6 +75,9 @@ pub mod plant_energy_balance;
 // Q_econ surface-normalized fusion-plant economics
 pub mod qecon;
 
+// First-order reliability/availability screening (not full RAMI)
+pub mod plant_availability;
+
 // Evidence-aware sub-keV metallic hydride yield models
 pub mod sub_kev_yield;
 
@@ -104,6 +107,12 @@ pub use optimal_experiment::{
     greedy_sequence, rank_experiments, standard_candidate_experiments,
 };
 pub use physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
+pub use plant_availability::{
+    AVAILABILITY_MODEL_REVISION, AvailabilityGroup, AvailabilityGroupResult,
+    ComponentAvailabilityResult, ComponentRepairProfile, PlantAvailabilityInput,
+    PlantAvailabilityResult, calculate_plant_availability,
+};
+
 pub use plant_energy_balance::{
     PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
     calculate_lcoe, calculate_plant_power_balance,
@@ -183,6 +192,11 @@ pub mod prelude {
     pub use crate::lattice::{LatticeLifetime, LatticeState};
     pub use crate::neutron_source::{NeutronSourceDesign, NeutronSourceDesigner, SourceSpec};
     pub use crate::physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
+    pub use crate::plant_availability::{
+        AvailabilityGroup, ComponentRepairProfile, PlantAvailabilityInput,
+        PlantAvailabilityResult, calculate_plant_availability,
+    };
+
     pub use crate::plant_energy_balance::{
         PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
         calculate_lcoe, calculate_plant_power_balance,
