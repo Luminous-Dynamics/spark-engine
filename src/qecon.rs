@@ -23,6 +23,7 @@
 //! caller must account for recirculating loads and all internal power
 //! conversion before supplying it.
 
+use crate::plant_energy_balance::PlantPowerBalance;
 use serde::{Deserialize, Serialize};
 
 /// Revision label for this implementation of the published steady-state model.
@@ -30,8 +31,6 @@ pub const QECON_MODEL_REVISION: &str = "qecon-whyte-2026-v0.1";
 
 const GAIN_RATE_CONVERSION: f64 = 8.76e-3;
 const TARGET_RATE_CONVERSION: f64 = 31.5;
-const HOURS_PER_YEAR: f64 = 8_760.0;
-const MUSD_PER_USD: f64 = 1_000_000.0;
 
 /// Nine control parameters other than fusion power density.
 ///
@@ -258,6 +257,35 @@ pub fn calculate_qecon(input: &QeconInput) -> Result<QeconResult, String> {
         q_econ,
         effective_lcoe_usd_per_mwh,
     })
+}
+
+/// Derive the Q_econ net-efficiency input from a complete electrical
+/// plant-power ledger.
+///
+/// This is the electrical-product path only. It requires a complete auxiliary
+/// boundary and calculates P_net / P_f using net grid export and fusion thermal
+/// power. It deliberately refuses incomplete ledgers and values outside [0, 1].
+pub fn net_electric_efficiency_from_power_balance(
+    balance: &PlantPowerBalance,
+) -> Result<f64, String> {
+    if !balance.plant_boundary_complete {
+        return Err("plant boundary is incomplete; net efficiency is unavailable".to_string());
+    }
+    let net_export_w = balance
+        .net_electric_export_w
+        .ok_or_else(|| "complete plant balance has no net electric export".to_string())?;
+    if !balance.fusion_thermal_power_w.is_finite()
+        || balance.fusion_thermal_power_w <= 0.0
+        || !net_export_w.is_finite()
+        || net_export_w < 0.0
+    {
+        return Err("fusion power must be positive and net export must be non-negative".to_string());
+    }
+    let efficiency = net_export_w / balance.fusion_thermal_power_w;
+    if !efficiency.is_finite() || !(0.0..=1.0).contains(&efficiency) {
+        return Err("derived net electric efficiency must be finite and in [0, 1]".to_string());
+    }
+    Ok(efficiency)
 }
 
 /// Solve the paper's analytic threshold for the required fusion power density.
@@ -567,6 +595,37 @@ mod tests {
         design.net_energy_conversion_efficiency = 0.0;
         assert!(required_fusion_power_density_for_qecon(&design, 1.0).is_err());
         assert!(required_fusion_power_density_for_qecon(&design, f64::NAN).is_err());
+    }
+
+    #[test]
+    fn derives_qecon_efficiency_only_from_complete_plant_power_balance() {
+        use crate::plant_energy_balance::{
+            PlantPowerBalanceInput, calculate_plant_power_balance,
+        };
+
+        let complete = PlantPowerBalanceInput {
+            fusion_thermal_power_w: 1_000_000_000.0,
+            primary_energy_to_medium_w: 50_000_000.0,
+            primary_driver_wall_plug_power_w: 100_000_000.0,
+            thermal_capture_fraction: 0.9,
+            thermal_to_electric_efficiency: 0.4,
+            direct_electric_output_w: 0.0,
+            magnet_power_w: 20_000_000.0,
+            cryogenic_power_w: 10_000_000.0,
+            vacuum_and_pumping_power_w: 5_000_000.0,
+            fuel_cycle_power_w: 10_000_000.0,
+            cooling_and_heat_rejection_power_w: 15_000_000.0,
+            other_auxiliary_power_w: 5_000_000.0,
+            all_plant_auxiliaries_accounted_for: true,
+        };
+        let balance = calculate_plant_power_balance(&complete).unwrap();
+        let efficiency = net_electric_efficiency_from_power_balance(&balance).unwrap();
+        assert!((efficiency - 0.195).abs() < 1e-12);
+
+        let mut incomplete = complete;
+        incomplete.all_plant_auxiliaries_accounted_for = false;
+        let partial = calculate_plant_power_balance(&incomplete).unwrap();
+        assert!(net_electric_efficiency_from_power_balance(&partial).is_err());
     }
 
     #[test]
