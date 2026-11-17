@@ -328,7 +328,7 @@ impl QeconTriangularMarginal {
             self.maximum
                 - (((1.0 - uniform) * (self.maximum - self.minimum) * (self.maximum - self.mode))
                     .max(0.0))
-                    .sqrt()
+                .sqrt()
         }
     }
 }
