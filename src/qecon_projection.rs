@@ -118,7 +118,10 @@ pub struct QeconWeightedProjectionResult {
     pub kkt_stationarity_residual: f64,
     pub status: QeconProjectionStatus,
     pub integer_lifetime_candidates_examined: u32,
+    /// Coordinate sweeps used for the selected lifetime candidate.
     pub coordinate_sweeps: u64,
+    /// Total coordinate sweeps across all lifetime candidates evaluated.
+    pub total_coordinate_sweeps: u64,
     pub final_barrier_parameter: f64,
     pub parameter_results: Vec<QeconProjectionParameterResult>,
     pub assumptions: Vec<String>,
@@ -129,8 +132,8 @@ pub struct QeconWeightedProjectionResult {
 ///
 /// The optimization is a logarithmic-barrier path in log(theta) coordinates.
 /// For each permitted integer plant lifetime, the nine continuous parameters
-/// are optimized by cyclic exact-coordinate minimization (one-dimensional
-/// golden-section minimization inside the feasible coordinate interval).
+/// are optimized by cyclic bounded one-dimensional golden-section minimization
+/// (an approximate coordinate minimizer) inside the feasible interval.
 /// The best feasible endpoint across all integer lifetimes is returned.
 ///
 /// The paper's convexity/uniqueness result applies only on the strictly
@@ -152,6 +155,7 @@ pub fn project_qecon_to_viability(
                 &ordered_bounds,
                 request.reference.clone(),
                 QeconProjectionStatus::ReferenceAlreadyViable,
+                0,
                 0,
                 0,
                 0.0,
@@ -257,6 +261,7 @@ pub fn project_qecon_to_viability(
         best.input,
         best.status,
         candidates_examined.min(lifetime_candidates),
+        best.coordinate_sweeps as u64,
         total_sweeps,
         best.final_barrier_parameter,
     )
@@ -793,6 +798,7 @@ fn build_projection_result(
     status: QeconProjectionStatus,
     lifetime_candidates_examined: u32,
     coordinate_sweeps: u64,
+    total_coordinate_sweeps: u64,
     final_barrier_parameter: f64,
 ) -> Result<QeconWeightedProjectionResult, String> {
     let projected = calculate_qecon(&projected_input)?;
@@ -839,6 +845,7 @@ fn build_projection_result(
         status,
         integer_lifetime_candidates_examined,
         coordinate_sweeps,
+        total_coordinate_sweeps,
         final_barrier_parameter,
         parameter_results,
         assumptions: vec![
@@ -967,7 +974,7 @@ mod tests {
     #[test]
     fn stakeholder_weights_change_the_selected_endpoint_not_the_viability_rule() {
         let reference = reference_input(2.5);
-        let mut density_is_cheap = QeconWeightedProjectionInput {
+        let density_is_cheap = QeconWeightedProjectionInput {
             reference: reference.clone(),
             target_q_econ: 1.5,
             bounds: projection_bounds(
@@ -994,6 +1001,49 @@ mod tests {
             < second.projected_input.design.net_price_of_energy_usd_per_mwh);
         assert!(first.projected_q_econ >= density_is_cheap.target_q_econ);
         assert!(second.projected_q_econ >= price_is_cheap.target_q_econ);
+    }
+
+    #[test]
+    fn multiple_feasible_starts_converge_to_the_same_weighted_endpoint() {
+        let reference = reference_input(2.5);
+        let request = QeconWeightedProjectionInput {
+            reference: reference.clone(),
+            target_q_econ: 1.5,
+            bounds: projection_bounds(
+                &reference,
+                Some(QeconParameter::FusionPowerDensity),
+                Some(QeconParameter::NetPriceOfEnergy),
+                1.0,
+                1.0,
+            ),
+        };
+        let bounds = order_projection_bounds(&request.bounds).unwrap();
+        let corner = favourable_corner(&bounds);
+        let clamped = clamp_reference(&input_values(&reference), &bounds);
+        let near_boundary =
+            strict_feasible_start(&reference, &corner, &clamped, request.target_q_econ).unwrap();
+        let starts = [
+            interpolate(&corner, &near_boundary, 0.2),
+            interpolate(&corner, &near_boundary, 0.5),
+            interpolate(&corner, &near_boundary, 0.8),
+        ];
+        let mut objectives = Vec::new();
+        for start in starts {
+            let (values, _, converged, _) = optimize_fixed_lifetime(
+                &reference,
+                &bounds,
+                &start,
+                request.target_q_econ,
+            )
+            .unwrap();
+            assert!(converged);
+            assert!(q_at_values(&reference, &values).unwrap() >= request.target_q_econ);
+            let input = input_from_values(&reference, &values).unwrap();
+            objectives.push(weighted_distance_squared(&input, &reference, &bounds));
+        }
+        let minimum = objectives.iter().copied().fold(f64::INFINITY, f64::min);
+        let maximum = objectives.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        assert!((maximum - minimum) / minimum.max(1e-12) < 2e-3);
     }
 
     #[test]
