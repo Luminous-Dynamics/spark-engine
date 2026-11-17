@@ -324,17 +324,27 @@ fn validate_project_finance_input(input: &ProjectFinanceInput) -> Result<(), Str
         if period.year_index != expected_year as u32 {
             return Err("cash-flow periods must be contiguous and start at year_index 0".to_string());
         }
-        let values = [
-            period.production_mwh,
-            period.realized_price_per_mwh,
+        if !period.production_mwh.is_finite()
+            || period.production_mwh < 0.0
+            || !period.realized_price_per_mwh.is_finite()
+        {
+            return Err(format!(
+                "production must be finite/non-negative and realized electricity price must be finite in year {}",
+                period.year_index
+            ));
+        }
+        let non_negative_values = [
             period.other_product_revenue,
             period.salvage_revenue,
             period.working_capital_increase,
             period.working_capital_release,
         ];
-        if values.iter().any(|value| !value.is_finite() || *value < 0.0) {
+        if non_negative_values
+            .iter()
+            .any(|value| !value.is_finite() || *value < 0.0)
+        {
             return Err(format!(
-                "production, revenue, salvage and working-capital values must be finite and non-negative in year {}",
+                "other-product revenue, salvage and working-capital values must be finite and non-negative in year {}",
                 period.year_index
             ));
         }
@@ -529,6 +539,17 @@ mod tests {
         assert_eq!(result.ending_working_capital, 0.0);
         assert_eq!(result.minimum_cumulative_cash_before_financing, -110.0);
         assert_eq!(result.ending_cumulative_cash_before_financing, 30.0);
+    }
+
+    #[test]
+    fn supports_negative_realized_electricity_prices() {
+        let mut year = period(0);
+        year.production_mwh = 100.0;
+        year.realized_price_per_mwh = -25.0;
+        let result = evaluate_project_cashflow(&input(vec![year])).unwrap();
+        assert_eq!(result.periods[0].energy_revenue, -2500.0);
+        assert_eq!(result.periods[0].net_project_cashflow, -2500.0);
+        assert_eq!(result.net_present_value, -2500.0);
     }
 
     #[test]
