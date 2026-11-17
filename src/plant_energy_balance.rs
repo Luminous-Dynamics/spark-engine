@@ -86,13 +86,22 @@ pub fn calculate_plant_power_balance(
 ) -> Result<PlantPowerBalance, String> {
     let non_negative = [
         ("fusion_thermal_power_w", input.fusion_thermal_power_w),
-        ("primary_driver_wall_plug_power_w", input.primary_driver_wall_plug_power_w),
+        (
+            "primary_driver_wall_plug_power_w",
+            input.primary_driver_wall_plug_power_w,
+        ),
         ("direct_electric_output_w", input.direct_electric_output_w),
         ("magnet_power_w", input.magnet_power_w),
         ("cryogenic_power_w", input.cryogenic_power_w),
-        ("vacuum_and_pumping_power_w", input.vacuum_and_pumping_power_w),
+        (
+            "vacuum_and_pumping_power_w",
+            input.vacuum_and_pumping_power_w,
+        ),
         ("fuel_cycle_power_w", input.fuel_cycle_power_w),
-        ("cooling_and_heat_rejection_power_w", input.cooling_and_heat_rejection_power_w),
+        (
+            "cooling_and_heat_rejection_power_w",
+            input.cooling_and_heat_rejection_power_w,
+        ),
         ("other_auxiliary_power_w", input.other_auxiliary_power_w),
     ];
     for (name, value) in non_negative {
@@ -104,9 +113,7 @@ pub fn calculate_plant_power_balance(
         }
     }
 
-    if !input.primary_energy_to_medium_w.is_finite()
-        || input.primary_energy_to_medium_w <= 0.0
-    {
+    if !input.primary_energy_to_medium_w.is_finite() || input.primary_energy_to_medium_w <= 0.0 {
         return Err("primary_energy_to_medium_w must be finite and positive".to_string());
     }
     if !input.primary_driver_wall_plug_power_w.is_finite()
@@ -125,12 +132,9 @@ pub fn calculate_plant_power_balance(
         return Err("thermal_to_electric_efficiency must be finite and in [0, 1]".to_string());
     }
 
-    let captured_thermal_power_w =
-        input.fusion_thermal_power_w * input.thermal_capture_fraction;
-    let thermal_electric_output_w =
-        captured_thermal_power_w * input.thermal_to_electric_efficiency;
-    let gross_electric_output_w =
-        thermal_electric_output_w + input.direct_electric_output_w;
+    let captured_thermal_power_w = input.fusion_thermal_power_w * input.thermal_capture_fraction;
+    let thermal_electric_output_w = captured_thermal_power_w * input.thermal_to_electric_efficiency;
+    let gross_electric_output_w = thermal_electric_output_w + input.direct_electric_output_w;
 
     let recirculating_electric_power_w = input.primary_driver_wall_plug_power_w
         + input.magnet_power_w
@@ -140,14 +144,11 @@ pub fn calculate_plant_power_balance(
         + input.cooling_and_heat_rejection_power_w
         + input.other_auxiliary_power_w;
 
-    if !recirculating_electric_power_w.is_finite()
-        || recirculating_electric_power_w <= 0.0
-    {
+    if !recirculating_electric_power_w.is_finite() || recirculating_electric_power_w <= 0.0 {
         return Err("recirculating electric power must be finite and positive".to_string());
     }
 
-    let primary_energy_gain =
-        input.fusion_thermal_power_w / input.primary_energy_to_medium_w;
+    let primary_energy_gain = input.fusion_thermal_power_w / input.primary_energy_to_medium_w;
     if !primary_energy_gain.is_finite() || !gross_electric_output_w.is_finite() {
         return Err("calculated power balance is not finite".to_string());
     }
@@ -223,7 +224,10 @@ pub fn calculate_lcoe(input: &PlantEconomicsInput) -> Result<PlantEconomicsResul
     let non_negative = [
         ("capital_cost_usd", input.capital_cost_usd),
         ("annual_fixed_om_usd", input.annual_fixed_om_usd),
-        ("annual_replacement_cost_usd", input.annual_replacement_cost_usd),
+        (
+            "annual_replacement_cost_usd",
+            input.annual_replacement_cost_usd,
+        ),
         ("variable_om_usd_per_mwh", input.variable_om_usd_per_mwh),
         ("fuel_cost_usd_per_mwh", input.fuel_cost_usd_per_mwh),
     ];
@@ -242,9 +246,7 @@ pub fn calculate_lcoe(input: &PlantEconomicsInput) -> Result<PlantEconomicsResul
     {
         return Err("availability_fraction must be finite and in (0, 1]".to_string());
     }
-    if !input.real_discount_rate.is_finite()
-        || !(0.0..1.0).contains(&input.real_discount_rate)
-    {
+    if !input.real_discount_rate.is_finite() || !(0.0..1.0).contains(&input.real_discount_rate) {
         return Err("real_discount_rate must be finite and in [0, 1)".to_string());
     }
     if input.lifetime_years == 0 {
@@ -261,11 +263,9 @@ pub fn calculate_lcoe(input: &PlantEconomicsInput) -> Result<PlantEconomicsResul
 
     let annual_net_generation_mwh =
         input.net_export_power_w / 1_000_000.0 * 8_760.0 * input.availability_fraction;
-    let annualized_capital_cost_usd =
-        input.capital_cost_usd * capital_recovery_factor;
-    let annual_fixed_costs = annualized_capital_cost_usd
-        + input.annual_fixed_om_usd
-        + input.annual_replacement_cost_usd;
+    let annualized_capital_cost_usd = input.capital_cost_usd * capital_recovery_factor;
+    let annual_fixed_costs =
+        annualized_capital_cost_usd + input.annual_fixed_om_usd + input.annual_replacement_cost_usd;
     let lcoe_usd_per_mwh = annual_fixed_costs / annual_net_generation_mwh
         + input.variable_om_usd_per_mwh
         + input.fuel_cost_usd_per_mwh;
