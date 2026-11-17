@@ -250,6 +250,22 @@ The numbers below are **qualification targets**, not results achieved by Spark. 
 
 For disruption prediction specifically, the DisruptionBench figures are baselines to reproduce before trying to beat them; the 0.90 AUC / 0.70 F2 figures above are our proposed stretch goals, not reported results. For neutronics, the current OpenMC-Fusion-Benchmarks proof-of-concept scope must not be represented as a fully mature fusion-plant benchmark suite. For hydride yield, raw-data reproduction must wait for the stated release date; the source paper's fitted values do not establish net energy production.
 
+## Evidence-aware Q_econ engineering envelope
+
+A separate `qecon_feasibility` module evaluates an economic target only inside a caller-declared power-density interval. It preserves separate base-scenario and engineering-envelope evidence classes, source locators, model revisions, digest receipts and assumptions.
+
+The caller supplies:
+- the base Q_econ scenario and target;
+- scenario control-surface ID and envelope control-surface ID (which must match);
+- minimum and maximum fusion power density in MW/m²;
+- envelope evidence class, source, model revision, digest receipt and assumptions.
+
+The output reports Q_econ at both interval boundaries, the asymptotic economic ceiling, required density (if finite), margin to the maximum, and one of four reason-coded outcomes: `EconomicallyAsymptoticallyUnreachable`, `AboveDeclaredMaximum`, `TargetMetAtMinimum`, or `WithinDeclaredInterval`.
+
+These statuses are deliberately **not** called physical feasibility. The module does not compute heat exhaust, material damage, plasma stability or thermal-hydraulic limits. It compares the economic threshold with a provenance-carrying external interval. Measured/literature/engineering envelope classes require a source locator; digest fields are syntax-checked but cryptographic verification is still delegated to Mycelix's shared evidence layer.
+
+The next qualification step is to connect a real, independently validated heat-exhaust/thermal-hydraulic limit and component fluence constraints to this envelope. Never install a universal maximum power density as a constant in the Q_econ model.
+
 ## Project-finance extension beyond steady-state Q_econ
 
 Q_econ and its effective-LCOE proxy are steady-state design screens, not complete project-finance models. The 2026 Q_econ paper itself identifies omitted financing and lifecycle dimensions: working-capital swings around target procurement and surface replacement, interest during construction, ramp-up liquidity, covenant risk, decommissioning, waste-handling reserves and residual/salvage value.
