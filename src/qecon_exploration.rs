@@ -329,6 +329,7 @@ pub fn estimate_qecon_sobol_indices(
     let mut output_a = Vec::with_capacity(sobol.sample_count as usize);
     let mut output_b = Vec::with_capacity(sobol.sample_count as usize);
     let mut first_order_sums = [0.0; QECON_PARAMETER_COUNT];
+    let mut first_order_difference_sums = [0.0; QECON_PARAMETER_COUNT];
     let mut total_order_sums = [0.0; QECON_PARAMETER_COUNT];
 
     for _ in 0..sobol.sample_count {
@@ -343,8 +344,9 @@ pub fn estimate_qecon_sobol_indices(
             let value_from_b = parameter.value(&input_b);
             let hybrid = parameter.with_value(&input_a, value_from_b)?;
             let hybrid_output = calculate_qecon(&hybrid)?.q_econ;
-            first_order_sums[parameter.index()] +=
-                output_b_value * (hybrid_output - output_a_value);
+            let difference_from_a = hybrid_output - output_a_value;
+            first_order_sums[parameter.index()] += output_b_value * difference_from_a;
+            first_order_difference_sums[parameter.index()] += difference_from_a;
             let difference = output_a_value - hybrid_output;
             total_order_sums[parameter.index()] += difference * difference;
         }
@@ -372,7 +374,13 @@ pub fn estimate_qecon_sobol_indices(
             let index = parameter.index();
             QeconSobolIndex {
                 parameter,
-                first_order_index: first_order_sums[index] / sample_count as f64 / output_variance,
+                // Center Y_B by the pooled mean to reduce finite-sample noise.
+                // E[Y_B - E(Y)] * (Y_AB_i - Y_A) has the same target because
+                // E[Y_AB_i - Y_A] is zero under independent A/B designs.
+                first_order_index: (first_order_sums[index]
+                    - output_mean * first_order_difference_sums[index])
+                    / sample_count as f64
+                    / output_variance,
                 total_order_index: total_order_sums[index]
                     / (2.0 * sample_count as f64)
                     / output_variance,
