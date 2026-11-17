@@ -225,6 +225,33 @@ The next economics increment is a weighted closest-viable-design solver faithful
 
 Do not label the finite-difference ranking as the paper's weighted projection. Do not claim a globally closest viable design until the constrained optimization and independent oracle are implemented and validated.
 
+## Chance-constrained weighted Q_econ design projection
+
+The new `qecon_chance_projection` layer composes the weighted design box with the robust uncertainty sampler:
+
+`min weighted_distance(theta, theta_reference)`
+
+subject to:
+
+`WilsonLower95(Pr[Q_econ(theta, U) >= q_target]) >= p_required`
+
+The optimizer:
+- reuses one fixed optimization seed and sample count for every candidate (common random numbers);
+- starts from the favourable parameter-box corner;
+- enumerates integer plant-lifetime years;
+- uses repeated one-coordinate moves toward the clamped reference, with bisection to retain the chance-feasible side of each move;
+- respects a caller-supplied candidate-evaluation budget and coordinate-sweep budget;
+- selects the lowest weighted-distance candidate found;
+- then evaluates the selected candidate with the separate validation seed, which is not used during search.
+
+The output preserves the original baseline digest and full uncertainty model, returns the projected candidate, weighted objective, optimization/validation probability estimates and Wilson intervals, and a validation-qualified flag. A new digest for the projected candidate must be created by the shared evidence layer; the baseline digest is not reused as the candidate digest.
+
+### Limits
+
+This is an approximate sample-average coordinate search over a non-smooth empirical chance constraint, not a global-optimality proof. Common random numbers reduce noise in candidate comparisons but do not validate the assumed probability model. The final validation interval covers finite Monte Carlo sampling error only. Tail shifts, model discrepancy, heat-exhaust limits and material/maintenance constraints require separate stress and qualification studies. The next implementation step is independent baseline comparison (random search / derivative-free optimizer), multi-seed convergence, and distribution-shift validation.
+
+Related: [chance-constrained design issue #27](https://github.com/Luminous-Dynamics/spark-engine/issues/27).
+
 ## Conditional robust-viability assessment
 
 A separate `qecon_robust` module now evaluates one nominal Q_econ candidate with two independent seeded ensembles:
