@@ -84,6 +84,47 @@ Commercial programmes are pursuing materially different routes:
 
 These are competitor reference points, not interchangeable performance claims.
 
+## 2.3 Competitive reality: the AI digital-twin race has started
+
+The DOE's June 2026 Fusion Science and Technology Roadmap describes an AI-Fusion Digital Convergence Platform (DCP) connecting HPC codes, foundation models, physics- and chemistry-informed neural networks, surrogate models, digital twins, facility data, experiment planning and whole-facility real-time control. The November 2026 DOE Genesis Mission fusion challenge repeats this direction.
+
+Sources:
+- DOE Fusion Science and Technology Roadmap: https://www.energy.gov/documents/fusion-science-and-technology-roadmap
+- DOE Genesis Mission, Accelerating Delivery of Fusion Energy: https://www.energy.gov/undersecretaryforscience/genesis-mission/accelerating-delivery-fusion-energy
+
+This changes our differentiation strategy. "AI + fusion digital twin" is no longer a sufficient claim. A credible Luminous contribution should instead emphasize:
+
+1. **Evidence-qualified cross-machine generalization:** frozen benchmarks, whole-discharge partitions, calibration, transfer uncertainty, sensor failure and published operational alarm logic.
+2. **Independent model and solver qualification:** each physical model remains tied to its source data, solver, version, input digest, boundary conditions and uncertainty; predictions are not evidence.
+3. **Open, auditable plant-boundary accounting:** device gain, gross electrical output, recirculating load, net export, availability and lifecycle cost are never collapsed into one Q value.
+4. **Decision-quality active learning:** select experiments by robust value of information, probability of a decision-changing result and the value of a negative result, not just nominal EIG per dollar.
+5. **Lifecycle and maintainability co-optimization:** component fluence, replacement interval, remote-maintenance duration and failure distribution are part of the design objective from the start.
+6. **Vendor- and solver-neutral evidence contracts:** a research group can exchange benchmark manifests and results without adopting the Luminous software stack as the physics authority.
+
+We should treat DOE's DCP and CFS's announced participation as a strong external benchmark for scope and maturity. We should not imply Luminous is ahead of a national-lab/industry platform on facilities, data volume or integrated predictive control. Our realistic contribution is a smaller but unusually rigorous, open and reusable evidence/qualification layer.
+
+### Open neutronics benchmark
+
+A 2026 paper introduced OpenMC-Fusion-Benchmarks (OFB), a schema-driven, code-agnostic fusion-neutronics validation framework with CAD/STEP geometries, automated meshing, benchmark result metadata and uncertainty analysis:
+- Segantin et al. (2026), *OpenMC-Fusion-Benchmarks, a CAD-Based Automated Framework for Fusion Neutronics Validation*: https://doi.org/10.1080/15361055.2026.2664345
+- Documentation: https://openmc-fusion-benchmarks.readthedocs.io/
+- Repository: https://github.com/eepeterson/openmc_fusion_benchmarks
+
+The project's current complete proof-of-concept workflow is the Oktavian aluminium benchmark; future plans include TBR, shielding, shutdown dose rate and broader uncertainty workflows. It is an appropriate external reference for the Symtropy fusion bridge, not a substitute for a complete plant neutronics qualification.
+
+### Economic-gain reference
+
+Whyte et al. (2026) propose a concept-agnostic fusion-plant economic gain factor, (Q_{econ}), based on ten normalized parameters including fusion power per extraction-surface area, energy conversion, component fluence/lifetime, replacement time, component cost and energy price:
+- https://doi.org/10.1007/s10894-026-00577-9
+
+The paper defines (Q_{econ} ge 1) as necessary but not sufficient for commercial viability. It highlights a model-specific threshold around (P_f/S sim 2 mathrm{MW/m^2}) and replacement intervals below approximately 0.25 years in its robust-economic-performance parameter scan. Those are model-derived design-window results, not universal requirements or measured performance of an operating fusion plant.
+
+Our Spark LCOE routine is an entry-level cash-flow approximation and does not yet implement (Q_{econ}). The next economics increment should report both:
+- an electrical cash-flow view (net MWh, availability, capital and O&M, replacements, fuel-cycle cost, discount rate); and
+- an extraction-surface normalized economic-gain view, with every one of the ten parameters and its scenario range visible.
+
+The two are complementary, not interchangeable. Do not call the current LCOE helper a complete plant economics model.
+
 ## 3. Paradigm shifts
 
 ### P1 — Optimize delivered net electricity, not plasma Q alone
