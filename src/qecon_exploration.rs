@@ -16,7 +16,10 @@
 //! a Pearson correlation matrix for the physical/economic parameters after
 //! applying triangular marginal transforms.
 
-use crate::qecon::{QECON_MODEL_REVISION, QeconInput, QeconResult, calculate_qecon};
+use crate::qecon::{
+    QECON_MODEL_REVISION, QeconEvidenceClass, QeconInput, QeconResult, QeconScenario,
+    QeconScenarioResult, calculate_qecon, calculate_qecon_scenario,
+};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
@@ -397,6 +400,84 @@ pub struct QeconUncertaintyResult {
     pub probability_q_econ_at_least_one: QeconProbabilityEstimate,
     pub probability_q_econ_at_least_one_point_five: QeconProbabilityEstimate,
     pub samples: Vec<QeconUncertaintySample>,
+}
+
+/// Evidence-carrying wrapper for a Q_econ uncertainty ensemble.
+///
+/// The two digests are caller-supplied receipts. This function validates their
+/// hexadecimal form and preserves them; it does not perform canonical
+/// serialization or cryptographic digest verification.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct QeconUncertaintyScenario {
+    pub base_scenario: QeconScenario,
+    pub uncertainty_input_digest_sha256: String,
+    pub uncertainty_input: QeconUncertaintyInput,
+    pub uncertainty_assumptions: Vec<String>,
+}
+
+/// Uncertainty result tied to the original scenario's identity and evidence class.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct QeconUncertaintyScenarioResult {
+    pub scenario_id: String,
+    pub model_revision: String,
+    pub exploration_revision: String,
+    pub evidence_class: QeconEvidenceClass,
+    pub source_locator: Option<String>,
+    pub base_input_digest_sha256: String,
+    pub uncertainty_input_digest_sha256: String,
+    pub base_assumptions: Vec<String>,
+    pub uncertainty_assumptions: Vec<String>,
+    pub result: QeconUncertaintyResult,
+}
+
+/// Run an uncertainty ensemble without losing the base scenario's evidence identity.
+///
+/// The base Q_econ scenario is validated by the canonical scenario evaluator.
+/// The uncertainty-input digest is syntax-checked and carried through; digest
+/// construction and verification remain the responsibility of the shared
+/// evidence pipeline.
+pub fn propagate_qecon_scenario_uncertainty(
+    scenario: &QeconUncertaintyScenario,
+) -> Result<QeconUncertaintyScenarioResult, String> {
+    let base_result: QeconScenarioResult = calculate_qecon_scenario(&scenario.base_scenario)?;
+    if scenario.uncertainty_input_digest_sha256.len() != 64
+        || !scenario
+            .uncertainty_input_digest_sha256
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit())
+    {
+        return Err(
+            "uncertainty_input_digest_sha256 must contain exactly 64 hexadecimal characters"
+                .to_string(),
+        );
+    }
+    if scenario.uncertainty_assumptions.is_empty()
+        || scenario
+            .uncertainty_assumptions
+            .iter()
+            .any(|assumption| assumption.trim().is_empty())
+    {
+        return Err(
+            "uncertainty scenario must preserve at least one non-empty assumption".to_string(),
+        );
+    }
+
+    let result = propagate_qecon_uncertainty(
+        &scenario.base_scenario.input,
+        &scenario.uncertainty_input,
+    )?;
+    Ok(QeconUncertaintyScenarioResult {
+        scenario_id: base_result.scenario_id,
+        model_revision: base_result.model_revision,
+        exploration_revision: result.exploration_revision.clone(),
+        evidence_class: base_result.evidence_class,
+        source_locator: base_result.source_locator,
+        base_input_digest_sha256: base_result.input_digest_sha256,
+        uncertainty_input_digest_sha256: scenario.uncertainty_input_digest_sha256.clone(),
+        base_assumptions: base_result.assumptions,
+        uncertainty_assumptions: scenario.uncertainty_assumptions.clone(),
+        result,
+    })
 }
 
 /// Run seeded correlated uncertainty propagation for the Q_econ model.
@@ -926,6 +1007,59 @@ mod tests {
         scenario.latent_gaussian_correlation[0][1] = 1.0;
         scenario.latent_gaussian_correlation[1][0] = 1.0;
         assert!(propagate_qecon_uncertainty(&input(), &scenario).is_err());
+    }
+
+    #[test]
+    fn uncertainty_scenario_preserves_base_evidence_identity() {
+        let scenario = QeconUncertaintyScenario {
+            base_scenario: QeconScenario {
+                scenario_id: "scenario-2026-a".to_string(),
+                model_revision: QECON_MODEL_REVISION.to_string(),
+                evidence_class: QeconEvidenceClass::ScenarioAssumption,
+                source_locator: None,
+                input_digest_sha256: "a".repeat(64),
+                assumptions: vec!["Illustrative Q_econ base point".to_string()],
+                input: input(),
+            },
+            uncertainty_input_digest_sha256: "b".repeat(64),
+            uncertainty_input: uncertainty(0x5eed),
+            uncertainty_assumptions: vec![
+                "Triangular input ranges are scenario assumptions.".to_string(),
+                "Gaussian copula dependence is an illustrative assumption.".to_string(),
+            ],
+        };
+        let result = propagate_qecon_scenario_uncertainty(&scenario).unwrap();
+        assert_eq!(result.scenario_id, "scenario-2026-a");
+        assert_eq!(result.evidence_class, QeconEvidenceClass::ScenarioAssumption);
+        assert_eq!(result.base_input_digest_sha256, "a".repeat(64));
+        assert_eq!(result.uncertainty_input_digest_sha256, "b".repeat(64));
+        assert_eq!(result.result.seed, 0x5eed);
+        assert_eq!(result.base_assumptions, scenario.base_scenario.assumptions);
+        assert_eq!(result.uncertainty_assumptions, scenario.uncertainty_assumptions);
+    }
+
+    #[test]
+    fn uncertainty_scenario_rejects_invalid_digest_and_missing_assumptions() {
+        let mut scenario = QeconUncertaintyScenario {
+            base_scenario: QeconScenario {
+                scenario_id: "scenario-2026-a".to_string(),
+                model_revision: QECON_MODEL_REVISION.to_string(),
+                evidence_class: QeconEvidenceClass::ScenarioAssumption,
+                source_locator: None,
+                input_digest_sha256: "a".repeat(64),
+                assumptions: vec!["Illustrative base point".to_string()],
+                input: input(),
+            },
+            uncertainty_input_digest_sha256: "b".repeat(64),
+            uncertainty_input: uncertainty(123),
+            uncertainty_assumptions: vec!["Assumed triangular marginals".to_string()],
+        };
+        scenario.uncertainty_input_digest_sha256 = "bad".to_string();
+        assert!(propagate_qecon_scenario_uncertainty(&scenario).is_err());
+
+        scenario.uncertainty_input_digest_sha256 = "b".repeat(64);
+        scenario.uncertainty_assumptions.clear();
+        assert!(propagate_qecon_scenario_uncertainty(&scenario).is_err());
     }
 
     #[test]
