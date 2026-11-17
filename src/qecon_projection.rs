@@ -23,9 +23,7 @@
 //! Changing them changes the selected closest point, never the Q_econ
 //! viability boundary.
 
-use crate::qecon::{
-    QECON_MODEL_REVISION, QeconInput, QeconResult, calculate_qecon,
-};
+use crate::qecon::{QECON_MODEL_REVISION, QeconInput, calculate_qecon};
 use crate::qecon_exploration::QeconParameter;
 use serde::{Deserialize, Serialize};
 
@@ -353,7 +351,6 @@ fn validate_projection_input(
         return Err("all ten Q_econ parameters need one projection bound".to_string());
     }
     let ordered = order_projection_bounds(&request.bounds)?;
-    let reference = input_values(&request.reference);
     for parameter in QeconParameter::ALL {
         let bound = &ordered[parameter.index()];
         if parameter != QeconParameter::PlantLifetime
@@ -366,7 +363,6 @@ fn validate_projection_input(
     if lifetime.minimum > lifetime.maximum {
         return Err("integer plant lifetime range is empty".to_string());
     }
-    let _ = reference;
     Ok(())
 }
 
@@ -791,6 +787,7 @@ fn kkt_stationarity_residual(
     Ok(maximum_residual)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_projection_result(
     request: &QeconWeightedProjectionInput,
     bounds: &[QeconProjectionBound; 10],
