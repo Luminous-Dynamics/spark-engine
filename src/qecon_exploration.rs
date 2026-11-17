@@ -367,6 +367,19 @@ pub struct QeconScalarStatistics {
     pub maximum: f64,
 }
 
+/// Binomial probability estimate with a Wilson 95% interval.
+///
+/// The interval measures finite Monte Carlo sampling error only. It does not
+/// cover uncertainty in the caller-supplied marginals, copula or Q_econ model.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub struct QeconProbabilityEstimate {
+    pub successes: u32,
+    pub sample_count: u32,
+    pub probability_estimate: f64,
+    pub wilson_lower_95: f64,
+    pub wilson_upper_95: f64,
+}
+
 /// Summary statistics and replayable samples for one seeded uncertainty run.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct QeconUncertaintyResult {
@@ -381,8 +394,8 @@ pub struct QeconUncertaintyResult {
     pub q_econ: QeconScalarStatistics,
     pub utilization_fraction: QeconScalarStatistics,
     pub net_economic_rate_musd_per_m2_year: QeconScalarStatistics,
-    pub probability_q_econ_at_least_one: f64,
-    pub probability_q_econ_at_least_one_point_five: f64,
+    pub probability_q_econ_at_least_one: QeconProbabilityEstimate,
+    pub probability_q_econ_at_least_one_point_five: QeconProbabilityEstimate,
     pub samples: Vec<QeconUncertaintySample>,
 }
 
@@ -469,10 +482,14 @@ pub fn propagate_qecon_uncertainty(
         q_econ: scalar_statistics(&q_values)?,
         utilization_fraction: scalar_statistics(&utilization_values)?,
         net_economic_rate_musd_per_m2_year: scalar_statistics(&net_rate_values)?,
-        probability_q_econ_at_least_one: f64::from(viable_count)
-            / f64::from(uncertainty.sample_count),
-        probability_q_econ_at_least_one_point_five: f64::from(q15_count)
-            / f64::from(uncertainty.sample_count),
+        probability_q_econ_at_least_one: wilson_probability_estimate(
+            viable_count,
+            uncertainty.sample_count,
+        ),
+        probability_q_econ_at_least_one_point_five: wilson_probability_estimate(
+            q15_count,
+            uncertainty.sample_count,
+        ),
         samples,
     })
 }
@@ -601,6 +618,26 @@ fn standard_normal_cdf(value: f64) -> f64 {
         1.0 - upper_tail
     } else {
         upper_tail
+    }
+}
+
+fn wilson_probability_estimate(successes: u32, sample_count: u32) -> QeconProbabilityEstimate {
+    const Z_95: f64 = 1.959_963_984_540_054;
+    let n = f64::from(sample_count);
+    let observed = f64::from(successes) / n;
+    let z_squared = Z_95 * Z_95;
+    let denominator = 1.0 + z_squared / n;
+    let center = (observed + z_squared / (2.0 * n)) / denominator;
+    let half_width = Z_95 / denominator
+        * (observed * (1.0 - observed) / n
+            + z_squared / (4.0 * n * n))
+            .sqrt();
+    QeconProbabilityEstimate {
+        successes,
+        sample_count,
+        probability_estimate: observed,
+        wilson_lower_95: (center - half_width).clamp(0.0, 1.0),
+        wilson_upper_95: (center + half_width).clamp(0.0, 1.0),
     }
 }
 
@@ -806,11 +843,23 @@ mod tests {
         assert_eq!(first.samples.len(), 128);
         assert_eq!(first.uncertainty_input, scenario);
         assert!(first.assumptions.len() >= 3);
-        assert!((0.0..=1.0).contains(&first.probability_q_econ_at_least_one));
         assert!(
-            first.probability_q_econ_at_least_one_point_five
-                <= first.probability_q_econ_at_least_one
+            (0.0..=1.0).contains(
+                &first.probability_q_econ_at_least_one.probability_estimate
+            )
         );
+        assert!(
+            first.probability_q_econ_at_least_one_point_five.probability_estimate
+                <= first.probability_q_econ_at_least_one.probability_estimate
+        );
+        for estimate in [
+            first.probability_q_econ_at_least_one,
+            first.probability_q_econ_at_least_one_point_five,
+        ] {
+            assert!(estimate.wilson_lower_95 <= estimate.probability_estimate);
+            assert!(estimate.probability_estimate <= estimate.wilson_upper_95);
+            assert!(estimate.wilson_upper_95 - estimate.wilson_lower_95 > 0.0);
+        }
     }
 
     #[test]
@@ -871,6 +920,19 @@ mod tests {
         scenario.latent_gaussian_correlation[0][1] = 1.0;
         scenario.latent_gaussian_correlation[1][0] = 1.0;
         assert!(propagate_qecon_uncertainty(&input(), &scenario).is_err());
+    }
+
+    #[test]
+    fn wilson_interval_behaves_at_probability_boundaries() {
+        let all_success = wilson_probability_estimate(100, 100);
+        assert_eq!(all_success.probability_estimate, 1.0);
+        assert!(all_success.wilson_lower_95 < 1.0);
+        assert_eq!(all_success.wilson_upper_95, 1.0);
+
+        let no_success = wilson_probability_estimate(0, 100);
+        assert_eq!(no_success.probability_estimate, 0.0);
+        assert_eq!(no_success.wilson_lower_95, 0.0);
+        assert!(no_success.wilson_upper_95 > 0.0);
     }
 
     #[test]
