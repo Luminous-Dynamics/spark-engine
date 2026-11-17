@@ -168,7 +168,7 @@ pub struct ProjectFinanceResult {
     pub assumptions: Vec<String>,
 }
 
-/// Calculate unlevered project cash flow, NPV, a guarded IRR and liquidity
+/// Calculate project cash flow before external financing, NPV, a guarded IRR and liquidity
 /// indicators from a fully declared annual schedule.
 pub fn evaluate_project_cashflow(
     input: &ProjectFinanceInput,
@@ -259,9 +259,9 @@ pub fn evaluate_project_cashflow(
         periods: results,
         assumptions: vec![
             "All annual amounts use the supplied currency code, currency year and real/nominal basis.".to_string(),
-            "NPV is unlevered project NPV; no debt/equity waterfall or financing draw schedule is modelled.".to_string(),
+            "NPV is project NPV; no debt/equity waterfall or financing draw schedule is modelled.".to_string(),
             "Interest during construction is an explicit input cost; do not double-count it through the discount-rate convention.".to_string(),
-            "The minimum cumulative project cash position is before external debt/equity funding and is not a solvency guarantee.".to_string(),
+            "The minimum cumulative project cash position is before external debt/equity funding and is not a solvency guarantee; if interest during construction is included as a cost line, it remains part of this cash-flow path.".to_string(),
             "IRR is returned only for a single-sign-change cash-flow pattern with a root bracketed in [-0.99, 10.0].".to_string(),
             "Taxes are explicit cash-cost inputs; this version does not calculate tax rules, depreciation or tax-loss carryforwards.".to_string(),
             "Production and prices are caller-supplied annual assumptions; no market dispatch or price-formation model is included.".to_string(),
@@ -294,7 +294,9 @@ fn validate_project_finance_input(input: &ProjectFinanceInput) -> Result<(), Str
     }
     if matches!(
         input.evidence_class,
-        QeconEvidenceClass::Measured | QeconEvidenceClass::LiteratureReported
+        QeconEvidenceClass::Measured
+            | QeconEvidenceClass::LiteratureReported
+            | QeconEvidenceClass::EngineeringEstimate
     ) && input
         .source_locator
         .as_ref()
