@@ -27,7 +27,7 @@ pub struct PlantPowerBalanceInput {
     pub thermal_capture_fraction: f64,
     /// Thermal-to-electric conversion efficiency applied to captured heat.
     pub thermal_to_electric_efficiency: f64,
-    /// Net electrical output from a direct-conversion pathway, if present.
+    /// Gross electrical output from a direct-conversion pathway, before plant auxiliary loads.
     pub direct_electric_output_w: f64,
     /// Magnet and power-supply electrical load.
     pub magnet_power_w: f64,
