@@ -311,7 +311,7 @@ fn apply_robust_value(
     marginal.parameter.with_value(base, transformed)
 }
 
-fn run_robust_ensemble(
+pub(crate) fn run_robust_ensemble(
     base_input: &QeconInput,
     target_q_econ: f64,
     uncertainty: &QeconRobustUncertaintyInput,
