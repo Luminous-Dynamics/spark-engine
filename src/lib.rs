@@ -129,12 +129,11 @@ pub use qecon::{
 pub use qecon_exploration::{
     DifferenceMethod, MAX_QECON_UNCERTAINTY_SAMPLES, QECON_EXPLORATION_REVISION,
     QECON_PARAMETER_COUNT, QeconGlobalAssociation, QeconParameter, QeconProbabilityEstimate,
-    QeconScalarStatistics, QeconSensitivityEstimate, QeconTriangularMarginal,
-    QeconUncertaintyInput, QeconUncertaintyResult, QeconUncertaintySample,
-    QeconSobolIndex, QeconSobolInput, QeconSobolResult, QeconUncertaintyScenario,
-    QeconUncertaintyScenarioResult, estimate_qecon_sobol_indices,
-    propagate_qecon_scenario_uncertainty, propagate_qecon_uncertainty,
-    rank_qecon_global_associations, rank_qecon_sensitivities,
+    QeconScalarStatistics, QeconSensitivityEstimate, QeconSobolIndex, QeconSobolInput,
+    QeconSobolResult, QeconTriangularMarginal, QeconUncertaintyInput, QeconUncertaintyResult,
+    QeconUncertaintySample, QeconUncertaintyScenario, QeconUncertaintyScenarioResult,
+    estimate_qecon_sobol_indices, propagate_qecon_scenario_uncertainty,
+    propagate_qecon_uncertainty, rank_qecon_global_associations, rank_qecon_sensitivities,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
