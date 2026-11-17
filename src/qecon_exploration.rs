@@ -262,6 +262,133 @@ pub fn rank_qecon_sensitivities(
     Ok(estimates)
 }
 
+/// Global association between one sampled Q_econ input and the Q_econ output.
+///
+/// Pearson correlation measures linear association; Spearman correlation
+/// measures monotonic rank association. These are descriptive associations
+/// over the supplied uncertainty ensemble. With correlated inputs they are
+/// not independent-input sensitivity indices, causal effects or Sobol indices.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct QeconGlobalAssociation {
+    pub parameter: QeconParameter,
+    pub unit: String,
+    pub pearson_correlation: Option<f64>,
+    pub spearman_rank_correlation: Option<f64>,
+}
+
+/// Rank all ten parameters by absolute Spearman association with Q_econ.
+///
+/// This evaluates the actual sampled ensemble, so rankings depend on the
+/// caller-supplied marginal distributions, dependence assumptions and seed.
+/// A constant parameter or constant output produces an undefined correlation,
+/// retained as `None` rather than converted to zero.
+pub fn rank_qecon_global_associations(
+    uncertainty_result: &QeconUncertaintyResult,
+) -> Result<Vec<QeconGlobalAssociation>, String> {
+    if uncertainty_result.samples.len() < 2
+        || uncertainty_result.samples.len() != uncertainty_result.sample_count as usize
+    {
+        return Err(
+            "global associations require at least two complete samples matching sample_count"
+                .to_string(),
+        );
+    }
+    let output_values: Vec<f64> = uncertainty_result
+        .samples
+        .iter()
+        .map(|sample| sample.result.q_econ)
+        .collect();
+    if output_values.iter().any(|value| !value.is_finite()) {
+        return Err("global association output values must be finite".to_string());
+    }
+    let output_ranks = average_ranks(&output_values);
+    let mut associations = Vec::with_capacity(QECON_PARAMETER_COUNT);
+
+    for parameter in QeconParameter::ALL {
+        let input_values: Vec<f64> = uncertainty_result
+            .samples
+            .iter()
+            .map(|sample| parameter.value(&sample.input))
+            .collect();
+        if input_values.iter().any(|value| !value.is_finite()) {
+            return Err(format!(
+                "global association values for {parameter:?} must be finite"
+            ));
+        }
+        let input_ranks = average_ranks(&input_values);
+        associations.push(QeconGlobalAssociation {
+            parameter,
+            unit: parameter.unit().to_string(),
+            pearson_correlation: pearson_correlation(&input_values, &output_values),
+            spearman_rank_correlation: pearson_correlation(&input_ranks, &output_ranks),
+        });
+    }
+
+    associations.sort_by(|left, right| {
+        match (
+            left.spearman_rank_correlation,
+            right.spearman_rank_correlation,
+        ) {
+            (Some(left_value), Some(right_value)) => {
+                right_value.abs().total_cmp(&left_value.abs())
+            }
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => {
+                left.parameter.index().cmp(&right.parameter.index())
+            }
+        }
+    });
+    Ok(associations)
+}
+
+fn average_ranks(values: &[f64]) -> Vec<f64> {
+    let mut ordered_indices: Vec<usize> = (0..values.len()).collect();
+    ordered_indices.sort_by(|left, right| values[*left].total_cmp(&values[*right]));
+    let mut ranks = vec![0.0; values.len()];
+    let mut start = 0;
+    while start < ordered_indices.len() {
+        let first_value = values[ordered_indices[start]];
+        let mut end = start + 1;
+        while end < ordered_indices.len()
+            && values[ordered_indices[end]] == first_value
+        {
+            end += 1;
+        }
+        // Ranks are 1-based; tied values receive their average rank.
+        let average_rank = ((start + 1) as f64 + end as f64) / 2.0;
+        for ordered_index in &ordered_indices[start..end] {
+            ranks[*ordered_index] = average_rank;
+        }
+        start = end;
+    }
+    ranks
+}
+
+fn pearson_correlation(left: &[f64], right: &[f64]) -> Option<f64> {
+    if left.len() != right.len() || left.len() < 2 {
+        return None;
+    }
+    let left_mean = left.iter().sum::<f64>() / left.len() as f64;
+    let right_mean = right.iter().sum::<f64>() / right.len() as f64;
+    let mut covariance = 0.0;
+    let mut left_variance = 0.0;
+    let mut right_variance = 0.0;
+    for (left_value, right_value) in left.iter().zip(right) {
+        let left_delta = left_value - left_mean;
+        let right_delta = right_value - right_mean;
+        covariance += left_delta * right_delta;
+        left_variance += left_delta * left_delta;
+        right_variance += right_delta * right_delta;
+    }
+    let denominator = (left_variance * right_variance).sqrt();
+    if !denominator.is_finite() || denominator <= 0.0 {
+        return None;
+    }
+    let correlation = covariance / denominator;
+    correlation.is_finite().then_some(correlation.clamp(-1.0, 1.0))
+}
+
 /// Triangular marginal distribution for one Q_econ parameter.
 ///
 /// The distribution is defined by minimum, mode and maximum. Equal bounds
@@ -919,6 +1046,63 @@ mod tests {
         assert!(find(QeconParameter::PlantArealCost) < 0.0);
         assert!(find(QeconParameter::RealInterestRate) < 0.0);
         assert!(find(QeconParameter::PlantLifetime) > 0.0);
+    }
+
+    #[test]
+    fn global_associations_cover_parameters_and_recover_monotonic_directions() {
+        let result = propagate_qecon_uncertainty(&input(), &uncertainty(0x5eed)).unwrap();
+        let associations = rank_qecon_global_associations(&result).unwrap();
+        assert_eq!(associations.len(), QECON_PARAMETER_COUNT);
+        assert!(associations.windows(2).all(|pair| {
+            match (
+                pair[0].spearman_rank_correlation,
+                pair[1].spearman_rank_correlation,
+            ) {
+                (Some(left), Some(right)) => left.abs() >= right.abs(),
+                (Some(_), None) => true,
+                (None, _) => true,
+            }
+        }));
+        let find = |parameter| {
+            associations
+                .iter()
+                .find(|entry| entry.parameter == parameter)
+                .unwrap()
+                .spearman_rank_correlation
+                .unwrap()
+        };
+        assert!(find(QeconParameter::NetEnergyConversionEfficiency) > 0.0);
+        assert!(find(QeconParameter::NetPriceOfEnergy) > 0.0);
+        assert!(find(QeconParameter::SurfaceReplacementTime) < 0.0);
+        assert!(find(QeconParameter::SurfaceReplacementCost) < 0.0);
+        assert!(find(QeconParameter::PlantArealCost) < 0.0);
+    }
+
+    #[test]
+    fn global_associations_mark_constant_inputs_as_undefined() {
+        let mut scenario = uncertainty(19);
+        for marginal in &mut scenario.marginals {
+            marginal.minimum = match marginal.parameter {
+                QeconParameter::FusionPowerDensity => 3.7,
+                QeconParameter::SurfaceReplacementTime => 0.1,
+                QeconParameter::SurfaceEnergyFluenceLimit => 3.125,
+                QeconParameter::NetEnergyConversionEfficiency => 0.4,
+                QeconParameter::NetPriceOfEnergy => 100.0,
+                QeconParameter::TargetCostPerEnergyYield => 0.0,
+                QeconParameter::SurfaceReplacementCost => 0.3,
+                QeconParameter::PlantArealCost => 10.0,
+                QeconParameter::RealInterestRate => 2.0,
+                QeconParameter::PlantLifetime => 30.0,
+            };
+            marginal.mode = marginal.minimum;
+            marginal.maximum = marginal.minimum;
+        }
+        let result = propagate_qecon_uncertainty(&input(), &scenario).unwrap();
+        let associations = rank_qecon_global_associations(&result).unwrap();
+        assert!(associations.iter().all(|entry| {
+            entry.pearson_correlation.is_none()
+                && entry.spearman_rank_correlation.is_none()
+        }));
     }
 
     #[test]
