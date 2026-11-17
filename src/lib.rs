@@ -75,6 +75,9 @@ pub mod plant_energy_balance;
 // Q_econ surface-normalized fusion-plant economics
 pub mod qecon;
 
+// Sensitivity, scenario sweeps and correlated uncertainty for Q_econ
+pub mod qecon_exploration;
+
 // First-order reliability/availability screening (not full RAMI)
 pub mod plant_availability;
 
@@ -116,6 +119,12 @@ pub use plant_availability::{
 pub use plant_energy_balance::{
     PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
     calculate_lcoe, calculate_plant_power_balance,
+};
+pub use qecon_exploration::{
+    DifferenceMethod, QeconParameter, QeconScalarStatistics, QeconSensitivityEstimate,
+    QeconTriangularMarginal, QeconUncertaintyInput, QeconUncertaintyResult,
+    QeconUncertaintySample, QECON_EXPLORATION_REVISION, QECON_PARAMETER_COUNT,
+    MAX_QECON_UNCERTAINTY_SAMPLES, propagate_qecon_uncertainty, rank_qecon_sensitivities,
 };
 pub use qecon::{
     QECON_MODEL_REVISION, QeconDesignParameters, QeconEvidenceClass, QeconInput, QeconResult,
