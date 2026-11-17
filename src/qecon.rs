@@ -346,6 +346,11 @@ pub fn calculate_qecon_scenario(scenario: &QeconScenario) -> Result<QeconScenari
     if scenario.model_revision.trim().is_empty() {
         return Err("model_revision must not be empty".to_string());
     }
+    if scenario.model_revision != QECON_MODEL_REVISION {
+        return Err(format!(
+            "model_revision must match the active implementation ({QECON_MODEL_REVISION})"
+        ));
+    }
     if scenario.input_digest_sha256.len() != 64
         || !scenario
             .input_digest_sha256
@@ -677,6 +682,10 @@ mod tests {
 
         let mut invalid = scenario.clone();
         invalid.input_digest_sha256 = "not-a-digest".to_string();
+        assert!(calculate_qecon_scenario(&invalid).is_err());
+
+        let mut invalid = scenario.clone();
+        invalid.model_revision = "qecon-older-version".to_string();
         assert!(calculate_qecon_scenario(&invalid).is_err());
 
         let mut invalid = scenario.clone();
