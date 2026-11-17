@@ -96,16 +96,10 @@ impl QeconParameter {
             Self::SurfaceEnergyFluenceLimit => {
                 input.design.surface_energy_fluence_limit_mw_year_per_m2
             }
-            Self::NetEnergyConversionEfficiency => {
-                input.design.net_energy_conversion_efficiency
-            }
+            Self::NetEnergyConversionEfficiency => input.design.net_energy_conversion_efficiency,
             Self::NetPriceOfEnergy => input.design.net_price_of_energy_usd_per_mwh,
-            Self::TargetCostPerEnergyYield => {
-                input.design.target_cost_per_energy_yield_usd_per_mj
-            }
-            Self::SurfaceReplacementCost => {
-                input.design.surface_replacement_cost_musd_per_m2
-            }
+            Self::TargetCostPerEnergyYield => input.design.target_cost_per_energy_yield_usd_per_mj,
+            Self::SurfaceReplacementCost => input.design.surface_replacement_cost_musd_per_m2,
             Self::PlantArealCost => input.design.plant_areal_cost_musd_per_m2,
             Self::RealInterestRate => input.design.real_interest_rate_percent,
             Self::PlantLifetime => f64::from(input.design.plant_lifetime_years),
@@ -217,15 +211,13 @@ pub fn rank_qecon_sensitivities(
             .map(|result| result.q_econ);
 
         let (derivative_per_unit, actual_step, method) = match (plus_q, minus_q) {
-            (Some(plus), Some(minus)) => {
-                ( (plus - minus) / (2.0 * step), step, DifferenceMethod::Central )
-            }
-            (Some(plus), None) => {
-                ( (plus - base_q) / step, step, DifferenceMethod::Forward )
-            }
-            (None, Some(minus)) => {
-                ( (base_q - minus) / step, step, DifferenceMethod::Backward )
-            }
+            (Some(plus), Some(minus)) => (
+                (plus - minus) / (2.0 * step),
+                step,
+                DifferenceMethod::Central,
+            ),
+            (Some(plus), None) => ((plus - base_q) / step, step, DifferenceMethod::Forward),
+            (None, Some(minus)) => ((base_q - minus) / step, step, DifferenceMethod::Backward),
             (None, None) => {
                 return Err(format!(
                     "could not evaluate a valid finite difference for {parameter:?}"
@@ -256,14 +248,14 @@ pub fn rank_qecon_sensitivities(
         });
     }
 
-    estimates.sort_by(|left, right| {
-        match (left.relative_elasticity, right.relative_elasticity) {
+    estimates.sort_by(
+        |left, right| match (left.relative_elasticity, right.relative_elasticity) {
             (Some(a), Some(b)) => b.abs().total_cmp(&a.abs()),
             (Some(_), None) => std::cmp::Ordering::Less,
             (None, Some(_)) => std::cmp::Ordering::Greater,
             (None, None) => left.parameter.index().cmp(&right.parameter.index()),
-        }
-    });
+        },
+    );
     Ok(estimates)
 }
 
@@ -330,14 +322,11 @@ impl QeconTriangularMarginal {
         let split = (self.mode - self.minimum) / (self.maximum - self.minimum);
         if uniform < split {
             self.minimum
-                + ((uniform * (self.maximum - self.minimum) * (self.mode - self.minimum))
-                    .max(0.0))
+                + ((uniform * (self.maximum - self.minimum) * (self.mode - self.minimum)).max(0.0))
                     .sqrt()
         } else {
             self.maximum
-                - (((1.0 - uniform)
-                    * (self.maximum - self.minimum)
-                    * (self.maximum - self.mode))
+                - (((1.0 - uniform) * (self.maximum - self.minimum) * (self.maximum - self.mode))
                     .max(0.0))
                     .sqrt()
         }
@@ -412,15 +401,13 @@ pub fn propagate_qecon_uncertainty(
     base_input: &QeconInput,
     uncertainty: &QeconUncertaintyInput,
 ) -> Result<QeconUncertaintyResult, String> {
-    if uncertainty.sample_count < 2
-        || uncertainty.sample_count > MAX_QECON_UNCERTAINTY_SAMPLES
-    {
+    if uncertainty.sample_count < 2 || uncertainty.sample_count > MAX_QECON_UNCERTAINTY_SAMPLES {
         return Err(format!(
             "sample_count must be in 2..={MAX_QECON_UNCERTAINTY_SAMPLES}"
         ));
     }
 
-    let base_result = calculate_qecon(base_input)?;
+    calculate_qecon(base_input)?;
     validate_marginals(&uncertainty.marginals)?;
     let cholesky = cholesky_correlation(&uncertainty.latent_gaussian_correlation)?;
     let ordered_marginals = order_marginals(&uncertainty.marginals)?;
@@ -435,15 +422,13 @@ pub fn propagate_qecon_uncertainty(
 
     for sample_index in 0..uncertainty.sample_count {
         let independent_normals = standard_normal_vector(&mut rng);
-        let correlated_normals =
-            multiply_lower_triangular(&cholesky, &independent_normals);
+        let correlated_normals = multiply_lower_triangular(&cholesky, &independent_normals);
         let mut sampled_input = base_input.clone();
 
         for parameter in QeconParameter::ALL {
             let latent = correlated_normals[parameter.index()];
             let uniform = standard_normal_cdf(latent).clamp(1e-12, 1.0 - 1e-12);
-            let mut sampled_value =
-                ordered_marginals[parameter.index()].inverse_cdf(uniform);
+            let mut sampled_value = ordered_marginals[parameter.index()].inverse_cdf(uniform);
             if parameter == QeconParameter::PlantLifetime {
                 sampled_value = sampled_value.round();
             }
@@ -503,10 +488,7 @@ fn validate_marginals(marginals: &[QeconTriangularMarginal]) -> Result<(), Strin
         marginal.validate()?;
         let index = marginal.parameter.index();
         if seen[index] {
-            return Err(format!(
-                "duplicate marginal for {:?}",
-                marginal.parameter
-            ));
+            return Err(format!("duplicate marginal for {:?}", marginal.parameter));
         }
         seen[index] = true;
     }
@@ -529,7 +511,9 @@ fn order_marginals(
     for marginal in ordered {
         values.push(marginal.ok_or_else(|| "missing Q_econ marginal".to_string())?);
     }
-    values.try_into().map_err(|_| "expected ten Q_econ marginals".to_string())
+    values
+        .try_into()
+        .map_err(|_| "expected ten Q_econ marginals".to_string())
 }
 
 fn cholesky_correlation(
@@ -610,10 +594,8 @@ fn standard_normal_cdf(value: f64) -> f64 {
     let polynomial = t
         * (0.319_381_530
             + t * (-0.356_563_782
-                + t * (1.781_477_937
-                    + t * (-1.821_255_978 + t * 1.330_274_429))));
-    let density = (-0.5 * absolute * absolute).exp()
-        / (2.0 * std::f64::consts::PI).sqrt();
+                + t * (1.781_477_937 + t * (-1.821_255_978 + t * 1.330_274_429))));
+    let density = (-0.5 * absolute * absolute).exp() / (2.0 * std::f64::consts::PI).sqrt();
     let upper_tail = density * polynomial;
     if value >= 0.0 {
         1.0 - upper_tail
@@ -758,8 +740,8 @@ mod tests {
 
     fn identity_correlation() -> [[f64; QECON_PARAMETER_COUNT]; QECON_PARAMETER_COUNT] {
         let mut matrix = [[0.0; QECON_PARAMETER_COUNT]; QECON_PARAMETER_COUNT];
-        for index in 0..QECON_PARAMETER_COUNT {
-            matrix[index][index] = 1.0;
+        for (index, row) in matrix.iter_mut().enumerate() {
+            row[index] = 1.0;
         }
         matrix
     }
