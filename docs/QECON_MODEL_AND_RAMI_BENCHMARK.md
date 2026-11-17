@@ -167,6 +167,16 @@ This is not a calibrated forecast. No distribution is inferred automatically fro
 
 
 
+### Independent-input Sobol indices
+
+The exploration module now implements first-order and total-order variance indices using an independent-input Saltelli/Jansen design. It requires an explicit caller declaration that all ten triangular input marginals are independent and deliberately does not accept the Gaussian-copula matrix used for correlated Monte Carlo runs.
+
+The estimator uses two independent base sample matrices, one hybrid evaluation per input and sample, the Saltelli first-order covariance estimator and the Jansen total-order squared-difference estimator. It reports the seed, input marginals, output variance and exact model-evaluation count. Estimates are not clamped to [0, 1], so finite-sample excursions remain visible.
+
+This method is valid only under the declared independent-input model. It must not be applied to the correlated Gaussian-copula ensemble. The current sampled-ensemble Pearson/Spearman diagnostics remain descriptive; they are not a substitute for variance-based attribution.
+
+The next dependent-input track is a generalized dependent-input variance decomposition (e.g. Kucherenko indices) and a Shapley-effect allocation. Shapley effects are especially attractive because they allocate total output variance across inputs even when inputs are dependent and interaction effects exist, but estimating them requires conditional sampling and careful compute-budget/error control.
+
 ### Global ensemble associations
 
 A second sensitivity view is now available through `rank_qecon_global_associations`. It calculates Pearson and tie-aware Spearman associations between each of the ten sampled input parameters and Q_econ over the actual seeded ensemble. It ranks parameters by absolute Spearman association and returns `None` for constant inputs or outputs.
