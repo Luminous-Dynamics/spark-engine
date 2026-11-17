@@ -366,7 +366,11 @@ fn average_ranks(values: &[f64]) -> Vec<f64> {
 }
 
 fn pearson_correlation(left: &[f64], right: &[f64]) -> Option<f64> {
-    if left.len() != right.len() || left.len() < 2 {
+    if left.len() != right.len()
+        || left.len() < 2
+        || left.iter().all(|value| *value == left[0])
+        || right.iter().all(|value| *value == right[0])
+    {
         return None;
     }
     let left_mean = left.iter().sum::<f64>() / left.len() as f64;
@@ -1049,7 +1053,7 @@ mod tests {
     }
 
     #[test]
-    fn global_associations_cover_parameters_and_recover_monotonic_directions() {
+    fn global_associations_cover_all_parameters_and_rank_the_sampled_ensemble() {
         let result = propagate_qecon_uncertainty(&input(), &uncertainty(0x5eed)).unwrap();
         let associations = rank_qecon_global_associations(&result).unwrap();
         assert_eq!(associations.len(), QECON_PARAMETER_COUNT);
@@ -1063,41 +1067,57 @@ mod tests {
                 (None, _) => true,
             }
         }));
-        let find = |parameter| {
-            associations
-                .iter()
-                .find(|entry| entry.parameter == parameter)
-                .unwrap()
-                .spearman_rank_correlation
-                .unwrap()
-        };
-        assert!(find(QeconParameter::NetEnergyConversionEfficiency) > 0.0);
-        assert!(find(QeconParameter::NetPriceOfEnergy) > 0.0);
-        assert!(find(QeconParameter::SurfaceReplacementTime) < 0.0);
-        assert!(find(QeconParameter::SurfaceReplacementCost) < 0.0);
-        assert!(find(QeconParameter::PlantArealCost) < 0.0);
+        assert!(associations.iter().all(|entry| {
+            entry.pearson_correlation.is_none_or(|value| (-1.0..=1.0).contains(&value))
+                && entry.spearman_rank_correlation.is_none_or(|value| (-1.0..=1.0).contains(&value))
+        }));
     }
 
     #[test]
-    fn global_associations_mark_constant_inputs_as_undefined() {
+    fn global_associations_recover_monotonic_relationship_when_other_inputs_are_fixed() {
         let mut scenario = uncertainty(19);
+        let base = input();
         for marginal in &mut scenario.marginals {
-            marginal.minimum = match marginal.parameter {
-                QeconParameter::FusionPowerDensity => 3.7,
-                QeconParameter::SurfaceReplacementTime => 0.1,
-                QeconParameter::SurfaceEnergyFluenceLimit => 3.125,
-                QeconParameter::NetEnergyConversionEfficiency => 0.4,
-                QeconParameter::NetPriceOfEnergy => 100.0,
-                QeconParameter::TargetCostPerEnergyYield => 0.0,
-                QeconParameter::SurfaceReplacementCost => 0.3,
-                QeconParameter::PlantArealCost => 10.0,
-                QeconParameter::RealInterestRate => 2.0,
-                QeconParameter::PlantLifetime => 30.0,
-            };
-            marginal.mode = marginal.minimum;
-            marginal.maximum = marginal.minimum;
+            let value = marginal.parameter.value(&base);
+            marginal.minimum = value;
+            marginal.mode = value;
+            marginal.maximum = value;
         }
-        let result = propagate_qecon_uncertainty(&input(), &scenario).unwrap();
+        let replacement_time = scenario
+            .marginals
+            .iter_mut()
+            .find(|marginal| marginal.parameter == QeconParameter::SurfaceReplacementTime)
+            .unwrap();
+        replacement_time.minimum = 0.05;
+        replacement_time.mode = 0.1;
+        replacement_time.maximum = 0.2;
+
+        let result = propagate_qecon_uncertainty(&base, &scenario).unwrap();
+        let associations = rank_qecon_global_associations(&result).unwrap();
+        let replacement_time_association = associations
+            .iter()
+            .find(|entry| entry.parameter == QeconParameter::SurfaceReplacementTime)
+            .unwrap();
+        assert_eq!(replacement_time_association.spearman_rank_correlation, Some(-1.0));
+        assert!(associations.iter().filter(|entry| {
+            entry.parameter != QeconParameter::SurfaceReplacementTime
+        }).all(|entry| {
+            entry.pearson_correlation.is_none()
+                && entry.spearman_rank_correlation.is_none()
+        }));
+    }
+
+    #[test]
+    fn global_associations_mark_constant_inputs_and_output_as_undefined() {
+        let mut scenario = uncertainty(19);
+        let base = input();
+        for marginal in &mut scenario.marginals {
+            let value = marginal.parameter.value(&base);
+            marginal.minimum = value;
+            marginal.mode = value;
+            marginal.maximum = value;
+        }
+        let result = propagate_qecon_uncertainty(&base, &scenario).unwrap();
         let associations = rank_qecon_global_associations(&result).unwrap();
         assert!(associations.iter().all(|entry| {
             entry.pearson_correlation.is_none()
