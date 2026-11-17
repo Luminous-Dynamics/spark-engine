@@ -250,6 +250,23 @@ The numbers below are **qualification targets**, not results achieved by Spark. 
 
 For disruption prediction specifically, the DisruptionBench figures are baselines to reproduce before trying to beat them; the 0.90 AUC / 0.70 F2 figures above are our proposed stretch goals, not reported results. For neutronics, the current OpenMC-Fusion-Benchmarks proof-of-concept scope must not be represented as a fully mature fusion-plant benchmark suite. For hydride yield, raw-data reproduction must wait for the stated release date; the source paper's fitted values do not establish net energy production.
 
+## External RAMI and remote-maintenance evidence (2025–2026)
+
+The engineering feasibility layer should be benchmarked against real published maintenance cases rather than a generic MTBF/MTTR toy model.
+
+- **Commercial spherical-tokamak availability:** the 2025 Fusion Engineering and Design study by K. et al. (DOI: https://doi.org/10.1016/j.fusengdes.2025.115231) couples component fluence/lifetime, replacement duration, cost and plant availability. For its studied single-null parameter ranges, no solutions exceeded 80% availability; its double-null case reduced the divertor fluence target for 80% availability from about 160 to 115 MW·year/m². It reports a 0.25-year maintenance-time target and component-specific fluence/lifetime sensitivities. These figures are **specific PROCESS-model results**, not universal plant requirements; its underlying data are confidential, so Spark can compare published trends/targets but cannot claim a raw-data reproduction.
+- **VNS remote blanket extraction:** Mozzillo et al. (2025), DOI https://doi.org/10.1016/j.fusengdes.2025.115226, describe a virtual kinematic feasibility study in which outboard shielding-blanket segments can be removed without first removing the divertor. The reported sequence includes a 40 mm lift, approximately 9° tilt and 115 mm radial movement for a central outboard segment. These are concept/kinematic results, not an in-radiation plant-cadence demonstration.
+- **2026 VNS remote-tool design:** the follow-on paper (DOI: https://doi.org/10.1016/j.fusengdes.2026.115758) adds a conceptual blanket transporter, cask transporter and contamination-protection structure, with preliminary structural analysis. This is a useful Symtropy CAD/kinematic/structural workflow reference, still not operational qualification.
+- **DOE 2026 roadmap:** DOE identifies plant-level RAMI, non-nuclear remote-maintenance mockups, structured reliability data, modular digital twins and coupled-experiment validation as work needed to reach validated whole-system models. This is a national programme target, not a capability we have already delivered: https://www.energy.gov/articles/energy-department-releases-finalized-fusion-science-and-technology-roadmap-accelerate
+
+### Proposed externalized benchmark cases
+
+1. Reconstruct the published spherical-tokamak sensitivity *directions* and stated target ranges; explicitly mark the data as literature-reported and the full confidential PROCESS database as unavailable.
+2. Encode the VNS blanket segment geometry and removal sequence as a pinned CAD/kinematic task: collision-free extraction, required clearances, operations count, tool reach, cask interface, divertor-independent removal, and deterministic replay.
+3. Measure a full maintenance operation as a task graph: isolation, drain/decontaminate, disconnect, unbolt/cut, lift, transfer, hot-cell queue, refurbishment, replacement, reconnect, leak/pressure test, recommission and configuration verification.
+4. Report elapsed outage time, resource bottlenecks, parallelizable work, failure/recovery branches, dose/contamination boundary assumptions, equipment utilization and sensitivity to spare/cask/hot-cell capacity.
+5. Distinguish virtual kinematic clearance, mock-up demonstration, radiation-environment qualification and plant operational evidence as different assurance levels.
+
 ## Industry comparison and our credible differentiation
 
 The DOE's June 2026 Fusion Science and Technology Roadmap explicitly calls for an AI-Fusion Digital Convergence Platform integrating HPC codes, physics-constrained digital twins, foundation models, surrogates, whole-facility modelling and real-time control. It also identifies the lack of validated end-to-end plant-level integrated modelling and the need to make RAMI a first-class quantitative design driver ([DOE roadmap](https://www.energy.gov/documents/fusion-science-and-technology-roadmap)).
