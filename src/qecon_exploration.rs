@@ -852,11 +852,12 @@ mod tests {
         assert_eq!(first.uncertainty_input, scenario);
         assert!(first.assumptions.len() >= 3);
         assert!(
-            (0.0..=1.0)
-                .contains(&first.probability_q_econ_at_least_one.probability_estimate)
+            (0.0..=1.0).contains(&first.probability_q_econ_at_least_one.probability_estimate)
         );
         assert!(
-            first.probability_q_econ_at_least_one_point_five.probability_estimate
+            first
+                .probability_q_econ_at_least_one_point_five
+                .probability_estimate
                 <= first.probability_q_econ_at_least_one.probability_estimate
         );
         for estimate in [
