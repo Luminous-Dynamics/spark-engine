@@ -30,6 +30,7 @@
 //!   from experimental outcomes
 //! - **optimal_experiment**: Expected-information-gain ranking and
 //!   budget-constrained experiment sequencing
+//! - **qecon**: Surface-normalized economic gain and design thresholds
 //!
 //! ## Usage
 //!
@@ -71,6 +72,12 @@ pub mod bridge;
 // Explicit plant power boundary and first-order economics
 pub mod plant_energy_balance;
 
+// Q_econ surface-normalized fusion-plant economics
+pub mod qecon;
+
+// First-order reliability/availability screening (not full RAMI)
+pub mod plant_availability;
+
 // Evidence-aware sub-keV metallic hydride yield models
 pub mod sub_kev_yield;
 
@@ -100,9 +107,20 @@ pub use optimal_experiment::{
     greedy_sequence, rank_experiments, standard_candidate_experiments,
 };
 pub use physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
+pub use plant_availability::{
+    AVAILABILITY_MODEL_REVISION, AvailabilityGroup, AvailabilityGroupResult,
+    ComponentAvailabilityResult, ComponentRepairProfile, PlantAvailabilityInput,
+    PlantAvailabilityResult, calculate_plant_availability,
+};
+
 pub use plant_energy_balance::{
     PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
     calculate_lcoe, calculate_plant_power_balance,
+};
+pub use qecon::{
+    QECON_MODEL_REVISION, QeconDesignParameters, QeconEvidenceClass, QeconInput, QeconResult,
+    QeconScenario, QeconScenarioResult, calculate_qecon, calculate_qecon_scenario,
+    net_electric_efficiency_from_power_balance, required_fusion_power_density_for_qecon,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
@@ -174,9 +192,19 @@ pub mod prelude {
     pub use crate::lattice::{LatticeLifetime, LatticeState};
     pub use crate::neutron_source::{NeutronSourceDesign, NeutronSourceDesigner, SourceSpec};
     pub use crate::physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
+    pub use crate::plant_availability::{
+        AvailabilityGroup, ComponentRepairProfile, PlantAvailabilityInput, PlantAvailabilityResult,
+        calculate_plant_availability,
+    };
+
     pub use crate::plant_energy_balance::{
         PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
         calculate_lcoe, calculate_plant_power_balance,
+    };
+    pub use crate::qecon::{
+        QeconDesignParameters, QeconEvidenceClass, QeconInput, QeconResult, QeconScenario,
+        calculate_qecon, calculate_qecon_scenario, net_electric_efficiency_from_power_balance,
+        required_fusion_power_density_for_qecon,
     };
     pub use crate::shielding::{NeutronShielding, ShieldingResult};
 
