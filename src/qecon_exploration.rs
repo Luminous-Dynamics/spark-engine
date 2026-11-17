@@ -902,7 +902,7 @@ fn order_marginals(
         .map_err(|_| "expected ten Q_econ marginals".to_string())
 }
 
-fn cholesky_correlation(
+pub(crate) fn cholesky_correlation(
     matrix: &[[f64; QECON_PARAMETER_COUNT]; QECON_PARAMETER_COUNT],
 ) -> Result<[[f64; QECON_PARAMETER_COUNT]; QECON_PARAMETER_COUNT], String> {
     const N: usize = QECON_PARAMETER_COUNT;
@@ -943,7 +943,7 @@ fn cholesky_correlation(
     Ok(lower)
 }
 
-fn standard_normal_vector(rng: &mut ChaCha8Rng) -> [f64; QECON_PARAMETER_COUNT] {
+pub(crate) fn standard_normal_vector(rng: &mut ChaCha8Rng) -> [f64; QECON_PARAMETER_COUNT] {
     let mut values = [0.0; QECON_PARAMETER_COUNT];
     let mut index = 0;
     while index < QECON_PARAMETER_COUNT {
@@ -960,7 +960,7 @@ fn standard_normal_vector(rng: &mut ChaCha8Rng) -> [f64; QECON_PARAMETER_COUNT] 
     values
 }
 
-fn multiply_lower_triangular(
+pub(crate) fn multiply_lower_triangular(
     lower: &[[f64; QECON_PARAMETER_COUNT]; QECON_PARAMETER_COUNT],
     values: &[f64; QECON_PARAMETER_COUNT],
 ) -> [f64; QECON_PARAMETER_COUNT] {
@@ -974,7 +974,7 @@ fn multiply_lower_triangular(
 }
 
 /// Normal CDF approximation (maximum absolute error approximately 1.5e-7).
-fn standard_normal_cdf(value: f64) -> f64 {
+pub(crate) fn standard_normal_cdf(value: f64) -> f64 {
     let absolute = value.abs();
     let t = 1.0 / (1.0 + 0.231_641_9 * absolute);
     let polynomial = t
@@ -990,7 +990,7 @@ fn standard_normal_cdf(value: f64) -> f64 {
     }
 }
 
-fn wilson_probability_estimate(successes: u32, sample_count: u32) -> QeconProbabilityEstimate {
+pub(crate) fn wilson_probability_estimate(successes: u32, sample_count: u32) -> QeconProbabilityEstimate {
     const Z_95: f64 = 1.959_963_984_540_054;
     let n = f64::from(sample_count);
     let observed = f64::from(successes) / n;
@@ -1018,7 +1018,7 @@ fn wilson_probability_estimate(successes: u32, sample_count: u32) -> QeconProbab
     }
 }
 
-fn scalar_statistics(values: &[f64]) -> Result<QeconScalarStatistics, String> {
+pub(crate) fn scalar_statistics(values: &[f64]) -> Result<QeconScalarStatistics, String> {
     if values.len() < 2 || values.iter().any(|value| !value.is_finite()) {
         return Err("statistics require at least two finite values".to_string());
     }
