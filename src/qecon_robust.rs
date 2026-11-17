@@ -147,6 +147,8 @@ pub struct QeconRobustAssessmentResult {
     pub source_locator: Option<String>,
     pub base_input_digest_sha256: String,
     pub uncertainty_input_digest_sha256: String,
+    pub nominal_input: QeconInput,
+    pub uncertainty_input: QeconRobustUncertaintyInput,
     pub target_q_econ: f64,
     pub required_viability_probability: f64,
     pub optimization: QeconRobustRunEstimate,
@@ -195,6 +197,8 @@ pub fn assess_qecon_robust_viability(
         source_locator: base.source_locator,
         base_input_digest_sha256: base.input_digest_sha256,
         uncertainty_input_digest_sha256: scenario.uncertainty_input_digest_sha256.clone(),
+        nominal_input: scenario.base_scenario.input.clone(),
+        uncertainty_input: scenario.uncertainty_input.clone(),
         target_q_econ: scenario.target_q_econ,
         required_viability_probability: scenario.required_viability_probability,
         optimization,
@@ -459,6 +463,8 @@ mod tests {
         assert_eq!(first.evidence_class, QeconEvidenceClass::ScenarioAssumption);
         assert_eq!(first.base_input_digest_sha256, "a".repeat(64));
         assert_eq!(first.uncertainty_input_digest_sha256, "b".repeat(64));
+        assert_eq!(first.nominal_input, request.base_scenario.input);
+        assert_eq!(first.uncertainty_input, request.uncertainty_input);
     }
 
     #[test]
