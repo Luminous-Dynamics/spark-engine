@@ -1262,7 +1262,11 @@ mod tests {
         let result = estimate_qecon_sobol_indices(&base, &design).unwrap();
         for index in &result.indices {
             if index.parameter == QeconParameter::NetEnergyConversionEfficiency {
-                assert!((index.first_order_index - 1.0).abs() < 0.08);
+                assert!(
+                    (index.first_order_index - 1.0).abs() < 0.08,
+                    "single active factor first-order index was {}",
+                    index.first_order_index
+                );
                 assert!((index.total_order_index - 1.0).abs() < 0.08);
             } else {
                 assert!(index.first_order_index.abs() < 1e-10);
