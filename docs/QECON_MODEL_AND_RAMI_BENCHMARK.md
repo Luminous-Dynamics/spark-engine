@@ -167,6 +167,12 @@ This is not a calibrated forecast. No distribution is inferred automatically fro
 
 
 
+### Global ensemble associations
+
+A second sensitivity view is now available through `rank_qecon_global_associations`. It calculates Pearson and tie-aware Spearman associations between each of the ten sampled input parameters and Q_econ over the actual seeded ensemble. It ranks parameters by absolute Spearman association and returns `None` for constant inputs or outputs.
+
+This is a distribution-conditional, global descriptive association. With correlated inputs, a high rank correlation can reflect shared dependence with other parameters; it is not a causal effect, an independent-input Sobol index or a Shapley attribution. Use it alongside local elasticity, not instead of it. A true global variance-based sensitivity analysis for dependent inputs remains a separate research task.
+
 ### Evidence-carrying uncertainty runs
 
 The exploration API now supports an evidence-carrying scenario wrapper. It retains the base scenario identifier, model revision, evidence class, source locator, base-input digest and assumptions alongside the uncertainty-input digest, seed, marginal distributions, dependence matrix and uncertainty result. It validates the base scenario through the Q_econ scenario evaluator and syntax-checks the uncertainty digest.
