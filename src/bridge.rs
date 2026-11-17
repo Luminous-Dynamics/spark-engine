@@ -90,10 +90,12 @@ impl UnifiedFusionCalculator {
             let screening = conditions.host_material.screening_ev();
             let gamow = GamowIntegration::dd_rate(conditions.temperature_k, screening, 0);
             let n_d = conditions.host_material.d_density_full() * conditions.loading_ratio;
-            let q_factor = self.lcf_primary_input_power_density_w_cm3.map(|input_power_density| {
-                let params = QFactorParams::new(n_d, 1.0, input_power_density);
-                QFactor::compute(&gamow, &params).0
-            });
+            let q_factor = self
+                .lcf_primary_input_power_density_w_cm3
+                .map(|input_power_density| {
+                    let params = QFactorParams::new(n_d, 1.0, input_power_density);
+                    QFactor::compute(&gamow, &params).0
+                });
 
             LcfFusionResult {
                 sigma_v_cm3_s: gamow.sigma_v_cm3_s,
