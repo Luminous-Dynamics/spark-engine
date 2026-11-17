@@ -218,7 +218,7 @@ pub fn assess_qecon_robust_viability(
     })
 }
 
-fn validate_robust_assessment_scenario(
+pub(crate) fn validate_robust_assessment_scenario(
     scenario: &QeconRobustAssessmentScenario,
 ) -> Result<(), String> {
     if !scenario.target_q_econ.is_finite() || scenario.target_q_econ <= 0.0 {
