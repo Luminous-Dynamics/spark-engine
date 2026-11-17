@@ -372,8 +372,7 @@ mod tests {
                 < 1e-12
         );
         assert!(
-            (two_environment_enhancement(0.5, DD_GAMOW_ENERGY_KEV, 0.0, 2.0, 0.4).unwrap()
-                - bulk)
+            (two_environment_enhancement(0.5, DD_GAMOW_ENERGY_KEV, 0.0, 2.0, 0.4).unwrap() - bulk)
                 .abs()
                 < 1e-12
         );
