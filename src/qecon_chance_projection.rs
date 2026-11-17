@@ -416,19 +416,23 @@ fn evaluate_optimization_candidate(
         return Ok(None);
     }
     let candidate_input = input_from_values(reference, values)?;
-    match run_candidate_ensemble(
+    let mut candidate_scenario = robust.clone();
+    candidate_scenario.base_scenario.input = candidate_input.clone();
+    // The nominal design can change whether the full perturbation support
+    // remains inside Q_econ's domain. Such a candidate is infeasible, while
+    // unrelated evaluation errors below still propagate as errors.
+    if validate_robust_assessment_scenario(&candidate_scenario).is_err() {
+        return Ok(None);
+    }
+    let result = run_robust_ensemble(
         &candidate_input,
-        robust,
+        robust.target_q_econ,
+        &robust.uncertainty_input,
         robust.uncertainty_input.optimization_seed,
         robust.uncertainty_input.optimization_sample_count,
-    ) {
-        Ok(result) => {
-            *evaluations += 1;
-            Ok(Some(result))
-        }
-        Err(error) if error.contains("invalid input") || error.contains("outside") => Ok(None),
-        Err(error) => Err(error),
-    }
+    )?;
+    *evaluations += 1;
+    Ok(Some(result))
 }
 
 fn run_candidate_ensemble(
