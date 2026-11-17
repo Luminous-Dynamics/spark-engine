@@ -68,6 +68,12 @@ pub mod uncertainty;
 // Integration modules
 pub mod bridge;
 
+// Explicit plant power boundary and first-order economics
+pub mod plant_energy_balance;
+
+// Evidence-aware sub-keV metallic hydride yield models
+pub mod sub_kev_yield;
+
 // Extended fusion physics (D-T, p-B11, muon-catalyzed)
 pub mod reactions;
 
@@ -94,7 +100,17 @@ pub use optimal_experiment::{
     greedy_sequence, rank_experiments, standard_candidate_experiments,
 };
 pub use physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
+pub use plant_energy_balance::{
+    PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
+    calculate_lcoe, calculate_plant_power_balance,
+};
 pub use shielding::{NeutronShielding, ShieldingResult};
+pub use sub_kev_yield::{
+    DatasetAvailability, DetectionChannel, HomogeneousScreeningFit, LoadingCondition,
+    RelativeYieldPoint, RelativeYieldSeries, ScreeningParameterStatus, SubKevHostMaterial,
+    YieldDataOrigin, YieldProvenance, alr_screening_enhancement,
+    equivalent_homogeneous_screening_kev, published_high_energy_fits, two_environment_enhancement,
+};
 
 // Path C re-exports
 pub use experimental_design::{ExperimentDesign, ExperimentDesigner, ExperimentalProgram};
@@ -158,6 +174,10 @@ pub mod prelude {
     pub use crate::lattice::{LatticeLifetime, LatticeState};
     pub use crate::neutron_source::{NeutronSourceDesign, NeutronSourceDesigner, SourceSpec};
     pub use crate::physics::{GamowIntegration, GamowResult, QFactor, QFactorParams};
+    pub use crate::plant_energy_balance::{
+        PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
+        calculate_lcoe, calculate_plant_power_balance,
+    };
     pub use crate::shielding::{NeutronShielding, ShieldingResult};
 
     // Path C: Anomaly investigation
