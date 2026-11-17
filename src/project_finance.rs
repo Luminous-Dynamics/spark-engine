@@ -5,11 +5,12 @@
 //! module evaluates an explicitly supplied annual cash-flow path in one
 //! declared currency and price basis.
 //!
-//! It is currently an unlevered project-cash-flow model. It does not build a
-//! debt/equity waterfall, tax schedule, refinancing model, dispatch forecast or
-//! construction stochastic process. Interest during construction can be
-//! supplied as an explicit annual cost line, but the caller must ensure that
-//! it is not double-counted through the discount-rate convention.
+//! It is currently a pre-financing project-cash-flow model. It does not build
+//! a debt/equity waterfall, debt draws, debt service, tax schedule, refinancing
+//! model, dispatch forecast or construction stochastic process. Interest
+//! during construction can be supplied as an explicit annual cost line, but
+//! the caller must ensure that it is not double-counted through the
+//! discount-rate convention.
 //!
 //! Every period must include one explicit line for every cost category,
 //! including categories whose amount is zero. This is intentionally stricter
@@ -160,8 +161,8 @@ pub struct ProjectFinanceResult {
     pub irr_status: ProjectIrrStatus,
     pub peak_working_capital: f64,
     pub ending_working_capital: f64,
-    /// Minimum cumulative unlevered project cash position before external
-    /// debt/equity financing. Negative values indicate a funding trough.
+    /// Minimum cumulative project cash position before external debt/equity
+    /// financing. Negative values indicate a funding trough.
     pub minimum_cumulative_cash_before_financing: f64,
     pub ending_cumulative_cash_before_financing: f64,
     pub periods: Vec<ProjectCashflowResultPeriod>,
