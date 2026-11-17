@@ -240,6 +240,8 @@ The optimizer:
 - starts from the favourable parameter-box corner;
 - enumerates integer plant-lifetime years;
 - uses repeated one-coordinate moves toward the clamped reference, with bisection to retain the chance-feasible side of each move;
+- assumes Q_econ is monotone in each favourable parameter direction over the supplied box; candidate support that violates Q_econ input-domain constraints is treated as infeasible;
+- records search candidate evaluations, a final optimization-ensemble recheck, and independent validation model evaluations separately;
 - respects a caller-supplied candidate-evaluation budget and coordinate-sweep budget;
 - selects the lowest weighted-distance candidate found;
 - then evaluates the selected candidate with the separate validation seed, which is not used during search.
