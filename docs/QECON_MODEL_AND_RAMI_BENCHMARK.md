@@ -167,6 +167,12 @@ This is not a calibrated forecast. No distribution is inferred automatically fro
 
 
 
+### Evidence-carrying uncertainty runs
+
+The exploration API now supports an evidence-carrying scenario wrapper. It retains the base scenario identifier, model revision, evidence class, source locator, base-input digest and assumptions alongside the uncertainty-input digest, seed, marginal distributions, dependence matrix and uncertainty result. It validates the base scenario through the Q_econ scenario evaluator and syntax-checks the uncertainty digest.
+
+The digest fields are still caller-supplied receipts: this crate does not define canonical cross-repository serialization or verify the cryptographic digests. Mycelix's shared evidence layer remains responsible for canonical serialization, digest generation and verification. A scenario's evidence class is inherited, not upgraded by running Monte Carlo.
+
 ### Sampling-error intervals for viability probabilities
 
 The uncertainty result now accompanies each Monte Carlo estimate of `P(Q_econ >= 1)` and `P(Q_econ >= 1.5)` with a Wilson 95% binomial interval. The interval quantifies finite sample-count error **conditional on the supplied model and distributions**. It does not include uncertainty in the marginal ranges, the copula, the Q_econ equations, missing physical processes or model discrepancy.
