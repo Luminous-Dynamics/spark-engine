@@ -167,6 +167,22 @@ This is not a calibrated forecast. No distribution is inferred automatically fro
 
 
 
+
+
+### Independent-input Saltelli/Jansen indices
+
+The module now includes a standard independent-input variance-based sensitivity design. It:
+- requires an explicit declaration that all ten input marginals are independent;
+- samples two independent base designs A/B and computes one hybrid A-with-column-i-from-B per parameter;
+- estimates first-order indices with the Saltelli covariance estimator;
+- estimates total-order indices with the Jansen squared-difference estimator;
+- reports sample seed, number of model evaluations, output variance and the full marginal definitions;
+- leaves finite-sample excursions outside [0, 1] visible rather than clipping them.
+
+The independent-input API intentionally does not accept the Gaussian-copula correlation matrix. Do not run ordinary Sobol estimators on correlated input ensembles and do not reinterpret Pearson/Spearman marginal associations as Sobol indices.
+
+A separate dependent-input Shapley/conditional-variance track is tracked in [issue #20](https://github.com/Luminous-Dynamics/spark-engine/issues/20). Shapley effects are a promising route because they can allocate output variance across dependent inputs and interactions; conditional sampling and convergence/error control are required.
+
 ### Independent-input Sobol indices
 
 The exploration module now implements first-order and total-order variance indices using an independent-input Saltelli/Jansen design. It requires an explicit caller declaration that all ten triangular input marginals are independent and deliberately does not accept the Gaussian-copula matrix used for correlated Monte Carlo runs.
