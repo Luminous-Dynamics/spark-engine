@@ -121,8 +121,9 @@ pub use plant_energy_balance::{
     calculate_lcoe, calculate_plant_power_balance,
 };
 pub use qecon::{
-    QECON_MODEL_REVISION, QeconDesignParameters, QeconEvidenceClass, QeconInput, QeconResult,
-    QeconScenario, QeconScenarioResult, calculate_qecon, calculate_qecon_scenario,
+    QECON_MODEL_REVISION, QeconAsymptoticLimits, QeconDesignParameters, QeconEvidenceClass,
+    QeconInput, QeconResult, QeconScenario, QeconScenarioResult,
+    calculate_qecon, calculate_qecon_asymptotic_limits, calculate_qecon_scenario,
     net_electric_efficiency_from_power_balance, required_fusion_power_density_for_qecon,
 };
 pub use qecon_exploration::{
