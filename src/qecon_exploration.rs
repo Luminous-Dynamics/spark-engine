@@ -262,6 +262,163 @@ pub fn rank_qecon_sensitivities(
     Ok(estimates)
 }
 
+/// Independent-input Saltelli/Jansen variance-based sensitivity input.
+///
+/// The standard first-order/total-order estimators require independent input
+/// factors. This API requires an explicit caller declaration and samples each
+/// triangular marginal independently; it does not accept the correlated
+/// Gaussian-copula matrix used by `QeconUncertaintyInput`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct QeconSobolInput {
+    pub sample_count: u32,
+    pub seed: u64,
+    pub independence_assumption_confirmed: bool,
+    pub marginals: Vec<QeconTriangularMarginal>,
+}
+
+/// First-order and total-order Sobol estimates for one independent input.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub struct QeconSobolIndex {
+    pub parameter: QeconParameter,
+    pub first_order_index: f64,
+    pub total_order_index: f64,
+}
+
+/// Reproducible independent-input Saltelli/Jansen sensitivity result.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct QeconSobolResult {
+    pub model_revision: String,
+    pub exploration_revision: String,
+    pub seed: u64,
+    pub sample_count: u32,
+    pub model_evaluation_count: u64,
+    pub output_variance: f64,
+    pub independence_assumption_confirmed: bool,
+    pub marginals: Vec<QeconTriangularMarginal>,
+    pub assumptions: Vec<String>,
+    pub indices: Vec<QeconSobolIndex>,
+}
+
+/// Estimate independent-input first-order and total-order Sobol indices.
+///
+/// Uses two independent base matrices A/B and one A-with-column-i-from-B
+/// hybrid per parameter. The Saltelli first-order covariance estimator and
+/// Jansen total-order squared-difference estimator are calculated from the
+/// same design. Estimates are not clamped to [0, 1]; finite Monte Carlo noise
+/// can produce small excursions and those should remain visible.
+pub fn estimate_qecon_sobol_indices(
+    base_input: &QeconInput,
+    sobol: &QeconSobolInput,
+) -> Result<QeconSobolResult, String> {
+    if !sobol.independence_assumption_confirmed {
+        return Err(
+            "standard Sobol estimators require an explicit independent-input declaration"
+                .to_string(),
+        );
+    }
+    if sobol.sample_count < 128 || sobol.sample_count > MAX_QECON_UNCERTAINTY_SAMPLES {
+        return Err(format!(
+            "Sobol sample_count must be in 128..={MAX_QECON_UNCERTAINTY_SAMPLES}"
+        ));
+    }
+    calculate_qecon(base_input)?;
+    validate_marginals(&sobol.marginals)?;
+
+    let ordered_marginals = order_marginals(&sobol.marginals)?;
+    let mut rng = ChaCha8Rng::seed_from_u64(sobol.seed);
+    let mut output_a = Vec::with_capacity(sobol.sample_count as usize);
+    let mut output_b = Vec::with_capacity(sobol.sample_count as usize);
+    let mut first_order_sums = [0.0; QECON_PARAMETER_COUNT];
+    let mut total_order_sums = [0.0; QECON_PARAMETER_COUNT];
+
+    for _ in 0..sobol.sample_count {
+        let input_a = sample_independent_qecon_input(base_input, &ordered_marginals, &mut rng)?;
+        let input_b = sample_independent_qecon_input(base_input, &ordered_marginals, &mut rng)?;
+        let output_a_value = calculate_qecon(&input_a)?.q_econ;
+        let output_b_value = calculate_qecon(&input_b)?.q_econ;
+        output_a.push(output_a_value);
+        output_b.push(output_b_value);
+
+        for parameter in QeconParameter::ALL {
+            let value_from_b = parameter.value(&input_b);
+            let hybrid = parameter.with_value(&input_a, value_from_b)?;
+            let hybrid_output = calculate_qecon(&hybrid)?.q_econ;
+            first_order_sums[parameter.index()] +=
+                output_b_value * (hybrid_output - output_a_value);
+            let difference = output_a_value - hybrid_output;
+            total_order_sums[parameter.index()] += difference * difference;
+        }
+    }
+
+    let sample_count = sobol.sample_count as usize;
+    let mut combined_outputs = output_a;
+    combined_outputs.extend(output_b);
+    let output_mean = combined_outputs.iter().sum::<f64>() / combined_outputs.len() as f64;
+    let output_variance = combined_outputs
+        .iter()
+        .map(|value| {
+            let difference = value - output_mean;
+            difference * difference
+        })
+        .sum::<f64>()
+        / combined_outputs.len() as f64;
+    if !output_variance.is_finite() || output_variance <= 0.0 {
+        return Err("Sobol indices require non-zero finite output variance".to_string());
+    }
+
+    let indices = QeconParameter::ALL
+        .into_iter()
+        .map(|parameter| {
+            let index = parameter.index();
+            QeconSobolIndex {
+                parameter,
+                first_order_index: first_order_sums[index]
+                    / sample_count as f64
+                    / output_variance,
+                total_order_index: total_order_sums[index]
+                    / (2.0 * sample_count as f64)
+                    / output_variance,
+            }
+        })
+        .collect();
+
+    Ok(QeconSobolResult {
+        model_revision: QECON_MODEL_REVISION.to_string(),
+        exploration_revision: QECON_EXPLORATION_REVISION.to_string(),
+        seed: sobol.seed,
+        sample_count: sobol.sample_count,
+        model_evaluation_count: u64::from(sobol.sample_count)
+            * (2 + QECON_PARAMETER_COUNT as u64),
+        output_variance,
+        independence_assumption_confirmed: true,
+        marginals: sobol.marginals.clone(),
+        assumptions: vec![
+            "All ten input factors are sampled independently from the supplied triangular marginals.".to_string(),
+            "Classical first-order and total-order variance indices are only interpreted under this independent-input assumption.".to_string(),
+            "Finite Monte Carlo error may produce estimates slightly outside [0, 1]; values are not silently clamped.".to_string(),
+            "These indices quantify variance contribution under the declared distributions, not causal effects or intervention costs.".to_string(),
+        ],
+        indices,
+    })
+}
+
+fn sample_independent_qecon_input(
+    base_input: &QeconInput,
+    marginals: &[QeconTriangularMarginal; QECON_PARAMETER_COUNT],
+    rng: &mut ChaCha8Rng,
+) -> Result<QeconInput, String> {
+    let mut sampled = base_input.clone();
+    for parameter in QeconParameter::ALL {
+        let uniform = rng.gen_range(0.0..1.0);
+        let mut value = marginals[parameter.index()].inverse_cdf(uniform);
+        if parameter == QeconParameter::PlantLifetime {
+            value = value.round();
+        }
+        sampled = parameter.with_value(&sampled, value)?;
+    }
+    Ok(sampled)
+}
+
 /// Global association between one sampled Q_econ input and the Q_econ output.
 ///
 /// Pearson correlation measures linear association; Spearman correlation
@@ -1046,6 +1203,72 @@ mod tests {
         assert!(find(QeconParameter::PlantArealCost) < 0.0);
         assert!(find(QeconParameter::RealInterestRate) < 0.0);
         assert!(find(QeconParameter::PlantLifetime) > 0.0);
+    }
+
+    fn sobol_input(seed: u64, sample_count: u32) -> QeconSobolInput {
+        QeconSobolInput {
+            sample_count,
+            seed,
+            independence_assumption_confirmed: true,
+            marginals: marginals(),
+        }
+    }
+
+    #[test]
+    fn independent_sobol_rejects_missing_independence_declaration_and_small_samples() {
+        let mut design = sobol_input(12, 128);
+        design.independence_assumption_confirmed = false;
+        assert!(estimate_qecon_sobol_indices(&input(), &design).is_err());
+        design.independence_assumption_confirmed = true;
+        design.sample_count = 127;
+        assert!(estimate_qecon_sobol_indices(&input(), &design).is_err());
+    }
+
+    #[test]
+    fn independent_sobol_is_reproducible_and_reports_model_evaluations() {
+        let design = sobol_input(0x5eed, 512);
+        let first = estimate_qecon_sobol_indices(&input(), &design).unwrap();
+        let second = estimate_qecon_sobol_indices(&input(), &design).unwrap();
+        assert_eq!(first, second);
+        assert_eq!(first.indices.len(), QECON_PARAMETER_COUNT);
+        assert_eq!(
+            first.model_evaluation_count,
+            512 * (2 + QECON_PARAMETER_COUNT as u64)
+        );
+        assert!(first.output_variance > 0.0);
+    }
+
+    #[test]
+    fn independent_sobol_recovers_single_active_input() {
+        let base = input();
+        let mut design = sobol_input(0x1234, 4096);
+        for marginal in &mut design.marginals {
+            let value = marginal.parameter.value(&base);
+            marginal.minimum = value;
+            marginal.mode = value;
+            marginal.maximum = value;
+        }
+        let efficiency = design
+            .marginals
+            .iter_mut()
+            .find(|marginal| {
+                marginal.parameter == QeconParameter::NetEnergyConversionEfficiency
+            })
+            .unwrap();
+        efficiency.minimum = 0.3;
+        efficiency.mode = 0.4;
+        efficiency.maximum = 0.5;
+
+        let result = estimate_qecon_sobol_indices(&base, &design).unwrap();
+        for index in &result.indices {
+            if index.parameter == QeconParameter::NetEnergyConversionEfficiency {
+                assert!((index.first_order_index - 1.0).abs() < 0.08);
+                assert!((index.total_order_index - 1.0).abs() < 0.08);
+            } else {
+                assert!(index.first_order_index.abs() < 1e-10);
+                assert!(index.total_order_index.abs() < 1e-10);
+            }
+        }
     }
 
     #[test]
