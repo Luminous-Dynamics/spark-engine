@@ -82,7 +82,13 @@ pub struct QeconChanceProjectionResult {
     pub integer_lifetimes_with_robust_feasible_corner: u32,
     pub coordinate_sweeps_for_selected_lifetime: u32,
     pub total_coordinate_sweeps: u64,
+    /// Number of candidate ensemble evaluations used during the search.
     pub optimization_candidate_evaluations: u32,
+    /// One final recheck of the selected candidate on the optimization seed.
+    pub final_optimization_recheck_evaluations: u32,
+    /// Total Q_econ model calls across search plus final optimization recheck.
+    pub optimization_model_evaluation_count: u64,
+    /// Q_econ model calls on the independent validation ensemble.
     pub validation_model_evaluations: u64,
     pub parameter_results: Vec<QeconProjectionParameterResult>,
     pub assumptions: Vec<String>,
@@ -377,7 +383,10 @@ pub fn project_qecon_to_chance_constrained_viability(
         integer_lifetimes_with_robust_feasible_corner: robust_feasible_lifetime_count,
         coordinate_sweeps_for_selected_lifetime: best.coordinate_sweeps,
         total_coordinate_sweeps,
-        optimization_candidate_evaluations: optimization_evaluations,
+        optimization_candidate_evaluations: candidate_evaluations,
+        final_optimization_recheck_evaluations: 1,
+        optimization_model_evaluation_count: u64::from(optimization_evaluations)
+            * u64::from(robust.uncertainty_input.optimization_sample_count),
         validation_model_evaluations: u64::from(
             robust.uncertainty_input.validation_sample_count,
         ),
@@ -386,6 +395,7 @@ pub fn project_qecon_to_chance_constrained_viability(
             "The search uses the same optimization seed for every candidate (common random numbers).".to_string(),
             "The validation seed is not read during candidate selection and is used only for the final selected candidate.".to_string(),
             "The chance constraint is the Wilson 95% lower bound of the Monte Carlo probability P(Q_econ >= target), not the point estimate.".to_string(),
+            "The search assumes Q_econ is monotone in each declared favourable parameter direction over the supplied design box.".to_string(),
             "This is an approximate coordinate/bisection search over a sampled chance constraint, not a global-optimality proof.".to_string(),
             "Plant lifetime is enumerated over integer years; it is never relaxed to a continuous variable.".to_string(),
             "The objective uses stakeholder scales and difficulty weights in the original design parameters.".to_string(),
@@ -611,6 +621,16 @@ mod tests {
         assert!(result.projected_nominal_q_econ >= 1.5);
         assert!(result.projected_input.fusion_power_density_mw_per_m2 > 2.5);
         assert_ne!(result.optimization.seed, result.validation.seed);
+        assert_eq!(result.final_optimization_recheck_evaluations, 1);
+        assert_eq!(
+            result.optimization_model_evaluation_count,
+            u64::from(result.optimization_candidate_evaluations + 1)
+                * u64::from(result.optimization.sample_count)
+        );
+        assert_eq!(
+            result.validation_model_evaluations,
+            u64::from(result.validation.sample_count)
+        );
     }
 
     #[test]
