@@ -145,7 +145,7 @@ impl UnifiedFusionCalculator {
                 };
 
                 Some(ApproachComparison {
-                    tokamak_to_lcf_reactivity_coefficient_ratio: reactivity_ratio,
+                    tokamak_rate_advantage: reactivity_ratio,
                     comparison_caveat: "The ratio compares modelled reactivity coefficients only. It is not a rate, power, gain, cost, or whole-system performance comparison; densities, active volumes, confinement, drivers and energy boundaries differ.".to_string(),
                     lcf_simplicity_advantage: "System-level simplicity is not established by the supplied inputs.".to_string(),
                     tokamak_energy_advantage: None,
@@ -207,7 +207,7 @@ pub struct TokamakFusionResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApproachComparison {
     /// Ratio of modelled reactivity coefficients only, not system performance.
-    pub tokamak_to_lcf_reactivity_coefficient_ratio: Option<f64>,
+    pub tokamak_rate_advantage: Option<f64>,
     /// Explanation of why a reactivity-coefficient ratio is not a plant comparison.
     pub comparison_caveat: String,
     /// Engineering simplicity assessment; absence of evidence is explicit.
