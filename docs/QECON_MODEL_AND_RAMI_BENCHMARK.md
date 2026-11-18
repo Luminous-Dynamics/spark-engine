@@ -225,6 +225,16 @@ The next economics increment is a weighted closest-viable-design solver faithful
 
 Do not label the finite-difference ranking as the paper's weighted projection. Do not claim a globally closest viable design until the constrained optimization and independent oracle are implemented and validated.
 
+## Chance-constrained weighted Q_econ design projection
+
+A new `qecon_chance_projection` layer composes weighted design bounds with the robust uncertainty sampler. It minimizes the original-parameter weighted Euclidean distance subject to a Wilson 95% lower-bound constraint on the conditional Monte Carlo probability `P(Q_econ >= target)`.
+
+The search uses common random numbers: every candidate shares the same optimization seed and sample set. It enumerates integer plant lifetimes, starts at the declared favourable box corner, and uses coordinate moves/bisection toward the reference while preserving the chance-feasible side. Search budgets are explicit. The selected candidate is rechecked using the optimization seed, then independently validated using a distinct seed that was never read by the search.
+
+It reports optimization and validation probability intervals, feasibility margins, selected design, weighted objective, parameter movements, lifetime/sweep counts and model-evaluation cost. The projected input is distinct from the baseline; its canonical digest must be created by the shared evidence layer.
+
+This is an approximate sample-average coordinate search, not a global-optimality proof. It assumes monotonic Q_econ effects in the declared favourable directions across the supplied box. Wilson intervals measure finite simulation error only; they do not validate the input distributions, model discrepancy, heat exhaust or materials physics. See [issue #27](https://github.com/Luminous-Dynamics/spark-engine/issues/27).
+
 ## Conditional robust-viability assessment
 
 A separate `qecon_robust` module now evaluates one nominal Q_econ candidate with two independent seeded ensembles:
