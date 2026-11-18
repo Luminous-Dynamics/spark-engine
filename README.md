@@ -68,7 +68,7 @@ let gap = AnomalyAnalysis::compute_gap(observed, predicted);
 ```
 
 ```bash
-cargo test              # 99 tests
+cargo test
 cargo run --bin spark   # CLI entry point
 
 cargo run --bin spark-case-validate -- benchmarks/conformance/synthetic-power-ledger.case.json
