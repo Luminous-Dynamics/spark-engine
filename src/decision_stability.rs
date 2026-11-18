@@ -266,20 +266,49 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
         return Err("common-mode fixture requires at least two model labels".to_string());
     }
     let mut values = Vec::with_capacity(models.len());
-    let mut dependence_groups = BTreeSet::new();
     let mut model_ids = BTreeSet::new();
+    let mut source_families = Vec::with_capacity(models.len());
+    let mut calibration_groups = Vec::with_capacity(models.len());
+    let mut declared_clusters = Vec::with_capacity(models.len());
 
     for model in models {
         let model_id = required_str(model, "model_id", "registered_model")?;
         if !model_ids.insert(model_id) {
             return Err("registered model IDs must be unique".to_string());
         }
-        let source_family = required_str(model, "source_family", "registered_model")?;
-        let calibration_group = required_str(model, "calibration_group", "registered_model")?;
+        source_families.push(required_str(model, "source_family", "registered_model")?);
+        calibration_groups.push(required_str(model, "calibration_group", "registered_model")?);
+        declared_clusters.push(required_str(model, "dependence_cluster_id", "registered_model")?);
         let _runner = required_str(model, "execution_lineage", "registered_model")?;
-        dependence_groups.insert((source_family, calibration_group));
         values.push(required_f64(model, "estimate", "registered_model")?);
     }
+
+    // If two models share any declared source/calibration dependency, they may not
+    // be assigned different dependence clusters. Different cluster IDs are not
+    // themselves proof of independence; unresolved dimensions remain explicit.
+    for left in 0..models.len() {
+        for right in (left + 1)..models.len() {
+            let shares_declared_dependency =
+                source_families[left] == source_families[right]
+                    || calibration_groups[left] == calibration_groups[right];
+            if shares_declared_dependency && declared_clusters[left] != declared_clusters[right] {
+                return Err("models sharing a declared source/calibration dependency must share a dependence cluster".to_string());
+            }
+        }
+    }
+
+    let unresolved_dimensions = required_array(&root, "unresolved_dependency_dimensions", "root")?;
+    if unresolved_dimensions.is_empty() {
+        return Err("unresolved dependency dimensions must remain explicit".to_string());
+    }
+    let actual_cluster_set: BTreeSet<_> = declared_clusters.iter().cloned().collect();
+    let expected_clusters = required_array(
+        required(&required(&root, "expected", "root")?, "declared_dependence_clusters", "expected")?,
+        "items",
+        "expected.declared_dependence_clusters",
+    );
+    let _ = expected_clusters;
+
 
     let minimum = values.iter().copied().fold(f64::INFINITY, f64::min);
     let maximum = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
@@ -299,23 +328,19 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
         return Err("common-mode model envelope does not match the known answer".to_string());
     }
 
-    let expected_groups = required(expected, "shared_dependence_groups", "expected")?
-        .as_array().ok_or_else(|| "shared_dependence_groups must be an array".to_string())?;
-    let expected_group_set: BTreeSet<_> = expected_groups.iter()
+    let expected_cluster_values = required_array(expected, "declared_dependence_clusters", "expected")?
+        .iter()
         .map(|value| value.as_str().map(ToString::to_string)
-            .ok_or_else(|| "shared_dependence_groups entries must be strings".to_string()))
+            .ok_or_else(|| "declared_dependence_clusters entries must be strings".to_string()))
         .collect::<Result<BTreeSet<_>, _>>()?;
-    let actual_group_labels: BTreeSet<_> = dependence_groups.iter()
-        .flat_map(|(source, calibration)| [source.clone(), calibration.clone()])
-        .collect();
-    if actual_group_labels != expected_group_set {
-        return Err("common-mode dependence labels do not match the known answer".to_string());
+    if actual_cluster_set != expected_cluster_values {
+        return Err("declared dependence clusters do not match the known answer".to_string());
     }
 
     let expected_count = required(expected, "dependence_cluster_count", "expected")?
         .as_u64().ok_or_else(|| "dependence_cluster_count must be an integer".to_string())?;
-    if dependence_groups.len() as u64 != expected_count {
-        return Err("dependence cluster count must match distinct registered source/calibration groups".to_string());
+    if actual_cluster_set.len() as u64 != expected_count {
+        return Err("dependence cluster count does not match the declared cluster IDs".to_string());
     }
     let reference_error_minimum = reference_value - maximum;
     let reference_error_maximum = reference_value - minimum;
@@ -330,7 +355,7 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
         minimum_estimate: minimum,
         maximum_estimate: maximum,
         estimate_range: range,
-        dependence_cluster_count: dependence_groups.len(),
+        dependence_cluster_count: actual_cluster_set.len(),
         reference_error_minimum,
         reference_error_maximum,
     })
@@ -458,6 +483,17 @@ mod tests {
     fn common_mode_consensus_rejects_false_independence_count() {
         let mut fixture: Value = serde_json::from_str(CONSENSUS).expect("fixture parses");
         fixture["expected"]["dependence_cluster_count"] = serde_json::json!(3);
+        assert!(validate_common_mode_consensus(&fixture.to_string()).is_err());
+    }
+
+    #[test]
+    fn common_mode_consensus_rejects_splitting_a_shared_source_lineage() {
+        let mut fixture: Value = serde_json::from_str(CONSENSUS).expect("fixture parses");
+        fixture["registered_models"][1]["dependence_cluster_id"] =
+            serde_json::json!("incorrect-separate-cluster");
+        fixture["expected"]["declared_dependence_clusters"] =
+            serde_json::json!(["shared-dependence-1", "incorrect-separate-cluster"]);
+        fixture["expected"]["dependence_cluster_count"] = serde_json::json!(2);
         assert!(validate_common_mode_consensus(&fixture.to_string()).is_err());
     }
 
