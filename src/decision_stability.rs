@@ -43,6 +43,17 @@ pub struct ConformalArithmeticSummary {
     pub coverage_composition_cases: usize,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct OodRefusalSummary {
+    pub requested_value: f64,
+    pub qualified_minimum: f64,
+    pub qualified_maximum: f64,
+    pub model_point_estimate_mwe: f64,
+    pub disposition: String,
+    pub decision_eligibility: String,
+    pub adjusted_robust_lower_bound_mwe: Option<f64>,
+}
+
 fn parse_json(raw: &str, label: &str) -> Result<Value, String> {
     serde_json::from_str(raw).map_err(|error| format!("{label} is invalid JSON: {error}"))
 }
@@ -467,11 +478,86 @@ pub fn validate_conformal_coverage_arithmetic(
     })
 }
 
+/// Verify that a numerical model output outside its declared applicability
+/// envelope cannot be promoted to a robust bound or decision-eligible result.
+pub fn validate_ood_refusal(raw: &str) -> Result<OodRefusalSummary, String> {
+    let root = parse_json(raw, "OOD refusal fixture")?;
+    if required_str(&root, "fixture_class", "root")? != "synthetic_analytic" {
+        return Err("OOD refusal fixture must remain synthetic_analytic".to_string());
+    }
+
+    let model = required(&root, "model_identity", "root")?;
+    required_str(model, "model_id", "model_identity")?;
+    required_str(model, "model_revision", "model_identity")?;
+    required_str(model, "model_family", "model_identity")?;
+
+    let applicability = required(&root, "applicability_contract", "root")?;
+    let requested = required(&root, "requested_state", "root")?;
+    let observable = required_str(applicability, "observable_id", "applicability_contract")?;
+    if required_str(requested, "observable_id", "requested_state")? != observable {
+        return Err("requested observable does not match the applicability contract".to_string());
+    }
+    let unit = required_str(applicability, "unit", "applicability_contract")?;
+    if required_str(requested, "unit", "requested_state")? != unit {
+        return Err("requested unit does not match the applicability contract".to_string());
+    }
+
+    let lower = required_f64(applicability, "qualified_minimum", "applicability_contract")?;
+    let upper = required_f64(applicability, "qualified_maximum", "applicability_contract")?;
+    if lower >= upper {
+        return Err("qualified applicability interval must have positive width".to_string());
+    }
+    let requested_value = required_f64(requested, "value", "requested_state")?;
+    if (lower..=upper).contains(&requested_value) {
+        return Err("OOD refusal fixture requested state is actually inside the qualified domain".to_string());
+    }
+
+    let model_output = required(&root, "model_output", "root")?;
+    if required_str(model_output, "observable_id", "model_output")? != "net_export" {
+        return Err("synthetic OOD output must identify net_export".to_string());
+    }
+    if required_str(model_output, "unit", "model_output")? != "MWe" {
+        return Err("synthetic OOD output unit must be MWe".to_string());
+    }
+    let model_point_estimate_mwe = required_f64(model_output, "point_estimate", "model_output")?;
+
+    let claim = required(&root, "reported_claim", "root")?;
+    let disposition = required_str(claim, "disposition", "reported_claim")?;
+    let decision_eligibility = required_str(claim, "decision_eligibility", "reported_claim")?;
+    if disposition != "OutOfDomain" || decision_eligibility != "Indeterminate" {
+        return Err("out-of-domain output must remain OutOfDomain and Indeterminate".to_string());
+    }
+    let bound_value = required(claim, "adjusted_robust_lower_bound_mwe", "reported_claim")?;
+    if !bound_value.is_null() {
+        return Err("out-of-domain model must not emit an adjusted robust lower bound".to_string());
+    }
+
+    let expected = required(&root, "expected", "root")?;
+    if required_str(expected, "disposition", "expected")? != disposition
+        || required_str(expected, "decision_eligibility", "expected")? != decision_eligibility
+        || !required(expected, "must_not_emit_robust_lower_bound", "expected")?
+            .as_bool()
+            .ok_or_else(|| "must_not_emit_robust_lower_bound must be boolean".to_string())?
+    {
+        return Err("reported OOD refusal does not match the frozen expected disposition".to_string());
+    }
+
+    Ok(OodRefusalSummary {
+        requested_value,
+        qualified_minimum: lower,
+        qualified_maximum: upper,
+        model_point_estimate_mwe,
+        disposition,
+        decision_eligibility,
+        adjusted_robust_lower_bound_mwe: None,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         validate_common_mode_consensus, validate_conformal_coverage_arithmetic,
-        validate_model_choice_cliff,
+        validate_model_choice_cliff, validate_ood_refusal,
     };
     use serde_json::Value;
 
@@ -487,6 +573,39 @@ mod tests {
     const CONFORMAL: &str = include_str!(
         "../benchmarks/research/decision-stability/synthetic-conformal-coverage-arithmetic-v0.1.json"
     );
+    const OOD: &str = include_str!(
+        "../benchmarks/research/decision-stability/synthetic-ood-refusal-v0.1.json"
+    );
+
+    #[test]
+    fn ood_numerical_output_is_not_decision_eligible() {
+        let summary = validate_ood_refusal(OOD).expect("synthetic OOD refusal is valid");
+        assert_eq!(summary.requested_value, 1.1);
+        assert_eq!(summary.qualified_minimum, 0.0);
+        assert_eq!(summary.qualified_maximum, 1.0);
+        assert_eq!(summary.model_point_estimate_mwe, 74.0);
+        assert_eq!(summary.disposition, "OutOfDomain");
+        assert_eq!(summary.decision_eligibility, "Indeterminate");
+        assert_eq!(summary.adjusted_robust_lower_bound_mwe, None);
+    }
+
+    #[test]
+    fn ood_validator_rejects_a_robust_bound_or_eligible_claim() {
+        let mut with_bound: Value = serde_json::from_str(OOD).expect("fixture parses");
+        with_bound["reported_claim"]["adjusted_robust_lower_bound_mwe"] = serde_json::json!(60.0);
+        assert!(validate_ood_refusal(&with_bound.to_string()).is_err());
+
+        let mut eligible: Value = serde_json::from_str(OOD).expect("fixture parses");
+        eligible["reported_claim"]["decision_eligibility"] = serde_json::json!("Eligible");
+        assert!(validate_ood_refusal(&eligible.to_string()).is_err());
+    }
+
+    #[test]
+    fn ood_validator_rejects_a_state_inside_the_qualified_domain() {
+        let mut fixture: Value = serde_json::from_str(OOD).expect("fixture parses");
+        fixture["requested_state"]["value"] = serde_json::json!(0.5);
+        assert!(validate_ood_refusal(&fixture.to_string()).is_err());
+    }
 
     #[test]
     fn model_choice_cliff_known_answer_passes() {
