@@ -1,0 +1,121 @@
+{
+  "schema_version": "0.1.0",
+  "fixture_id": "synthetic-model-choice-cliff-v0.1",
+  "fixture_class": "synthetic_analytic",
+  "evidence_class": "synthetic",
+  "intended_use": "software_decision_semantics",
+  "physical_validation": false,
+  "description": "Invented values test finite model-set feasibility and decision stability. They are not reactor predictions or engineering thresholds.",
+  "comparison_profile": {
+    "candidate_set": [
+      "candidate-a",
+      "candidate-b"
+    ],
+    "model_set": [
+      "model-m1",
+      "model-m2"
+    ],
+    "model_family": "synthetic_analytic_control",
+    "matched_observable_contract": {
+      "observable_ids": [
+        "net_export",
+        "maintenance_clearance",
+        "lifecycle_cost"
+      ],
+      "service_boundary": "synthetic-boundary-01",
+      "time_basis": "synthetic-steady-state",
+      "geometry_revision": "synthetic-geometry-v1",
+      "units": {
+        "net_export": "MWe",
+        "maintenance_clearance": "m",
+        "lifecycle_cost": "cost_unit"
+      },
+      "comparability": "Both synthetic variants use the same declared observable/boundary/time/geometry contract."
+    },
+    "hard_constraints": [
+      {
+        "observable_id": "net_export",
+        "operator": "greater_than_or_equal",
+        "threshold": 50,
+        "unit": "MWe"
+      },
+      {
+        "observable_id": "maintenance_clearance",
+        "operator": "greater_than_or_equal",
+        "threshold": 0.08,
+        "unit": "m"
+      }
+    ],
+    "objectives": [
+      {
+        "observable_id": "net_export",
+        "direction": "maximize"
+      },
+      {
+        "observable_id": "lifecycle_cost",
+        "direction": "minimize"
+      }
+    ],
+    "model_probabilities": null,
+    "probabilistic_aggregation": "forbidden"
+  },
+  "evaluations": [
+    {
+      "candidate_id": "candidate-a",
+      "model_id": "model-m1",
+      "net_export_mwe": 130,
+      "maintenance_clearance_m": 0.12,
+      "lifecycle_cost": 6,
+      "expected_hard_gate": "pass"
+    },
+    {
+      "candidate_id": "candidate-a",
+      "model_id": "model-m2",
+      "net_export_mwe": 90,
+      "maintenance_clearance_m": 0.07,
+      "lifecycle_cost": 6.2,
+      "expected_hard_gate": "fail_clearance"
+    },
+    {
+      "candidate_id": "candidate-b",
+      "model_id": "model-m1",
+      "net_export_mwe": 91,
+      "maintenance_clearance_m": 0.11,
+      "lifecycle_cost": 7,
+      "expected_hard_gate": "pass"
+    },
+    {
+      "candidate_id": "candidate-b",
+      "model_id": "model-m2",
+      "net_export_mwe": 89,
+      "maintenance_clearance_m": 0.1,
+      "lifecycle_cost": 7.1,
+      "expected_hard_gate": "pass"
+    }
+  ],
+  "expected": {
+    "candidate_dispositions": {
+      "candidate-a": {
+        "model_set_disposition": "DecisionSplit",
+        "robustly_feasible": false,
+        "reason": "A registered in-domain model variant violates the synthetic clearance constraint."
+      },
+      "candidate-b": {
+        "model_set_disposition": "AllModelsPassObservedEnvelope",
+        "robustly_feasible": true,
+        "reason": "Both registered model variants satisfy both synthetic hard constraints."
+      }
+    },
+    "nominal_single_model_m1_preference": "candidate-a",
+    "robust_feasible_set": [
+      "candidate-b"
+    ],
+    "model_set_spread_is_probability": false,
+    "expected_failure_controls": [
+      "Do not average model-m1 and model-m2 to hide candidate-a's clearance failure.",
+      "Do not assign 50/50 or any other probabilities to the model variants.",
+      "Do not claim candidate-b is physically feasible; it is only robustly feasible over this finite synthetic fixture set."
+    ]
+  },
+  "claim_ceiling": "Synthetic decision-semantics control only; not fusion analysis, engineering evidence or physical qualification."
+}
