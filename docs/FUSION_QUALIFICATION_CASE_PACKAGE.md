@@ -213,7 +213,26 @@ The direction complements existing specialist systems:
 
 The differentiator should be reproducible model-to-model contracts, evidence lineage and fail-closed qualification decisions, rather than a claim to have superior facility access, experimental datasets or specialist physics solvers.
 
-## 11. Implementation sequence
+## 11.1 First semantic conformance implementation
+
+The branch includes a development-only Python validator at `scripts/validate_fusion_cases.py` and a focused GitHub Actions workflow at `.github/workflows/fusion-case-package.yml`. Python is used only as a CI/test harness; it is not a runtime or production dependency of Spark Engine.
+
+The validator:
+- validates the manifest with JSON Schema Draft 2020-12 and a format checker;
+- checks uniqueness and referential integrity for boundaries, time bases, flows, models, uncertainty records and evidence artefacts;
+- checks a deliberately bounded UCUM unit profile for common power, energy, heat-flux, mass, mass-flow, temperature and pressure quantities;
+- requires fusion power density to name the energy-extraction surface and divertor heat flux to name a divertor target wetted surface, including the declared spatial statistic;
+- rejects unresolved time-series artefact references and calibration/validation/holdout split overlap;
+- checks local evidence SHA-256 digests against the actual packaged files;
+- enforces model-family isolation and explicit, independently evidenced transfers for cross-family contracts;
+- prevents synthetic fixtures or scenario assumptions from qualifying a physical case;
+- executes negative controls for family contamination, holdout leakage, synthetic false qualification and mismatched surface-role joins.
+
+This is a first conformance profile, not a general UCUM implementation, full RO-Crate validator, JCS canonicalizer, signature verifier or physical model validator. It deliberately fails closed for unsupported or ambiguous combinations. Expanding the unit vocabulary should be done with tested UCUM-compatible semantics, not string guessing.
+
+Run locally with Python 3.12 and `python -m pip install jsonschema==4.26.0`, then `python scripts/validate_fusion_cases.py`. The dedicated CI job must still pass on the exact PR head before the validator is called CI-validated.
+
+## 12. Implementation sequence
 
 1. Validate this schema and the synthetic fixture with at least two independent JSON Schema implementations.
 2. Add negative conformance fixtures and a semantic reference checker for IDs, units, time bases and boundary roles.
@@ -223,7 +242,7 @@ The differentiator should be reproducible model-to-model contracts, evidence lin
 6. Add public STEP/SOLPS-ITER, thermal/material, RAMI and tritium fuel-cycle cases only when redistribution rights and provenance are clear.
 7. Connect independent validation receipts and exact package digests to Mycelix.
 
-## 12. References
+## 13. References
 
 - U.S. DOE, [Fusion Science and Technology Roadmap (June 2026)](https://www.energy.gov/documents/fusion-science-and-technology-roadmap), especially whole-plant VV/UQ, FAIR data, RAMI, remote maintenance, blanket and tritium fuel-cycle milestones.
 - UKAEA, [PROCESS overview](https://www.ukaea.org/service/process/) and [public documentation](https://ukaea.github.io/PROCESS/).
