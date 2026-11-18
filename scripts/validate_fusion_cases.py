@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -166,6 +167,96 @@ def validate_manifest(
             elif artifact_id not in evidence_ids:
                 errors.append(
                     f"flow {flow['id']} references unknown time-series artifact: {artifact_id}"
+                )
+
+    # Explicit conservation checks are caller-declared: the validator
+    # never assumes every boundary must conserve a scalar independently.
+    accounting_checks = manifest.get("accounting_checks", [])
+    _unique_ids(accounting_checks, "accounting_checks", errors)
+    flow_by_id = {flow["id"]: flow for flow in flows}
+    for check in accounting_checks:
+        boundary_id = check["boundary_id"]
+        if boundary_id not in boundary_ids:
+            errors.append(
+                f"accounting check {check['id']} references unknown boundary: {boundary_id}"
+            )
+        _check_refs(
+            [check["time_basis_id"]],
+            time_ids,
+            f"accounting check {check['id']} time basis",
+            errors,
+        )
+        _check_refs(
+            check["evidence_artifact_ids"],
+            evidence_ids,
+            f"accounting check {check['id']} evidence",
+            errors,
+        )
+        inbound_ids = check["inbound_flow_ids"]
+        outbound_ids = check["outbound_flow_ids"]
+        overlap = set(inbound_ids).intersection(outbound_ids)
+        if overlap:
+            errors.append(
+                f"accounting check {check['id']} reuses flows in both directions: "
+                + ", ".join(sorted(overlap))
+            )
+        selected_ids = inbound_ids + outbound_ids
+        _check_refs(
+            selected_ids,
+            set(flow_by_id),
+            f"accounting check {check['id']} flow",
+            errors,
+        )
+        selected = [flow_by_id[item] for item in selected_ids if item in flow_by_id]
+        valid = len(selected) == len(selected_ids)
+        for flow in selected:
+            if flow["quantity_kind"] != check["quantity_kind"]:
+                errors.append(
+                    f"accounting check {check['id']} quantity kind differs from flow {flow['id']}"
+                )
+                valid = False
+            if flow["unit"] != check["unit"]:
+                errors.append(
+                    f"accounting check {check['id']} unit differs from flow {flow['id']}; "
+                    "implicit unit conversion is not permitted"
+                )
+                valid = False
+            if flow["time_basis_id"] != check["time_basis_id"]:
+                errors.append(
+                    f"accounting check {check['id']} time basis differs from flow {flow['id']}"
+                )
+                valid = False
+            if flow["value"] < 0.0:
+                errors.append(
+                    f"accounting check {check['id']} requires non-negative directed flow values"
+                )
+                valid = False
+        for flow_id in inbound_ids:
+            flow = flow_by_id.get(flow_id)
+            if flow is not None and flow["to_boundary_id"] != boundary_id:
+                errors.append(
+                    f"accounting check {check['id']} inbound flow {flow_id} "
+                    "does not terminate at its declared boundary"
+                )
+                valid = False
+        for flow_id in outbound_ids:
+            flow = flow_by_id.get(flow_id)
+            if flow is not None and flow["from_boundary_id"] != boundary_id:
+                errors.append(
+                    f"accounting check {check['id']} outbound flow {flow_id} "
+                    "does not originate at its declared boundary"
+                )
+                valid = False
+        if valid:
+            inbound_total = math.fsum(flow_by_id[item]["value"] for item in inbound_ids)
+            outbound_total = math.fsum(flow_by_id[item]["value"] for item in outbound_ids)
+            denominator = max(abs(inbound_total), abs(outbound_total), 1e-300)
+            relative_residual = abs(inbound_total - outbound_total) / denominator
+            if relative_residual > check["relative_tolerance"]:
+                errors.append(
+                    f"accounting check {check['id']} relative residual "
+                    f"{relative_residual:.12g} exceeds tolerance "
+                    f"{check['relative_tolerance']:.12g}"
                 )
 
     for quantity in quantities:
@@ -388,6 +479,15 @@ def main() -> int:
             return 1
         print(f"PASS rejected negative control: {label}")
 
+    # A balanced ledger that is tampered by one MW must fail its declared closure check.
+    imbalanced_ledger = copy.deepcopy(positive)
+    sink_c = next(flow for flow in imbalanced_ledger["flows"] if flow["id"] == "sink-c-power")
+    sink_c["value"] += 1.0
+    if not validate_manifest(imbalanced_ledger, schema):
+        print("FAIL negative control did not reject: non-closing power ledger", file=sys.stderr)
+        return 1
+    print("PASS rejected negative control: non-closing power ledger")
+
     # A heat-flux value with a valid unit but a surface role not present on
     # either endpoint must be rejected by the semantic boundary join.
     boundary_mismatch = copy.deepcopy(positive)
@@ -400,7 +500,7 @@ def main() -> int:
         return 1
     print("PASS rejected negative control: mismatched surface role")
 
-    print(f"Validated {len(loaded)} fixture(s) and {len(controls) + 1} negative control(s).")
+    print(f"Validated {len(loaded)} fixture(s) and {len(controls) + 2} negative control(s).")
     return 0
 
 
