@@ -129,12 +129,6 @@ pub use qecon::{
     calculate_qecon_asymptotic_limits, calculate_qecon_scenario,
     net_electric_efficiency_from_power_balance, required_fusion_power_density_for_qecon,
 };
-pub use qecon_projection::{
-    QECON_PROJECTION_MAX_LIFETIME_SPAN_YEARS, QECON_PROJECTION_REVISION,
-    QeconProjectionBound, QeconProjectionBoundState, QeconProjectionParameterResult,
-    QeconProjectionStatus, QeconWeightedProjectionInput, QeconWeightedProjectionResult,
-    project_qecon_to_viability,
-};
 pub use qecon_exploration::{
     DifferenceMethod, MAX_QECON_UNCERTAINTY_SAMPLES, QECON_EXPLORATION_REVISION,
     QECON_PARAMETER_COUNT, QeconGlobalAssociation, QeconParameter, QeconProbabilityEstimate,
@@ -143,6 +137,12 @@ pub use qecon_exploration::{
     QeconUncertaintySample, QeconUncertaintyScenario, QeconUncertaintyScenarioResult,
     estimate_qecon_sobol_indices, propagate_qecon_scenario_uncertainty,
     propagate_qecon_uncertainty, rank_qecon_global_associations, rank_qecon_sensitivities,
+};
+pub use qecon_projection::{
+    QECON_PROJECTION_MAX_LIFETIME_SPAN_YEARS, QECON_PROJECTION_REVISION,
+    QeconProjectionBound, QeconProjectionBoundState, QeconProjectionParameterResult,
+    QeconProjectionStatus, QeconWeightedProjectionInput, QeconWeightedProjectionResult,
+    project_qecon_to_viability,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
