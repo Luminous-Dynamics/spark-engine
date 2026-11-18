@@ -1,0 +1,103 @@
+{
+  "schema_version": "0.1.0",
+  "fixture_id": "synthetic-decision-irrelevant-disagreement-v0.1",
+  "fixture_class": "synthetic_analytic",
+  "evidence_class": "synthetic",
+  "intended_use": "software_decision_semantics",
+  "physical_validation": false,
+  "description": "Invented model estimates differ materially, but every candidate remains on the same side of each hard gate across the registered model set. This prevents model spread alone from being treated as a decision reversal.",
+  "comparison_profile": {
+    "candidate_set": ["candidate-a", "candidate-b"],
+    "model_set": ["model-m1", "model-m2"],
+    "model_family": "synthetic_analytic_control",
+    "matched_observable_contract": {
+      "observable_ids": ["net_export", "maintenance_clearance", "lifecycle_cost"],
+      "service_boundary": "synthetic-boundary-01",
+      "time_basis": "synthetic-steady-state",
+      "geometry_revision": "synthetic-geometry-v1",
+      "units": {
+        "net_export": "MWe",
+        "maintenance_clearance": "m",
+        "lifecycle_cost": "cost_unit"
+      },
+      "comparability": "Both synthetic variants use the same declared observable, boundary, time and geometry contract."
+    },
+    "hard_constraints": [
+      {
+        "observable_id": "net_export",
+        "operator": "greater_than_or_equal",
+        "threshold": 50,
+        "unit": "MWe"
+      },
+      {
+        "observable_id": "maintenance_clearance",
+        "operator": "greater_than_or_equal",
+        "threshold": 0.08,
+        "unit": "m"
+      }
+    ],
+    "objectives": [
+      {"observable_id": "net_export", "direction": "maximize"},
+      {"observable_id": "lifecycle_cost", "direction": "minimize"}
+    ],
+    "model_probabilities": null,
+    "probabilistic_aggregation": "forbidden"
+  },
+  "evaluations": [
+    {
+      "candidate_id": "candidate-a",
+      "model_id": "model-m1",
+      "net_export_mwe": 85,
+      "maintenance_clearance_m": 0.14,
+      "lifecycle_cost": 6.0,
+      "expected_hard_gate": "pass"
+    },
+    {
+      "candidate_id": "candidate-a",
+      "model_id": "model-m2",
+      "net_export_mwe": 64,
+      "maintenance_clearance_m": 0.11,
+      "lifecycle_cost": 6.2,
+      "expected_hard_gate": "pass"
+    },
+    {
+      "candidate_id": "candidate-b",
+      "model_id": "model-m1",
+      "net_export_mwe": 45,
+      "maintenance_clearance_m": 0.12,
+      "lifecycle_cost": 7.0,
+      "expected_hard_gate": "fail_net_export"
+    },
+    {
+      "candidate_id": "candidate-b",
+      "model_id": "model-m2",
+      "net_export_mwe": 39,
+      "maintenance_clearance_m": 0.10,
+      "lifecycle_cost": 7.2,
+      "expected_hard_gate": "fail_net_export"
+    }
+  ],
+  "expected": {
+    "candidate_dispositions": {
+      "candidate-a": {
+        "model_set_disposition": "AllModelsPassObservedEnvelope",
+        "robustly_feasible": true,
+        "reason": "Both models differ by 21 MWe, but both satisfy both declared hard constraints."
+      },
+      "candidate-b": {
+        "model_set_disposition": "AllModelsFailObservedEnvelope",
+        "robustly_feasible": false,
+        "reason": "Both models fail the same net-export hard constraint despite their disagreement."
+      }
+    },
+    "nominal_single_model_m1_preference": "candidate-a",
+    "robust_feasible_set": ["candidate-a"],
+    "model_set_spread_is_probability": false,
+    "expected_failure_controls": [
+      "Do not label candidate-a as DecisionSplit merely because the model estimates differ materially.",
+      "Do not treat model spread as a confidence interval or probability distribution.",
+      "Do not upgrade a finite synthetic robust disposition into physical feasibility."
+    ]
+  },
+  "claim_ceiling": "Synthetic decision-semantics control only; not fusion analysis, engineering evidence or physical qualification."
+}

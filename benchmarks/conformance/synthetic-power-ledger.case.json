@@ -1,0 +1,249 @@
+{
+  "$schema": "../../schemas/fusion-qualification-case.schema.json",
+  "schema_version": "0.1.0",
+  "case_id": "synthetic-power-ledger-001",
+  "title": "Synthetic three-sink power ledger conformance fixture",
+  "description": "Invented accounting fixture only. It is not a fusion design, a plasma operating point, or physical validation evidence.",
+  "case_class": "synthetic_fixture",
+  "intended_use": "schema_conformance",
+  "concept_family": "synthetic-control-volume",
+  "created_on": "2026-11-18",
+  "creator": "Luminous Dynamics",
+  "time_bases": [
+    {
+      "id": "one-second-window",
+      "kind": "finite_window_average",
+      "description": "Invented one-second accounting window.",
+      "duration_seconds": 1
+    }
+  ],
+  "physical_boundaries": [
+    {
+      "id": "source",
+      "name": "Synthetic source",
+      "domain": "other",
+      "role": "other",
+      "description": "Invented source boundary."
+    },
+    {
+      "id": "control-volume",
+      "name": "Synthetic control volume",
+      "domain": "other",
+      "role": "other",
+      "description": "Accounting volume only."
+    },
+    {
+      "id": "divertor-sink",
+      "name": "Synthetic sink A",
+      "domain": "other",
+      "role": "other",
+      "description": "Generic outgoing channel; not a divertor representation."
+    },
+    {
+      "id": "radiation-sink",
+      "name": "Synthetic sink B",
+      "domain": "other",
+      "role": "other",
+      "description": "Generic outgoing channel; not a radiation model."
+    },
+    {
+      "id": "storage-sink",
+      "name": "Synthetic sink C",
+      "domain": "other",
+      "role": "other",
+      "description": "Generic outgoing channel; not plasma stored-energy physics."
+    }
+  ],
+  "flows": [
+    {
+      "id": "input-power",
+      "from_boundary_id": "source",
+      "to_boundary_id": "control-volume",
+      "quantity_name": "synthetic_input_power",
+      "quantity_kind": "power",
+      "value": 100,
+      "unit": {
+        "system": "UCUM",
+        "code": "MW"
+      },
+      "time_basis_id": "one-second-window",
+      "evidence_artifact_ids": [
+        "synthetic-ledger-source"
+      ]
+    },
+    {
+      "id": "sink-a-power",
+      "from_boundary_id": "control-volume",
+      "to_boundary_id": "divertor-sink",
+      "quantity_name": "synthetic_sink_a_power",
+      "quantity_kind": "power",
+      "value": 70,
+      "unit": {
+        "system": "UCUM",
+        "code": "MW"
+      },
+      "time_basis_id": "one-second-window",
+      "evidence_artifact_ids": [
+        "synthetic-ledger-source"
+      ]
+    },
+    {
+      "id": "sink-b-power",
+      "from_boundary_id": "control-volume",
+      "to_boundary_id": "radiation-sink",
+      "quantity_name": "synthetic_sink_b_power",
+      "quantity_kind": "power",
+      "value": 20,
+      "unit": {
+        "system": "UCUM",
+        "code": "MW"
+      },
+      "time_basis_id": "one-second-window",
+      "evidence_artifact_ids": [
+        "synthetic-ledger-source"
+      ]
+    },
+    {
+      "id": "sink-c-power",
+      "from_boundary_id": "control-volume",
+      "to_boundary_id": "storage-sink",
+      "quantity_name": "synthetic_sink_c_power",
+      "quantity_kind": "power",
+      "value": 10,
+      "unit": {
+        "system": "UCUM",
+        "code": "MW"
+      },
+      "time_basis_id": "one-second-window",
+      "evidence_artifact_ids": [
+        "synthetic-ledger-source"
+      ]
+    }
+  ],
+  "quantities": [
+    {
+      "id": "unmeasured-component-temperature",
+      "name": "Component temperature unavailable in synthetic fixture",
+      "quantity_kind": "temperature",
+      "status": "unknown",
+      "unknown_reason": "The synthetic accounting fixture has no physical component or thermal model."
+    }
+  ],
+  "models": [
+    {
+      "id": "toy-ledger-model",
+      "name": "Synthetic ledger arithmetic",
+      "discipline": "accounting",
+      "version": "0.1.0",
+      "revision": "synthetic-example-v0",
+      "domain_of_validity": {
+        "summary": "Invented arithmetic fixture only.",
+        "status": "in_domain",
+        "known_exclusions": [
+          "All physical fusion interpretation."
+        ]
+      },
+      "input_artifact_ids": [
+        "synthetic-ledger-source"
+      ],
+      "output_artifact_ids": [],
+      "model_family": "synthetic_fixture"
+    }
+  ],
+  "uncertainty_models": [],
+  "evidence_artifacts": [
+    {
+      "id": "synthetic-ledger-source",
+      "evidence_class": "synthetic_fixture",
+      "claim": "Defines invented values solely for schema and arithmetic conformance.",
+      "scope": "100 MW input split into 70 MW, 20 MW and 10 MW outgoing channels.",
+      "producer": "Luminous Dynamics",
+      "locator": "benchmarks/conformance/synthetic-ledger-reference.txt",
+      "media_type": "text/plain",
+      "license": "CC0-1.0",
+      "retrieved_on": "2026-11-18",
+      "content_digest_sha256": "ce548fa382a7d38d4911494195ee8ebf1be33648a865eeec3db3506e236afce0",
+      "notes": [
+        "Values are fabricated and must never be presented as fusion engineering evidence."
+      ]
+    }
+  ],
+  "validation_plan": {
+    "protocol_id": "synthetic-ledger-conformance-v0",
+    "frozen_before_tuning": true,
+    "split_grouping_key": "single-synthetic-fixture",
+    "splits": [
+      {
+        "id": "analytic-fixture-split",
+        "role": "analytic_fixture",
+        "dataset_artifact_ids": [
+          "synthetic-ledger-source"
+        ],
+        "notes": "Not a calibration, validation or physical holdout dataset."
+      }
+    ],
+    "metrics": [
+      "relative power-ledger residual"
+    ]
+  },
+  "observables": [
+    {
+      "id": "power-ledger-closure",
+      "name": "Relative power ledger residual",
+      "expected_value": 0,
+      "unit": {
+        "system": "UCUM",
+        "code": "1"
+      },
+      "metric": "relative_residual",
+      "tolerance": 1e-10,
+      "reference_artifact_ids": [
+        "synthetic-ledger-source"
+      ]
+    }
+  ],
+  "exclusions": [
+    "Plasma physics",
+    "Divertor geometry",
+    "Radiation transport",
+    "Thermal response",
+    "Materials lifetime",
+    "Plant availability",
+    "Net electricity"
+  ],
+  "qualification": {
+    "status": "not_qualified",
+    "decision_basis": "A synthetic fixture may test schema and arithmetic but cannot qualify physical behavior.",
+    "blockers": [
+      "No physical model or experimental validation is present."
+    ],
+    "supporting_evidence_artifact_ids": [
+      "synthetic-ledger-source"
+    ]
+  },
+  "model_family": "synthetic_fixture",
+  "accounting_checks": [
+    {
+      "id": "control-volume-power-closure",
+      "boundary_id": "control-volume",
+      "quantity_kind": "power",
+      "unit": {
+        "system": "UCUM",
+        "code": "MW"
+      },
+      "time_basis_id": "one-second-window",
+      "inbound_flow_ids": [
+        "input-power"
+      ],
+      "outbound_flow_ids": [
+        "sink-a-power",
+        "sink-b-power",
+        "sink-c-power"
+      ],
+      "relative_tolerance": 1e-10,
+      "evidence_artifact_ids": [
+        "synthetic-ledger-source"
+      ]
+    }
+  ]
+}

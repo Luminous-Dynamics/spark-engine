@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.1.0",
+  "fixture_id": "synthetic-common-mode-consensus-v0.1",
+  "fixture_class": "synthetic_analytic",
+  "evidence_class": "synthetic",
+  "intended_use": "software_dependency_and_consensus_semantics",
+  "physical_validation": false,
+  "description": "Invented three-model consensus trap with one shared closure/calibration lineage.",
+  "observable_contract": {
+    "observable_id": "synthetic_net_export",
+    "unit": "MWe",
+    "service_boundary": "synthetic-boundary-consensus-01",
+    "time_basis": "synthetic-steady-state"
+  },
+  "registered_models": [
+    {
+      "model_id": "model-a",
+      "estimate": 70,
+      "source_family": "synthetic-closure-alpha",
+      "calibration_group": "synthetic-calibration-7",
+      "execution_lineage": "runner-a",
+      "dependence_cluster_id": "shared-dependence-1"
+    },
+    {
+      "model_id": "model-b",
+      "estimate": 71,
+      "source_family": "synthetic-closure-alpha",
+      "calibration_group": "synthetic-calibration-7",
+      "execution_lineage": "runner-b",
+      "dependence_cluster_id": "shared-dependence-1"
+    },
+    {
+      "model_id": "model-c",
+      "estimate": 72,
+      "source_family": "synthetic-closure-alpha",
+      "calibration_group": "synthetic-calibration-7",
+      "execution_lineage": "runner-c",
+      "dependence_cluster_id": "shared-dependence-1"
+    }
+  ],
+  "held_reference": {
+    "value": 100,
+    "unit": "MWe",
+    "visibility": "evaluator_only",
+    "evidence_class": "synthetic_analytic_oracle"
+  },
+  "expected": {
+    "model_envelope": {
+      "minimum": 70,
+      "maximum": 72,
+      "range": 2,
+      "unit": "MWe"
+    },
+    "dependence_cluster_count": 1,
+    "consensus_disposition": "CommonModeConsensus",
+    "reference_error_range": {
+      "minimum": 28,
+      "maximum": 30,
+      "unit": "MWe"
+    },
+    "expected_failure_controls": [
+      "Do not count three model IDs or three runner IDs as three independent physical confirmations.",
+      "Do not infer statistical independence from execution-lineage differences.",
+      "Do not label model-envelope width as a calibrated confidence interval.",
+      "The evaluator-only reference must remain hidden from any policy until it commits to an evaluation."
+    ],
+    "declared_dependence_clusters": [
+      "shared-dependence-1"
+    ]
+  },
+  "claim_ceiling": "Synthetic dependence-accounting control only; it says nothing about PROCESS, SARAS, D0FUS or actual reactor models.",
+  "unresolved_dependency_dimensions": [
+    "implementation_lineage",
+    "shared_libraries",
+    "execution_provider",
+    "operator_authority",
+    "trust_root"
+  ]
+}

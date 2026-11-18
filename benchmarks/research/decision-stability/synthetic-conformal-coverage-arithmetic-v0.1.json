@@ -1,0 +1,53 @@
+{
+  "schema_version": "0.1.0",
+  "fixture_id": "synthetic-conformal-coverage-arithmetic-v0.1",
+  "fixture_class": "synthetic_analytic",
+  "evidence_class": "synthetic",
+  "intended_use": "finite_sample_rank_and_union_bound_arithmetic",
+  "physical_validation": false,
+  "description": "Known-answer arithmetic controls only. No residuals in this fixture are measured or calibrated.",
+  "conformal_rank_cases": [
+    {
+      "n": 18,
+      "coverage_basis_points": 9500,
+      "rank_k": 19,
+      "finite_bound_available": false,
+      "expected_disposition": "InsufficientCalibration"
+    },
+    {
+      "n": 19,
+      "coverage_basis_points": 9500,
+      "rank_k": 19,
+      "finite_bound_available": true,
+      "selected_order_statistic": "maximum_observed_residual",
+      "expected_disposition": "ArithmeticControlOnly"
+    },
+    {
+      "n": 39,
+      "coverage_basis_points": 9750,
+      "rank_k": 39,
+      "finite_bound_available": true,
+      "selected_order_statistic": "maximum_observed_residual",
+      "expected_disposition": "ArithmeticControlOnly"
+    }
+  ],
+  "coverage_composition_cases": [
+    {
+      "parametric_coverage_basis_points": 9750,
+      "discrepancy_coverage_basis_points": 9750,
+      "union_bound_total_coverage_floor_basis_points": 9500
+    },
+    {
+      "parametric_coverage_basis_points": 9500,
+      "discrepancy_coverage_basis_points": 9500,
+      "union_bound_total_coverage_floor_basis_points": 9000
+    }
+  ],
+  "expected_failure_controls": [
+    "Do not clamp k to n when k exceeds n.",
+    "Do not multiply coverage levels or assume independence.",
+    "Do not describe the arithmetic examples as empirically calibrated coverage.",
+    "Do not accept SyntheticOnly inputs as measured residuals."
+  ],
+  "claim_ceiling": "Finite-sample conformal and union-bound arithmetic only; no exchangeability, calibration, physical validity or plant-performance claim."
+}

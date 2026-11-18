@@ -44,6 +44,8 @@ physics-honest assessment and
 [`docs/ANOMALY_INVESTIGATION_ROADMAP.md`](docs/ANOMALY_INVESTIGATION_ROADMAP.md)
 for the phased research plan this tool supports.
 
+The repository also contains a **separate conventional fusion-plant systems integration programme**. It does not inherit LCF physics or evidence. See [`docs/FUSION_SYSTEMS_BENCHMARK_STRATEGY_2026.md`](docs/FUSION_SYSTEMS_BENCHMARK_STRATEGY_2026.md), [`docs/FUSION_QUALIFICATION_CASE_PACKAGE.md`](docs/FUSION_QUALIFICATION_CASE_PACKAGE.md), and [`docs/FUSION_REFERENCE_CASE_INTEGRATION_2026.md`](docs/FUSION_REFERENCE_CASE_INTEGRATION_2026.md) plus [`docs/FUSION_MODEL_SET_DECISION_STABILITY_2026.md`](docs/FUSION_MODEL_SET_DECISION_STABILITY_2026.md) for its cross-project reference workflow ([FUSION-E2E-001 #43](https://github.com/Luminous-Dynamics/spark-engine/issues/43)) and architecture decision-stability benchmark ([FUSION-DECISION-ROBUSTNESS-001 #44](https://github.com/Luminous-Dynamics/spark-engine/issues/44)).
+
 ## Why this might matter to you
 
 If you're doing LCF/LENR-adjacent research and deciding what to fund or run next: the
@@ -68,8 +70,11 @@ let gap = AnomalyAnalysis::compute_gap(observed, predicted);
 ```
 
 ```bash
-cargo test              # 99 tests
+cargo test
+cargo test --lib decision_stability::tests -- --nocapture
 cargo run --bin spark   # CLI entry point
+
+cargo run --bin spark-case-validate -- benchmarks/conformance/synthetic-power-ledger.case.json
 ```
 
 ## License

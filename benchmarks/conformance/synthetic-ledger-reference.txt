@@ -1,0 +1,7 @@
+Synthetic fixture only. No reactor or measured physics claim.
+Boundary ledger reference:
+input_power = 100 MW
+divertor_sink_power = 70 MW
+radiation_sink_power = 20 MW
+stored_energy_sink_power = 10 MW
+All values are invented solely to test manifest and ledger conformance.
