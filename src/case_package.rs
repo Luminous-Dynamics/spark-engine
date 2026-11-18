@@ -751,4 +751,27 @@ mod tests {
         assert!(validate_case_manifest(&case).unwrap_err().iter()
             .any(|e| e.contains("unknown evidence artifact")));
     }
+
+    #[test]
+    fn rejects_power_quantity_with_energy_unit() {
+        let mut case = fixture();
+        case["flows"][0]["unit"]["code"] = Value::String("MJ".into());
+        assert!(validate_case_manifest(&case).unwrap_err().iter()
+            .any(|e| e.contains("incompatible with quantity_kind power")));
+    }
+
+    #[test]
+    fn rejects_synthetic_case_claiming_engineering_qualification() {
+        let mut case = fixture();
+        case["qualification"]["status"] = Value::String("qualified".into());
+        case["qualification"]["independent_review"] = serde_json::json!({
+            "review_process": "negative-control",
+            "reviewer_or_body": "test-harness",
+            "reviewed_on": "2026-11-18",
+            "scope": "synthetic fixture only"
+        });
+        let errors = validate_case_manifest(&case).unwrap_err();
+        assert!(errors.iter().any(|e| e.contains("synthetic_fixture cases can never be engineering-qualified")));
+        assert!(errors.iter().any(|e| e.contains("cannot rely on")));
+    }
 }
