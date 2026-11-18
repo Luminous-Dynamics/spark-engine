@@ -295,6 +295,27 @@ A separate September 2026 availability-centric paper defines `Q_ENG` as achievab
 - Tesini (2026), *An availability-centric Q-metrics framework for assessing fusion power-plant engineering viability*, Fusion Engineering and Design 230, 115874. DOI: https://doi.org/10.1016/j.fusengdes.2026.115874
 - DOE, *Fusion Science and Technology Roadmap* (June 2026): https://www.energy.gov/documents/fusion-science-and-technology-roadmap
 
+
+### 6.2 Q_econ decision exploration
+
+The follow-on `src/qecon_exploration.rs` layer adds local sensitivity analysis for all ten Q_econ inputs and seeded Monte Carlo using triangular marginal assumptions with a Gaussian copula. It retains each sampled input and result, and reports quantiles plus `P(Q_econ >= 1)` and `P(Q_econ >= 1.5)`.
+
+This is conditional scenario analysis. The marginal ranges, modes and latent dependence matrix are explicit caller assumptions; the tool does not infer them from sparse literature or turn them into empirical confidence intervals.
+
+The sensitivity rank is a local dimensionless elasticity, not an intervention-cost rank. The weighted closest-viable-design projection from Whyte et al. is a separate optimization problem. A future implementation must keep the Q_econ viability boundary fixed while changing only stakeholder-supplied intervention weights, and should report a Pareto family rather than imply that one subjective weighting is uniquely correct.
+
+
+
+### 6.3 Q_econ global variance sensitivity
+
+Spark now distinguishes:
+- Local finite-difference elasticity around one reference point.
+- Pearson/Spearman descriptive associations over a supplied correlated ensemble.
+- Independent-input first-/total-order Sobol indices using Saltelli/Jansen estimators, guarded by an explicit independence declaration.
+- Planned dependent-input Shapley/Kucherenko attribution tracked in [Spark issue #20](https://github.com/Luminous-Dynamics/spark-engine/issues/20).
+
+No estimator should be applied outside its input-dependence assumptions. The dependent-input problem matters in the fusion economics domain because fluence limits, component replacement time, remote-handling access, repair duration and replacement cost may share common drivers. These associations must not be mistaken for causal effects or intervention-cost weights.
+
 ## 7. Cross-project division of responsibility
 
 | Project | Responsibility | Boundary |

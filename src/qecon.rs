@@ -338,6 +338,90 @@ pub fn required_fusion_power_density_for_qecon(
     Ok(required_density)
 }
 
+/// Mathematical asymptotic limits of the steady-state Q_econ model.
+///
+/// The values describe the equations as fusion power density tends to
+/// infinity. They do not establish that such a power density is physically
+/// achievable or compatible with heat exhaust, plasma stability or materials
+/// limits. `None` for `maximum_q_econ` means the model has no finite
+/// mathematical upper bound under the supplied assumptions.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub struct QeconAsymptoticLimits {
+    /// Finite Q_econ ceiling, or `None` if Q_econ grows without a finite bound.
+    pub maximum_q_econ: Option<f64>,
+    /// Whether Q_econ >= 1 is attainable at a finite positive power density
+    /// under the supplied mathematical assumptions.
+    pub finite_density_break_even_possible: bool,
+    /// Marginal gain coefficient less the target and surface-replacement
+    /// coefficients, A = A1 - A2 - A3 in the paper. A must be positive for
+    /// finite-density economic break-even to be possible.
+    pub marginal_economic_value_coefficient: f64,
+}
+
+/// Calculate the asymptotic Q_econ and net-economic-rate limits.
+///
+/// Follows Whyte et al. (2026), Eqs. 43–44:
+///
+/// - A1 = 8.76e-3 * POE_net * eta_E
+/// - A2 = 31.5 * (c/Y)_target
+/// - A3 = (MUSD/S)_S / X_S
+/// - B = tau_rep / X_S
+/// - C_fixed = (MUSD/S)_FPP * CRF(i, tau_life)
+/// - Q_econ,max = A1 / (A2 + A3 + B*C_fixed)
+///
+/// A zero denominator with positive numerator represents an unbounded
+/// mathematical Q_econ ceiling; it is returned as `None` rather than infinity.
+pub fn calculate_qecon_asymptotic_limits(
+    design: &QeconDesignParameters,
+) -> Result<QeconAsymptoticLimits, String> {
+    validate_design(design)?;
+    let fixed_cost = design.plant_areal_cost_musd_per_m2
+        * capital_recovery_factor(
+            design.real_interest_rate_percent,
+            design.plant_lifetime_years,
+        )?;
+    let gain_coefficient = GAIN_RATE_CONVERSION
+        * design.net_price_of_energy_usd_per_mwh
+        * design.net_energy_conversion_efficiency;
+    let target_cost_coefficient =
+        TARGET_RATE_CONVERSION * design.target_cost_per_energy_yield_usd_per_mj;
+    let replacement_cost_coefficient = design.surface_replacement_cost_musd_per_m2
+        / design.surface_energy_fluence_limit_mw_year_per_m2;
+    let replacement_time_coefficient =
+        design.surface_replacement_time_years / design.surface_energy_fluence_limit_mw_year_per_m2;
+
+    let qecon_denominator = target_cost_coefficient
+        + replacement_cost_coefficient
+        + replacement_time_coefficient * fixed_cost;
+    let marginal_economic_value_coefficient =
+        gain_coefficient - target_cost_coefficient - replacement_cost_coefficient;
+
+    if !qecon_denominator.is_finite() || !marginal_economic_value_coefficient.is_finite() {
+        return Err("Q_econ asymptotic coefficients are not finite".to_string());
+    }
+
+    if qecon_denominator < 0.0 {
+        return Err("Q_econ asymptotic cost coefficient must be non-negative".to_string());
+    }
+    let maximum_q_econ = if qecon_denominator > 0.0 {
+        Some(gain_coefficient / qecon_denominator)
+    } else if gain_coefficient == 0.0 {
+        Some(0.0)
+    } else {
+        None
+    };
+    if maximum_q_econ.is_some_and(|value| !value.is_finite()) {
+        return Err("Q_econ asymptotic ceiling is not finite".to_string());
+    }
+    let finite_density_break_even_possible = maximum_q_econ.is_none_or(|maximum| maximum > 1.0);
+
+    Ok(QeconAsymptoticLimits {
+        maximum_q_econ,
+        finite_density_break_even_possible,
+        marginal_economic_value_coefficient,
+    })
+}
+
 /// Calculate a scenario while preserving its evidence metadata.
 pub fn calculate_qecon_scenario(scenario: &QeconScenario) -> Result<QeconScenarioResult, String> {
     if scenario.scenario_id.trim().is_empty() {
@@ -626,6 +710,32 @@ mod tests {
         let mut input = literature_example_input();
         input.design.plant_lifetime_years = 0;
         assert!(calculate_qecon(&input).is_err());
+    }
+
+    #[test]
+    fn asymptotic_qecon_matches_published_base_case_limit() {
+        let design = literature_example_design();
+        let limits = calculate_qecon_asymptotic_limits(&design).unwrap();
+        let maximum = limits.maximum_q_econ.unwrap();
+        assert!(maximum > 3.0 && maximum < 3.3);
+        assert!(limits.finite_density_break_even_possible);
+        assert!(limits.marginal_economic_value_coefficient > 0.0);
+
+        let just_below_limit =
+            required_fusion_power_density_for_qecon(&design, maximum * 0.99).unwrap();
+        assert!(just_below_limit.is_finite());
+        assert!(required_fusion_power_density_for_qecon(&design, maximum).is_err());
+    }
+
+    #[test]
+    fn asymptotic_qecon_reports_unbounded_case_without_infinity() {
+        let mut design = literature_example_design();
+        design.surface_replacement_time_years = 0.0;
+        design.surface_replacement_cost_musd_per_m2 = 0.0;
+        design.target_cost_per_energy_yield_usd_per_mj = 0.0;
+        let limits = calculate_qecon_asymptotic_limits(&design).unwrap();
+        assert_eq!(limits.maximum_q_econ, None);
+        assert!(limits.finite_density_break_even_possible);
     }
 
     #[test]

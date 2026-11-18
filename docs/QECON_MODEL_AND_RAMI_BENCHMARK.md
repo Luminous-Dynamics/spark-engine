@@ -121,6 +121,110 @@ Report calendar availability, productive utilization, planned/unplanned outage f
 - Preserve data licensing, code/model versions, calibration, source hashes, holdout identities, negative results and exact-head test evidence in each evaluation receipt.
 
 
+
+## Decision exploration: sensitivity and correlated uncertainty
+
+The 2026 Q_econ paper separates two questions:
+
+1. **Where is the viability boundary?** The Q_econ equations define the region where `Q_econ >= 1`.
+2. **Which intervention is the least difficult path to that boundary?** A weighted distance/projection problem encodes the different cost or difficulty of changing each parameter.
+
+The weights must not change the viability boundary. They express stakeholder assumptions about intervention difficulty. A unitless sensitivity ranking and an intervention-cost ranking are therefore different products and must not be conflated.
+
+### Asymptotic economic ceiling
+
+Spark now exposes the paper's analytic high-power-density limit for Q_econ. The model separates:
+- a finite mathematical Q_econ ceiling, when target cost, surface replacement cost or replacement downtime impose a positive asymptotic cost coefficient;
+- an unbounded mathematical Q_econ limit (`None` in the API), when the supplied assumptions remove every power-proportional cost term while leaving positive energy value;
+- whether `Q_econ >= 1` can be reached at any finite positive power density under the supplied assumptions.
+
+The ceiling is a mathematical property of the simplified steady-state model, **not** a physical operating target. The paper's illustration approaches Q_econ of roughly 3 only at extremely high areal fusion power densities where utilization falls below 0.5, while cooling/heat-exhaust limits may already be exceeded. A finite mathematical ceiling does not mean it is physically achievable.
+
+### Implemented local sensitivity analysis
+
+The new `src/qecon_exploration.rs` module provides finite-difference sensitivities for all ten controlling parameters. It reports:
+- derivative in the native parameter unit;
+- dimensionless local elasticity where the base parameter and Q_econ are nonzero;
+- the finite-difference step and whether a central, forward or backward estimate was used;
+- a ranking by absolute elasticity, with undefined elasticities kept visible at the end.
+
+This is a local derivative around one declared scenario. It is not a global sensitivity analysis, Sobol index, intervention-cost ranking or causal estimate. Zero-valued parameters retain a native-unit derivative while their relative elasticity is withheld.
+
+### Implemented seeded uncertainty propagation
+
+The module also provides seeded Monte Carlo with:
+- triangular marginal distributions (minimum, mode, maximum) for all ten parameters;
+- a positive-definite latent Gaussian correlation matrix;
+- a Gaussian-copula transform that preserves the supplied triangular marginals while imposing dependence;
+- deterministic ChaCha8 sampling from a caller-supplied seed;
+- Q_econ, surface-utilization and net-economic-rate distribution summaries;
+- estimated probabilities `P(Q_econ >= 1)` and `P(Q_econ >= 1.5)`;
+- retention of every complete sampled input and output for inspection and replay.
+
+The correlation matrix is defined for latent standard-normal variables in the fixed `QeconParameter::ALL` order. It is **not** a Pearson correlation matrix of the transformed physical/economic parameters. The caller must provide and justify the triangular ranges, modes and dependence assumptions.
+
+This is not a calibrated forecast. No distribution is inferred automatically from the literature, and no narrow uncertainty is assigned to poorly constrained material lifetime, availability or cost parameters. The outputs are conditional on the supplied scenario assumptions.
+
+
+
+
+
+### Independent-input Saltelli/Jansen indices
+
+The module now includes a standard independent-input variance-based sensitivity design. It:
+- requires an explicit declaration that all ten input marginals are independent;
+- samples two independent base designs A/B and computes one hybrid A-with-column-i-from-B per parameter;
+- estimates first-order indices with a mean-centered Saltelli covariance estimator to reduce finite-sample noise;
+- estimates total-order indices with the Jansen squared-difference estimator;
+- reports sample seed, number of model evaluations, output variance and the full marginal definitions;
+- leaves finite-sample excursions outside [0, 1] visible rather than clipping them.
+
+The independent-input API intentionally does not accept the Gaussian-copula correlation matrix. Do not run ordinary Sobol estimators on correlated input ensembles and do not reinterpret Pearson/Spearman marginal associations as Sobol indices.
+
+A separate dependent-input Shapley/conditional-variance track is tracked in [issue #20](https://github.com/Luminous-Dynamics/spark-engine/issues/20). Shapley effects are a promising route because they can allocate output variance across dependent inputs and interactions; conditional sampling and convergence/error control are required.
+
+### Independent-input Sobol indices
+
+The exploration module now implements first-order and total-order variance indices using an independent-input Saltelli/Jansen design. It requires an explicit caller declaration that all ten triangular input marginals are independent and deliberately does not accept the Gaussian-copula matrix used for correlated Monte Carlo runs.
+
+The estimator uses two independent base sample matrices, one hybrid evaluation per input and sample, the Saltelli first-order covariance estimator and the Jansen total-order squared-difference estimator. It reports the seed, input marginals, output variance and exact model-evaluation count. Estimates are not clamped to [0, 1], so finite-sample excursions remain visible.
+
+This method is valid only under the declared independent-input model. It must not be applied to the correlated Gaussian-copula ensemble. The current sampled-ensemble Pearson/Spearman diagnostics remain descriptive; they are not a substitute for variance-based attribution.
+
+The next dependent-input track is a generalized dependent-input variance decomposition (e.g. Kucherenko indices) and a Shapley-effect allocation. Shapley effects are especially attractive because they allocate total output variance across inputs even when inputs are dependent and interaction effects exist, but estimating them requires conditional sampling and careful compute-budget/error control.
+
+### Global ensemble associations
+
+A second sensitivity view is now available through `rank_qecon_global_associations`. It calculates Pearson and tie-aware Spearman associations between each of the ten sampled input parameters and Q_econ over the actual seeded ensemble. It ranks parameters by absolute Spearman association and returns `None` for constant inputs or outputs.
+
+This is a distribution-conditional, global descriptive association. With correlated inputs, a high rank correlation can reflect shared dependence with other parameters; it is not a causal effect, an independent-input Sobol index or a Shapley attribution. Use it alongside local elasticity, not instead of it. A true global variance-based sensitivity analysis for dependent inputs remains a separate research task.
+
+### Evidence-carrying uncertainty runs
+
+The exploration API now supports an evidence-carrying scenario wrapper. It retains the base scenario identifier, model revision, evidence class, source locator, base-input digest and assumptions alongside the uncertainty-input digest, seed, marginal distributions, dependence matrix and uncertainty result. It validates the base scenario through the Q_econ scenario evaluator and syntax-checks the uncertainty digest.
+
+The digest fields are still caller-supplied receipts: this crate does not define canonical cross-repository serialization or verify the cryptographic digests. Mycelix's shared evidence layer remains responsible for canonical serialization, digest generation and verification. A scenario's evidence class is inherited, not upgraded by running Monte Carlo.
+
+### Sampling-error intervals for viability probabilities
+
+The uncertainty result now accompanies each Monte Carlo estimate of `P(Q_econ >= 1)` and `P(Q_econ >= 1.5)` with a Wilson 95% binomial interval. The interval quantifies finite sample-count error **conditional on the supplied model and distributions**. It does not include uncertainty in the marginal ranges, the copula, the Q_econ equations, missing physical processes or model discrepancy.
+
+For example, increasing sample count can narrow the Wilson interval, but it cannot make an unjustified fluence limit or market-price distribution more credible. Parameter/model uncertainty and Monte Carlo sampling error remain distinct.
+
+### Validation and next increment
+
+The module has tests for all-ten-parameter coverage, expected sensitivity signs, fixed-seed replay, marginal bounds, positive correlation propagation, invalid/incomplete matrices and sample-count limits. It is added in a separate stacked draft PR so it can be reviewed independently of the deterministic kernel.
+
+The next economics increment is a weighted closest-viable-design solver faithful to the paper's positive box-constrained log-space formulation. It must:
+- keep the Q_econ viability surface independent of weights;
+- expose separate scale factors and stakeholder-supplied intervention-difficulty weights;
+- reject infeasible bounds and invalid weights;
+- compare solver output against an independent numerical optimizer / KKT residual;
+- demonstrate multiple-start convergence and sensitivity to stakeholder weights;
+- preserve a Pareto view where no single weighting is endorsed as objectively correct.
+
+Do not label the finite-difference ranking as the paper's weighted projection. Do not claim a globally closest viable design until the constrained optimization and independent oracle are implemented and validated.
+
 ## Quantitative benchmark scoreboard
 
 The numbers below are **qualification targets**, not results achieved by Spark. Comparisons must preserve the same task definition, dataset version, device/shot split, warning horizon, event threshold, units and uncertainty treatment.
@@ -146,6 +250,55 @@ The numbers below are **qualification targets**, not results achieved by Spark. 
 
 For disruption prediction specifically, the DisruptionBench figures are baselines to reproduce before trying to beat them; the 0.90 AUC / 0.70 F2 figures above are our proposed stretch goals, not reported results. For neutronics, the current OpenMC-Fusion-Benchmarks proof-of-concept scope must not be represented as a fully mature fusion-plant benchmark suite. For hydride yield, raw-data reproduction must wait for the stated release date; the source paper's fitted values do not establish net energy production.
 
+## Project-finance extension beyond steady-state Q_econ
+
+Q_econ and its effective-LCOE proxy are steady-state design screens, not complete project-finance models. The 2026 Q_econ paper itself identifies omitted financing and lifecycle dimensions: working-capital swings around target procurement and surface replacement, interest during construction, ramp-up liquidity, covenant risk, decommissioning, waste-handling reserves and residual/salvage value.
+
+Spark tracks this separately in [issue #23](https://github.com/Luminous-Dynamics/spark-engine/issues/23). The eventual model should consume qualified component-life and outage distributions from RAMI, then time-phase construction drawdowns, inventory, replacement campaigns, production, restart/ramp-up and end-of-life liabilities. Its outputs should include NPV, project/equity IRR, liquidity trough, working-capital requirement and downside-tail exposure alongside—never substituted for—Q_econ and plant LCOE.
+
+## Heat-exhaust qualification: preserve the denominator and surface
+
+A divertor heat-flux limit must **not** be copied directly into the Q_econ fusion-power-density envelope just because both use MW/m².
+
+The Q_econ input `fusion_power_density_mw_per_m2` is fusion power divided by its declared economic extraction/control surface S. Divertor studies report heat flux on a divertor target/wetted surface, with a different geometry and energy-flow boundary. Converting between them requires a validated power-exhaust model and a geometric map; the unit string alone is insufficient.
+
+A useful external benchmark example:
+- A divertor/power-exhaust study describes an unmitigated DEMO scrape-off-layer heat flux of roughly 150 MW/m² against cited engineering design limits around 5–10 MW/m². These are design-study values, not universal limits.
+- A 2025 finite-element assessment of pipe-monoblock and helium-jet divertor designs found temperature limits of copper-alloy heat sinks and ferritic-martensitic steel can constrain candidate incident heat flux to below the study's 10 MW/m² design criterion; irradiation-induced tungsten property degradation further narrows the operating window.
+
+Sources:
+- [Divertor shaping with neutral baffling as a solution to the tokamak power-exhaust challenge](https://pmc.ncbi.nlm.nih.gov/articles/PMC12098118/)
+- [Thermal-mechanical evaluation of candidate tokamak divertor elements informing fusion materials design windows](https://doi.org/10.1016/j.fusengdes.2024.114764)
+
+### Required mapping contract
+
+Before an exhaust limit can constrain Q_econ, an independently qualified adapter must preserve:
+1. The numerator boundary: fusion power, power crossing the separatrix, charged-particle exhaust, neutron deposition, radiation or heat deposited in a named component.
+2. The denominator boundary: economic extraction surface S versus divertor wetted area, including actual 3-D geometry and flux expansion.
+3. Radiated power fraction, radiative/divertor partition, power sharing between targets and peak-to-average factors.
+4. Time basis: transient peak, pulse average, duty-cycle average or steady-state.
+5. Uncertainty and model discrepancy in geometry, detachment, radiation, material properties and heat-transfer boundary conditions.
+6. Provenance and validation domain of the upstream plasma-edge, thermal-hydraulic and material solvers.
+
+Until such a map exists, the Q_econ engineering envelope only accepts a maximum fusion power density already expressed on the same Q_econ extraction surface S. A raw divertor heat-flux limit remains a separate constraint in the physical design envelope. Missing mapping means **indeterminate**, never optimistic feasibility.
+
+## External RAMI and remote-maintenance evidence (2025–2026)
+
+The engineering feasibility layer should be benchmarked against real published maintenance cases rather than a generic MTBF/MTTR toy model.
+
+- **Commercial spherical-tokamak availability:** the 2025 Fusion Engineering and Design study by K. et al. (DOI: https://doi.org/10.1016/j.fusengdes.2025.115231) couples component fluence/lifetime, replacement duration, cost and plant availability. For its studied single-null parameter ranges, no solutions exceeded 80% availability; its double-null case reduced the divertor fluence target for 80% availability from about 160 to 115 MW·year/m². It reports a 0.25-year maintenance-time target and component-specific fluence/lifetime sensitivities. These figures are **specific PROCESS-model results**, not universal plant requirements; its underlying data are confidential, so Spark can compare published trends/targets but cannot claim a raw-data reproduction.
+- **VNS remote blanket extraction:** Mozzillo et al. (2025), DOI https://doi.org/10.1016/j.fusengdes.2025.115226, describe a virtual kinematic feasibility study in which outboard shielding-blanket segments can be removed without first removing the divertor. The reported sequence includes a 40 mm lift, approximately 9° tilt and 115 mm radial movement for a central outboard segment. These are concept/kinematic results, not an in-radiation plant-cadence demonstration.
+- **2026 VNS remote-tool design:** the follow-on paper (DOI: https://doi.org/10.1016/j.fusengdes.2026.115758) adds a conceptual blanket transporter, cask transporter and contamination-protection structure, with preliminary structural analysis. This is a useful Symtropy CAD/kinematic/structural workflow reference, still not operational qualification.
+- **DOE 2026 roadmap:** DOE identifies plant-level RAMI, non-nuclear remote-maintenance mockups, structured reliability data, modular digital twins and coupled-experiment validation as work needed to reach validated whole-system models. This is a national programme target, not a capability we have already delivered: https://www.energy.gov/articles/energy-department-releases-finalized-fusion-science-and-technology-roadmap-accelerate
+
+### Proposed externalized benchmark cases
+
+1. Reconstruct the published spherical-tokamak sensitivity *directions* and stated target ranges; explicitly mark the data as literature-reported and the full confidential PROCESS database as unavailable.
+2. Encode the VNS blanket segment geometry and removal sequence as a pinned CAD/kinematic task: collision-free extraction, required clearances, operations count, tool reach, cask interface, divertor-independent removal, and deterministic replay.
+3. Measure a full maintenance operation as a task graph: isolation, drain/decontaminate, disconnect, unbolt/cut, lift, transfer, hot-cell queue, refurbishment, replacement, reconnect, leak/pressure test, recommission and configuration verification.
+4. Report elapsed outage time, resource bottlenecks, parallelizable work, failure/recovery branches, dose/contamination boundary assumptions, equipment utilization and sensitivity to spare/cask/hot-cell capacity.
+5. Distinguish virtual kinematic clearance, mock-up demonstration, radiation-environment qualification and plant operational evidence as different assurance levels.
+
 ## Industry comparison and our credible differentiation
 
 The DOE's June 2026 Fusion Science and Technology Roadmap explicitly calls for an AI-Fusion Digital Convergence Platform integrating HPC codes, physics-constrained digital twins, foundation models, surrogates, whole-facility modelling and real-time control. It also identifies the lack of validated end-to-end plant-level integrated modelling and the need to make RAMI a first-class quantitative design driver ([DOE roadmap](https://www.energy.gov/documents/fusion-science-and-technology-roadmap)).
@@ -157,6 +310,38 @@ That is a national-scale programme with access to major facilities, data, comput
 - full boundary accounting from plasma to export, availability and economics;
 - open cross-device evaluation with frozen holdouts and negative controls;
 - auditable design decisions that show which measurements would most reduce risk.
+
+## Industry milestone snapshot — 17 November 2026
+
+This snapshot distinguishes demonstrated plasma/component milestones from commercial-plant claims. It is not an investment ranking.
+
+| Programme | Latest public milestone / status | What it demonstrates | What it does not demonstrate |
+|---|---|---|---|
+| **General Fusion LM26** | On 16 November 2026, the company reported October 2026 electron temperature above 1 keV with practical low-speed compression, measured with UKAEA Thomson scattering; the company says it is working toward 10 keV and its D-D Lawson criterion by end-2028 | A measured plasma-heating milestone, co-measured with a national fusion laboratory; commercial systems work is also under way | It is not yet the stated Lawson milestone, fusion-electric breakeven or a net-electric plant. The company's first-of-a-kind plant operating target is around 2035 |
+| **CFS SPARC** | CFS's public pages describe the facility as under construction and first plasma / Q>1 as the 2027 campaign objective. CFS reported eight of eighteen toroidal-field magnets installed in a recent update | HTS magnet manufacturing/installation and a specific Q_fus>1 experimental campaign plan | A campaign goal is not an achieved Q result; Q_fus is plasma fusion power relative to plasma auxiliary heating, not whole-plant net electricity |
+| **Helion Polaris / Orion** | Helion's current Polaris page describes the prototype goal as demonstrating electricity from fusion and direct energy recovery. It explicitly says its prior use of "net electricity" did not match the concrete prototype objective. Orion's public wording is initial operations in 2028; independent reporting in September 2026 described full-power expectations later | Direct conversion/recovery subsystem testing and fusion-derived electricity demonstration | Demonstrating some electrical recovery is not the same as net electric generation. Do not score Polaris as a net-electric machine on this basis |
+| **NIF** | LLNL reports an 11th ignition on 20 June 2026 with 7.9 MJ yield and target gain around 3.8 | Repeatable multi-megajoule inertial-fusion target performance | Laser-to-target gain is not facility electrical gain or a grid power plant |
+| **ITER** | ITER reports the ninth and final vacuum-vessel sector delivered in October 2026, with the core components on site | Major industrial procurement and assembly progress | Component delivery is not plasma operations or a fusion power demonstration |
+
+Sources:
+- General Fusion / LM26: [company Q3 2026 results, 16 Nov 2026](https://investors.generalfusion.com/news-releases/news-release-details/general-fusion-reports-third-quarter-2026-results); [UKAEA / UK Government milestone, 8 Oct 2026](https://www.gov.uk/government/news/ukaea-general-fusion-announce-magnetised-target-fusion-milestone)
+- CFS: [SPARC status and 2027 goal](https://cfs.energy/technology/sparc/); [recent magnet installation update](https://www.linkedin.com/posts/commonwealth-fusion-systems_fusionenergy-magnets-sparc-activity-7508160944787689472-wcEP); [first-campaign scenario and Q>1 strategy](https://blog.cfs.energy/how-cfs-will-rev-up-our-sparc-tokamak-for-its-q1-fusion-moment/)
+- Helion: [Polaris objective and clarification of "net electricity"](https://www.helionenergy.com/polaris); [Feb 2026 D-T / 150-million-degree milestone](https://www.helionenergy.com/newsroom/helion-achieves-new-fusion-energy-milestones); [Axios Pro, Sep 2026 timeline reporting](https://www.axios.com/pro/climate-deals/2026/09/08/helion-energy-fusion-net-electricity-date-year)
+- NIF: [LLNL ignition results](https://lasers.llnl.gov/science/achieving-fusion-ignition)
+- ITER: [final vacuum-vessel sector delivery](https://www.iter.org/node/20687/remarkable-chapter-draws-close)
+
+### Competitive implication for Luminous Dynamics
+
+We should not try to compete with these programmes on plasma temperature, Q_fus, magnet scale, target yield, prototype power or construction funding. They have facilities, specialized teams, proprietary data and capital that we do not have.
+
+A credible contribution is to make their *cross-domain evidence problem* more reproducible and inspectable:
+1. Make every headline quantity carry its exact denominator and boundary: Q_plasma, target gain, Q_fus, recirculating-power ratio, net electrical export, Q_econ, availability and lifecycle cash flow.
+2. Build reproducible qualification cases for materials life, heat exhaust, remote maintenance and plant availability around published datasets and geometry cases.
+3. Preserve provenance, uncertainty, negative results, model discrepancy and evidence class as first-class data.
+4. Compare independent solver outputs and operational benchmarks at identical boundaries rather than build a single all-purpose "fusion score".
+5. Publish open adapters and benchmark manifests that laboratories, vendors and regulators can audit without adopting the Luminous stack.
+
+The most valuable potential differentiator is an open, evidence-carrying plant-qualification layer that connects specialist physics, materials, remote maintenance, net power and lifecycle economics. It is a research programme, not a capability already qualified on a real fusion plant.
 
 ## Paradigm shifts worth pursuing
 
