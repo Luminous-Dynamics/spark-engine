@@ -52,7 +52,7 @@
       "synthetic-closure-alpha",
       "synthetic-calibration-7"
     ],
-    "independent_model_confirmation_count": 1,
+    "dependence_cluster_count": 1,
     "consensus_disposition": "CommonModeConsensus",
     "reference_error_range": {
       "minimum": 28,
