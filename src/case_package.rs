@@ -442,7 +442,6 @@ fn validate_transfers(transfers: Option<&Vec<Value>>, case_family: Option<&str>,
         return;
     };
     let mut transfer_ids = HashSet::new();
-    let mut covered_pairs: HashSet<(String, String)> = HashSet::new();
     for (index, transfer) in transfers.iter().enumerate() {
         let context = format!("cross_family_transfers[{index}]");
         if let Some(id) = transfer.get("id").and_then(Value::as_str) {
@@ -457,8 +456,18 @@ fn validate_transfers(transfers: Option<&Vec<Value>>, case_family: Option<&str>,
         let source_family = transfer.get("source_family").and_then(Value::as_str);
         let destination_family = transfer.get("destination_family").and_then(Value::as_str);
         if source_family == destination_family || source_family == Some("cross_family_contract")
-            || destination_family == Some("cross_family_contract") {
-            errors.push(format!("{context} must connect two distinct concrete model families"));
+            || destination_family == Some("cross_family_contract")
+            || !source_family.is_some_and(|family| MODEL_FAMILIES.contains(&family))
+            || !destination_family.is_some_and(|family| MODEL_FAMILIES.contains(&family)) {
+            errors.push(format!("{context} must connect two distinct supported concrete model families"));
+        }
+        if source_id.is_some() && source_id == destination_id {
+            errors.push(format!("{context} cannot transfer from a model to itself"));
+        }
+        for field in ["rationale", "claim"] {
+            if transfer.get(field).and_then(Value::as_str).is_none_or(str::is_empty) {
+                errors.push(format!("{context}.{field} must be a non-empty string"));
+            }
         }
         for (model_id, family, role) in [
             (source_id, source_family, "source"),
@@ -472,29 +481,12 @@ fn validate_transfers(transfers: Option<&Vec<Value>>, case_family: Option<&str>,
                 }
             }
         }
-        if let (Some(source_id), Some(destination_id)) = (source_id, destination_id) {
-            covered_pairs.insert((source_id.to_string(), destination_id.to_string()));
-        }
         let review_id = transfer.get("independent_review_evidence_id").and_then(Value::as_str);
         check_ref(review_id, evidence_ids, "independent-review evidence", &context, errors);
         if let Some(review) = review_id.and_then(|id| evidence_by_id.get(id)) {
             let class = review.get("evidence_class").and_then(Value::as_str);
             if !matches!(class, Some("measured" | "code_to_code_comparison" | "experimental_validation" | "engineering_qualification")) {
                 errors.push(format!("{context} independent-review evidence class is insufficient"));
-            }
-        }
-    }
-    let concrete_models: Vec<(&str, &str)> = model_by_id.iter().filter_map(|(id, model)| {
-        Some((*id, model.get("model_family")?.as_str()?))
-    }).collect();
-    for (source_id, source_family) in &concrete_models {
-        for (destination_id, destination_family) in &concrete_models {
-            if source_family != destination_family
-                && !covered_pairs.contains(&(source_id.to_string(), destination_id.to_string()))
-            {
-                errors.push(format!(
-                    "missing explicit cross-family transfer record for {source_id} -> {destination_id}"
-                ));
             }
         }
     }
