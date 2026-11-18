@@ -78,6 +78,9 @@ pub mod qecon;
 // Evidence-aware comparison of Q_econ thresholds with declared engineering power-density limits
 pub mod qecon_feasibility;
 
+// Conservation-ledger mapping from Q_econ extraction power to divertor target loads
+pub mod power_exhaust_bridge;
+
 // Sensitivity, scenario sweeps and correlated uncertainty for Q_econ
 pub mod qecon_exploration;
 
@@ -126,6 +129,11 @@ pub use plant_energy_balance::{
 pub use qecon_feasibility::{
     QECON_FEASIBILITY_REVISION, QeconEnvelopeStatus, QeconFeasibilityResult,
     QeconFeasibilityScenario, QeconPowerDensityEnvelope, evaluate_qecon_power_density_envelope,
+};
+pub use power_exhaust_bridge::{
+    POWER_EXHAUST_BRIDGE_REVISION, DivertorTargetInput, DivertorTargetLoad,
+    ExhaustPowerBalance, PowerExhaustBridgeInput, PowerExhaustBridgeResult, PowerSurfaceArea,
+    PowerSurfaceRole, PowerTimeBasis, PowerTimeBasisKind, map_qecon_to_divertor_loads,
 };
 pub use qecon::{
     QECON_MODEL_REVISION, QeconAsymptoticLimits, QeconDesignParameters, QeconEvidenceClass,
