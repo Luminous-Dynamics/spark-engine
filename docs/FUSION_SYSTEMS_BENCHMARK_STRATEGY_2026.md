@@ -139,3 +139,8 @@ The programme's differentiation is not that every solver is more accurate than t
 ---
 
 **Current status:** programme strategy and targets only. The open-source implementation has not yet reproduced PROCESS/SOLPS-ITER engineering cases, qualified materials lifetime, demonstrated tritium self-sufficiency, completed whole-plant net-electricity qualification or validated a commercial reactor design.
+
+
+### Decision-stability seed-corpus implementation — 18 November 2026
+
+The Spark #44 benchmark branch now has five synthetic controls: model-choice cliff, decision-irrelevant disagreement, common-mode consensus, finite-sample conformal/union-bound arithmetic, and OOD numeric-output refusal. The targeted Rust validator has seventeen authored tests, including hostile missing/duplicate model pairs, empty calibration/control sets, false robust-bound claims and in-domain mutation of the OOD fixture. These are software semantics only. Covariance-sign, model-form tail, scenario-correlation, missingness/selection and full Pareto-front fixtures remain planned. Exact-head Rust CI has not yet passed; no physical or solver validation is claimed.
