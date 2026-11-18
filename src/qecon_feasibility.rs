@@ -8,7 +8,7 @@
 //! limit.
 
 use crate::qecon::{
-    QeconAsymptoticLimits, QeconEvidenceClass, QeconInput, QeconResult, QeconScenario,
+    QeconAsymptoticLimits, QeconEvidenceClass, QeconInput, QeconScenario,
     QeconScenarioResult, calculate_qecon, calculate_qecon_asymptotic_limits,
     calculate_qecon_scenario, required_fusion_power_density_for_qecon,
 };
@@ -119,18 +119,15 @@ pub fn evaluate_qecon_power_density_envelope(
     let q_max = calculate_qecon(&maximum_input)?.q_econ;
     let asymptotic_limits =
         calculate_qecon_asymptotic_limits(&scenario.base_scenario.input.design)?;
-    let required_power_density_mw_per_m2 =
-        required_fusion_power_density_for_qecon(
-            &scenario.base_scenario.input.design,
-            scenario.target_q_econ,
-        )
-        .ok();
+    let required_power_density_mw_per_m2 = required_fusion_power_density_for_qecon(
+        &scenario.base_scenario.input.design,
+        scenario.target_q_econ,
+    )
+    .ok();
 
     let status = match required_power_density_mw_per_m2 {
         None => QeconEnvelopeStatus::EconomicallyAsymptoticallyUnreachable,
-        Some(required)
-            if required > scenario.envelope.maximum_power_density_mw_per_m2 =>
-        {
+        Some(required) if required > scenario.envelope.maximum_power_density_mw_per_m2 => {
             QeconEnvelopeStatus::AboveDeclaredMaximum
         }
         Some(required)
@@ -184,12 +181,19 @@ pub fn evaluate_qecon_power_density_envelope(
 
 fn validate_envelope(scenario: &QeconFeasibilityScenario) -> Result<(), String> {
     if scenario.scenario_control_surface_id.trim().is_empty()
-        || scenario.envelope.envelope_control_surface_id.trim().is_empty()
+        || scenario
+            .envelope
+            .envelope_control_surface_id
+            .trim()
+            .is_empty()
     {
         return Err("both control-surface identifiers must be non-empty".to_string());
     }
     if scenario.scenario_control_surface_id != scenario.envelope.envelope_control_surface_id {
-        return Err("Q_econ scenario and engineering envelope control-surface identifiers must match".to_string());
+        return Err(
+            "Q_econ scenario and engineering envelope control-surface identifiers must match"
+                .to_string(),
+        );
     }
     if !scenario.target_q_econ.is_finite() || scenario.target_q_econ <= 0.0 {
         return Err("target_q_econ must be finite and positive".to_string());
@@ -197,7 +201,9 @@ fn validate_envelope(scenario: &QeconFeasibilityScenario) -> Result<(), String> 
     let minimum = scenario.envelope.minimum_power_density_mw_per_m2;
     let maximum = scenario.envelope.maximum_power_density_mw_per_m2;
     if !minimum.is_finite() || !maximum.is_finite() || minimum <= 0.0 || maximum < minimum {
-        return Err("power-density envelope must satisfy finite 0 < minimum <= maximum".to_string());
+        return Err(
+            "power-density envelope must satisfy finite 0 < minimum <= maximum".to_string(),
+        );
     }
     if scenario.envelope.model_revision.trim().is_empty() {
         return Err("envelope model_revision must not be empty".to_string());
@@ -226,14 +232,18 @@ fn validate_envelope(scenario: &QeconFeasibilityScenario) -> Result<(), String> 
         .as_ref()
         .is_none_or(|source| source.trim().is_empty())
     {
-        return Err("measured, literature and engineering envelopes require a source locator".to_string());
+        return Err(
+            "measured, literature and engineering envelopes require a source locator".to_string(),
+        );
     }
     Ok(())
 }
 
 fn validate_sha256(value: &str, label: &str) -> Result<(), String> {
     if value.len() != 64 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
-        return Err(format!("{label} must contain exactly 64 hexadecimal characters"));
+        return Err(format!(
+            "{label} must contain exactly 64 hexadecimal characters"
+        ));
     }
     Ok(())
 }
