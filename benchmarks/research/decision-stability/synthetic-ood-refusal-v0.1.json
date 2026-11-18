@@ -1,0 +1,41 @@
+{
+  "schema_version": "0.1.0",
+  "fixture_id": "synthetic-ood-refusal-v0.1",
+  "fixture_class": "synthetic_analytic",
+  "evidence_class": "synthetic",
+  "intended_use": "software_applicability_refusal",
+  "physical_validation": false,
+  "description": "A model emits a synthetic point estimate outside its declared applicability envelope. The evaluator must preserve the OOD status and refuse a robust bound or decision-eligible disposition.",
+  "model_identity": {
+    "model_id": "synthetic-model-m1",
+    "model_revision": "synthetic-revision-1",
+    "model_family": "synthetic_analytic_control"
+  },
+  "applicability_contract": {
+    "observable_id": "normalized_operating_parameter",
+    "unit": "dimensionless",
+    "qualified_minimum": 0.0,
+    "qualified_maximum": 1.0
+  },
+  "requested_state": {
+    "observable_id": "normalized_operating_parameter",
+    "unit": "dimensionless",
+    "value": 1.1
+  },
+  "model_output": {
+    "observable_id": "net_export",
+    "unit": "MWe",
+    "point_estimate": 74.0
+  },
+  "reported_claim": {
+    "disposition": "OutOfDomain",
+    "decision_eligibility": "Indeterminate",
+    "adjusted_robust_lower_bound_mwe": null
+  },
+  "expected": {
+    "disposition": "OutOfDomain",
+    "decision_eligibility": "Indeterminate",
+    "must_not_emit_robust_lower_bound": true
+  },
+  "claim_ceiling": "Synthetic applicability-refusal control only; no model domain or fusion output is validated."
+}
