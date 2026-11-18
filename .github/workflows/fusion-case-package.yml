@@ -1,0 +1,36 @@
+name: Fusion case-package conformance
+
+on:
+  pull_request:
+    paths:
+      - "schemas/fusion-qualification-case.schema.json"
+      - "benchmarks/conformance/**"
+      - "scripts/validate_fusion_cases.py"
+      - ".github/workflows/fusion-case-package.yml"
+  push:
+    branches:
+      - main
+      - research/fusion-qualification-case-package-v0
+    paths:
+      - "schemas/fusion-qualification-case.schema.json"
+      - "benchmarks/conformance/**"
+      - "scripts/validate_fusion_cases.py"
+      - ".github/workflows/fusion-case-package.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  schema-and-semantic-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@v4
+      - name: Set up Python for the development-only JSON Schema validator
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned schema-validation dependency
+        run: python -m pip install --disable-pip-version-check jsonschema==4.26.0
+      - name: Validate schema, fixtures, references, evidence digests and negative controls
+        run: python scripts/validate_fusion_cases.py
