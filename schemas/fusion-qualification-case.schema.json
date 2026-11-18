@@ -9,6 +9,7 @@
     "schema_version",
     "case_id",
     "title",
+    "model_family",
     "case_class",
     "intended_use",
     "created_on",
@@ -137,6 +138,18 @@
     },
     "integrity": {
       "$ref": "#/$defs/integrity"
+    },
+    "model_family": {
+      "type": "string",
+      "enum": [
+        "synthetic_fixture",
+        "lattice_confinement_fusion",
+        "magnetic_confinement_fusion",
+        "inertial_confinement_fusion",
+        "magnetized_target_fusion",
+        "fusion_plant_systems",
+        "cross_family_contract"
+      ]
     }
   },
   "$defs": {
