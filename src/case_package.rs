@@ -309,7 +309,7 @@ fn unit_matches_quantity(kind: Option<&str>, code: &str) -> bool {
     let mass = ["g", "kg"].contains(&code);
     let particle_rate = code == "s-1";
     let temperature = ["K", "Cel"].contains(&code);
-    let pressure = ["Pa", "kPa", "MPa"].contains(&code);
+    let pressure = ["Pa", "kPa", "MPa", "bar"].contains(&code);
     match kind {
         Some("power" | "electric_power") => power,
         Some("energy" | "electrical_energy") => energy,
