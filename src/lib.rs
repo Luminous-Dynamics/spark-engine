@@ -78,6 +78,9 @@ pub mod qecon;
 // Sensitivity, scenario sweeps and correlated uncertainty for Q_econ
 pub mod qecon_exploration;
 
+// Time-phased fusion project cash-flow and liquidity analysis
+pub mod project_finance;
+
 // First-order reliability/availability screening (not full RAMI)
 pub mod plant_availability;
 
@@ -125,6 +128,11 @@ pub use qecon::{
     QeconInput, QeconResult, QeconScenario, QeconScenarioResult, calculate_qecon,
     calculate_qecon_asymptotic_limits, calculate_qecon_scenario,
     net_electric_efficiency_from_power_balance, required_fusion_power_density_for_qecon,
+};
+pub use project_finance::{
+    PROJECT_FINANCE_MODEL_REVISION, ProjectCashflowPeriod, ProjectCashflowResultPeriod,
+    ProjectCostCategory, ProjectCostLine, ProjectCurrencyBasis, ProjectFinanceInput,
+    ProjectFinanceResult, ProjectIrrStatus, evaluate_project_cashflow,
 };
 pub use qecon_exploration::{
     DifferenceMethod, MAX_QECON_UNCERTAINTY_SAMPLES, QECON_EXPLORATION_REVISION,

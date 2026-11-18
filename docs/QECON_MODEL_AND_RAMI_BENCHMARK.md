@@ -311,6 +311,26 @@ That is a national-scale programme with access to major facilities, data, comput
 - open cross-device evaluation with frozen holdouts and negative controls;
 - auditable design decisions that show which measurements would most reduce risk.
 
+## Time-phased project cash flow beyond Q_econ and plant LCOE
+
+The new `project_finance` module begins a separate annual cash-flow layer. It consumes explicit year-indexed production and realized-price assumptions, other-product revenue, salvage, working-capital investments/releases and a complete cost schedule. Each year must provide one entry for each of 13 categories, including explicit zero amounts where appropriate:
+construction, component replacement, fixed O&M, variable O&M, fuel cycle, targets/consumables, remote maintenance, hot-cell/cask operations, waste disposition, insurance/licensing, interest during construction, decommissioning and taxes.
+
+The annual realized electricity price may be negative, allowing negative energy revenue where the plant delivers under negative-price or must-run conditions. Production itself must remain non-negative. This does not model dispatch or curtailment decisions.
+
+The first release calculates:
+- annual energy and other-product revenue, total costs and net project cash flow;
+- NPV at a caller-supplied discount rate consistent with the declared real/nominal currency basis and currency year;
+- IRR only for a single-sign-change cash-flow pattern with a root bracketed in [-0.99, 10]; multiple sign changes are reported as non-unique rather than assigned an arbitrary root;
+- working-capital balance and peak;
+- minimum cumulative project cash position before external debt/equity funding.
+
+### Current limits
+
+This is a **pre-financing project cash-flow screen**, not a debt/equity model and not a bankable project-finance engine. It does not model debt drawdowns, debt service, equity waterfall, covenants, taxes beyond explicit cash-cost inputs, inflation conversion, stochastic construction delay, merchant dispatch or price formation. Interest during construction is an explicit cost category; the caller must avoid double counting it through the discount-rate convention.
+
+The schedule is a set of declared scenario assumptions unless evidence is supplied. No cost category may be omitted: it must be explicit, even when zero. A future release should couple production and outages to RAMI distributions and add liquidity/DSCR/covenant simulation, real options and tail-risk measures.
+
 ## Industry milestone snapshot — 17 November 2026
 
 This snapshot distinguishes demonstrated plasma/component milestones from commercial-plant claims. It is not an investment ranking.
