@@ -140,20 +140,17 @@
       "$ref": "#/$defs/integrity"
     },
     "model_family": {
-      "type": "string",
-      "enum": [
-        "synthetic_fixture",
-        "lattice_confinement_fusion",
-        "magnetic_confinement_fusion",
-        "inertial_confinement_fusion",
-        "magnetized_target_fusion",
-        "fusion_plant_systems",
-        "cross_family_contract"
-      ]
+      "$ref": "#/$defs/modelFamily"
     },
     "$schema": {
       "type": "string",
       "minLength": 1
+    },
+    "cross_family_transfers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/crossFamilyTransfer"
+      }
     }
   },
   "$defs": {
@@ -684,16 +681,7 @@
           }
         },
         "model_family": {
-          "type": "string",
-          "enum": [
-            "synthetic_fixture",
-            "lattice_confinement_fusion",
-            "magnetic_confinement_fusion",
-            "inertial_confinement_fusion",
-            "magnetized_target_fusion",
-            "fusion_plant_systems",
-            "cross_family_contract"
-          ]
+          "$ref": "#/$defs/modelFamily"
         }
       }
     },
@@ -1004,6 +992,94 @@
           "$ref": "#/$defs/sha256"
         }
       }
+    },
+    "crossFamilyTransfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source_model_id",
+        "destination_model_id",
+        "source_family",
+        "destination_family",
+        "rationale",
+        "claim",
+        "independent_review_evidence_id"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "source_model_id": {
+          "$ref": "#/$defs/id"
+        },
+        "destination_model_id": {
+          "$ref": "#/$defs/id"
+        },
+        "source_family": {
+          "$ref": "#/$defs/modelFamily"
+        },
+        "destination_family": {
+          "$ref": "#/$defs/modelFamily"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claim": {
+          "type": "string",
+          "minLength": 1
+        },
+        "independent_review_evidence_id": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "not": {
+        "properties": {
+          "source_family": {
+            "const": "cross_family_contract"
+          }
+        },
+        "required": [
+          "source_family"
+        ]
+      }
+    },
+    "modelFamily": {
+      "type": "string",
+      "enum": [
+        "synthetic_fixture",
+        "lattice_confinement_fusion",
+        "magnetic_confinement_fusion",
+        "inertial_confinement_fusion",
+        "magnetized_target_fusion",
+        "fusion_plant_systems",
+        "cross_family_contract"
+      ]
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "model_family": {
+            "const": "cross_family_contract"
+          }
+        },
+        "required": [
+          "model_family"
+        ]
+      },
+      "then": {
+        "required": [
+          "cross_family_transfers"
+        ],
+        "properties": {
+          "cross_family_transfers": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
 }
