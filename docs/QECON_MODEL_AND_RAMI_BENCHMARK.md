@@ -256,6 +256,32 @@ Q_econ and its effective-LCOE proxy are steady-state design screens, not complet
 
 Spark tracks this separately in [issue #23](https://github.com/Luminous-Dynamics/spark-engine/issues/23). The eventual model should consume qualified component-life and outage distributions from RAMI, then time-phase construction drawdowns, inventory, replacement campaigns, production, restart/ramp-up and end-of-life liabilities. Its outputs should include NPV, project/equity IRR, liquidity trough, working-capital requirement and downside-tail exposure alongside—never substituted for—Q_econ and plant LCOE.
 
+## Heat-exhaust qualification: preserve the denominator and surface
+
+A divertor heat-flux limit must **not** be copied directly into the Q_econ fusion-power-density envelope just because both use MW/m².
+
+The Q_econ input `fusion_power_density_mw_per_m2` is fusion power divided by its declared economic extraction/control surface S. Divertor studies report heat flux on a divertor target/wetted surface, with a different geometry and energy-flow boundary. Converting between them requires a validated power-exhaust model and a geometric map; the unit string alone is insufficient.
+
+A useful external benchmark example:
+- A divertor/power-exhaust study describes an unmitigated DEMO scrape-off-layer heat flux of roughly 150 MW/m² against cited engineering design limits around 5–10 MW/m². These are design-study values, not universal limits.
+- A 2025 finite-element assessment of pipe-monoblock and helium-jet divertor designs found temperature limits of copper-alloy heat sinks and ferritic-martensitic steel can constrain candidate incident heat flux to below the study's 10 MW/m² design criterion; irradiation-induced tungsten property degradation further narrows the operating window.
+
+Sources:
+- [Divertor shaping with neutral baffling as a solution to the tokamak power-exhaust challenge](https://pmc.ncbi.nlm.nih.gov/articles/PMC12098118/)
+- [Thermal-mechanical evaluation of candidate tokamak divertor elements informing fusion materials design windows](https://doi.org/10.1016/j.fusengdes.2024.114764)
+
+### Required mapping contract
+
+Before an exhaust limit can constrain Q_econ, an independently qualified adapter must preserve:
+1. The numerator boundary: fusion power, power crossing the separatrix, charged-particle exhaust, neutron deposition, radiation or heat deposited in a named component.
+2. The denominator boundary: economic extraction surface S versus divertor wetted area, including actual 3-D geometry and flux expansion.
+3. Radiated power fraction, radiative/divertor partition, power sharing between targets and peak-to-average factors.
+4. Time basis: transient peak, pulse average, duty-cycle average or steady-state.
+5. Uncertainty and model discrepancy in geometry, detachment, radiation, material properties and heat-transfer boundary conditions.
+6. Provenance and validation domain of the upstream plasma-edge, thermal-hydraulic and material solvers.
+
+Until such a map exists, the Q_econ engineering envelope only accepts a maximum fusion power density already expressed on the same Q_econ extraction surface S. A raw divertor heat-flux limit remains a separate constraint in the physical design envelope. Missing mapping means **indeterminate**, never optimistic feasibility.
+
 ## External RAMI and remote-maintenance evidence (2025–2026)
 
 The engineering feasibility layer should be benchmarked against real published maintenance cases rather than a generic MTBF/MTTR toy model.
