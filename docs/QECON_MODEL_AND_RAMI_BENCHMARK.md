@@ -341,3 +341,10 @@ The most valuable potential differentiator is an open, evidence-carrying plant-q
 ## Claim ceiling
 
 Current implementation is a deterministic Q_econ software model with an analytic design-threshold solver, an evidence metadata wrapper, and an adapter from a complete electrical balance. It is not a validated plant twin, stochastic RAMI model, bankable economics model, neutronics transport solver, validated plasma predictor, or demonstration of fusion energy production. All future performance claims must be tied to independent benchmark results and the exact tested revision.
+
+
+## Q_econ to divertor power-exhaust boundary bridge
+
+A separate conservation-ledger adapter now connects Q_econ's energy-extraction surface to explicitly identified divertor target wetted areas. It requires an explicit confined-plasma/separatrix/SOL power ledger, radiation fractions, divertor routing, target power shares, target geometry, peak-to-average factors, temporal basis and independent evidence receipts.
+
+See [POWER_EXHAUST_BOUNDARY_CONTRACT.md](POWER_EXHAUST_BOUNDARY_CONTRACT.md) for the full equations, limits, cross-code protocol and proposed benchmark gates. The bridge does not calculate SOL transport, detachment, neutrals, target thermal response or material lifetime. A calculated MW/m² target load is not itself a qualified operating point.
