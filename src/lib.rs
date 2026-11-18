@@ -68,6 +68,9 @@ pub mod uncertainty;
 // Integration modules
 pub mod bridge;
 
+// Fusion qualification case-package semantic validation
+pub mod case_package;
+
 // Extended fusion physics (D-T, p-B11, muon-catalyzed)
 pub mod reactions;
 
@@ -87,6 +90,10 @@ pub mod optimal_experiment;
 pub use anomaly::{AnomalyAnalysis, AnomalyHypothesis};
 pub use bayesian::{ALL_HYPOTHESES, HypothesisBelief, ObservedOutcome, OutcomeClasses};
 pub use error::{Result, SparkError};
+pub use case_package::{
+    CASE_PACKAGE_SEMANTIC_VALIDATOR_REVISION, CasePackageSummary,
+    validate_case_manifest, validate_case_manifest_str,
+};
 pub use lattice::{LatticeLifetime, LatticeState};
 pub use neutron_source::{NeutronSourceDesign, SourceSpec};
 pub use optimal_experiment::{
