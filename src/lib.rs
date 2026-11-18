@@ -78,6 +78,9 @@ pub mod qecon;
 // Evidence-aware comparison of Q_econ thresholds with declared engineering power-density limits
 pub mod qecon_feasibility;
 
+// Conservation-ledger mapping from Q_econ extraction power to divertor target loads
+pub mod power_exhaust_bridge;
+
 // Sensitivity, scenario sweeps and correlated uncertainty for Q_econ
 pub mod qecon_exploration;
 
@@ -123,9 +126,10 @@ pub use plant_energy_balance::{
     PlantEconomicsInput, PlantEconomicsResult, PlantPowerBalance, PlantPowerBalanceInput,
     calculate_lcoe, calculate_plant_power_balance,
 };
-pub use qecon_feasibility::{
-    QECON_FEASIBILITY_REVISION, QeconEnvelopeStatus, QeconFeasibilityResult,
-    QeconFeasibilityScenario, QeconPowerDensityEnvelope, evaluate_qecon_power_density_envelope,
+pub use power_exhaust_bridge::{
+    DivertorTargetInput, DivertorTargetLoad, ExhaustPowerBalance, POWER_EXHAUST_BRIDGE_REVISION,
+    PowerExhaustBridgeInput, PowerExhaustBridgeResult, PowerSurfaceArea, PowerSurfaceRole,
+    PowerTimeBasis, PowerTimeBasisKind, map_qecon_to_divertor_loads,
 };
 pub use qecon::{
     QECON_MODEL_REVISION, QeconAsymptoticLimits, QeconDesignParameters, QeconEvidenceClass,
@@ -141,6 +145,10 @@ pub use qecon_exploration::{
     QeconUncertaintySample, QeconUncertaintyScenario, QeconUncertaintyScenarioResult,
     estimate_qecon_sobol_indices, propagate_qecon_scenario_uncertainty,
     propagate_qecon_uncertainty, rank_qecon_global_associations, rank_qecon_sensitivities,
+};
+pub use qecon_feasibility::{
+    QECON_FEASIBILITY_REVISION, QeconEnvelopeStatus, QeconFeasibilityResult,
+    QeconFeasibilityScenario, QeconPowerDensityEnvelope, evaluate_qecon_power_density_envelope,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
