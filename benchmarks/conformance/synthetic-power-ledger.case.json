@@ -211,5 +211,6 @@
     "supporting_evidence_artifact_ids": [
       "synthetic-ledger-source"
     ]
-  }
+  },
+  "model_family": "synthetic_fixture"
 }
