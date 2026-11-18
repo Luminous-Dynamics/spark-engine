@@ -990,7 +990,10 @@ pub(crate) fn standard_normal_cdf(value: f64) -> f64 {
     }
 }
 
-pub(crate) fn wilson_probability_estimate(successes: u32, sample_count: u32) -> QeconProbabilityEstimate {
+pub(crate) fn wilson_probability_estimate(
+    successes: u32,
+    sample_count: u32,
+) -> QeconProbabilityEstimate {
     const Z_95: f64 = 1.959_963_984_540_054;
     let n = f64::from(sample_count);
     let observed = f64::from(successes) / n;
