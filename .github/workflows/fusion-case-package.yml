@@ -6,6 +6,11 @@ on:
       - "schemas/fusion-qualification-case.schema.json"
       - "benchmarks/conformance/**"
       - "scripts/validate_fusion_cases.py"
+      - "src/case_package.rs"
+      - "src/bin/validate_case_package.rs"
+      - "src/lib.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
       - ".github/workflows/fusion-case-package.yml"
   push:
     branches:
@@ -34,3 +39,17 @@ jobs:
         run: python -m pip install --disable-pip-version-check jsonschema[format]==4.26.0
       - name: Validate schema, fixtures, references, evidence digests and negative controls
         run: python scripts/validate_fusion_cases.py
+      - name: Set up Rust for the runtime semantic validator
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run Rust semantic validator on every case package
+        shell: bash
+        run: |
+          shopt -s nullglob
+          cases=(benchmarks/conformance/*.case.json)
+          if [ ${#cases[@]} -eq 0 ]; then
+            echo "No case package fixtures found" >&2
+            exit 1
+          fi
+          for case in "${cases[@]}"; do
+            cargo run --quiet --bin spark-case-validate -- "$case"
+          done
