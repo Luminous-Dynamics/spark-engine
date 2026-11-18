@@ -91,7 +91,8 @@ pub fn validate_case_manifest(value: &Value) -> Result<CasePackageSummary, Vec<S
         &evidence_by_id, &mut errors);
     validate_accounting(accounting, flows, &flow_ids, &boundary_ids, &time_ids,
         &evidence_ids, &mut errors);
-    validate_qualification(root.get("qualification"), &evidence_ids, &mut errors);
+    validate_qualification(root.get("qualification"), model_family.as_deref(),
+        models, &evidence_ids, &evidence_by_id, &mut errors);
 
     if errors.is_empty() {
         Ok(CasePackageSummary {
@@ -441,6 +442,7 @@ fn validate_transfers(transfers: Option<&Vec<Value>>, case_family: Option<&str>,
         return;
     };
     let mut transfer_ids = HashSet::new();
+    let mut covered_pairs: HashSet<(String, String)> = HashSet::new();
     for (index, transfer) in transfers.iter().enumerate() {
         let context = format!("cross_family_transfers[{index}]");
         if let Some(id) = transfer.get("id").and_then(Value::as_str) {
@@ -470,12 +472,29 @@ fn validate_transfers(transfers: Option<&Vec<Value>>, case_family: Option<&str>,
                 }
             }
         }
+        if let (Some(source_id), Some(destination_id)) = (source_id, destination_id) {
+            covered_pairs.insert((source_id.to_string(), destination_id.to_string()));
+        }
         let review_id = transfer.get("independent_review_evidence_id").and_then(Value::as_str);
         check_ref(review_id, evidence_ids, "independent-review evidence", &context, errors);
         if let Some(review) = review_id.and_then(|id| evidence_by_id.get(id)) {
             let class = review.get("evidence_class").and_then(Value::as_str);
             if !matches!(class, Some("measured" | "code_to_code_comparison" | "experimental_validation" | "engineering_qualification")) {
                 errors.push(format!("{context} independent-review evidence class is insufficient"));
+            }
+        }
+    }
+    let concrete_models: Vec<(&str, &str)> = model_by_id.iter().filter_map(|(id, model)| {
+        Some((*id, model.get("model_family")?.as_str()?))
+    }).collect();
+    for (source_id, source_family) in &concrete_models {
+        for (destination_id, destination_family) in &concrete_models {
+            if source_family != destination_family
+                && !covered_pairs.contains(&(source_id.to_string(), destination_id.to_string()))
+            {
+                errors.push(format!(
+                    "missing explicit cross-family transfer record for {source_id} -> {destination_id}"
+                ));
             }
         }
     }
@@ -585,8 +604,9 @@ fn resolve_flows<'a>(check: &Value, field: &str, flow_ids: &HashSet<String>,
     result
 }
 
-fn validate_qualification(qualification: Option<&Value>, evidence: &HashSet<String>,
-    errors: &mut Vec<String>) {
+fn validate_qualification(qualification: Option<&Value>, case_family: Option<&str>,
+    models: Option<&Vec<Value>>, evidence: &HashSet<String>,
+    evidence_by_id: &HashMap<&str, &Value>, errors: &mut Vec<String>) {
     let Some(qualification) = qualification else {
         errors.push("qualification record is required".to_string());
         return;
@@ -598,9 +618,32 @@ fn validate_qualification(qualification: Option<&Value>, evidence: &HashSet<Stri
             if qualification.get("independent_review").is_none() {
                 errors.push("qualified status requires independent_review".to_string());
             }
-            if qualification.get("supporting_evidence_artifact_ids")
-                .and_then(Value::as_array).is_none_or(Vec::is_empty) {
+            let supporting = qualification.get("supporting_evidence_artifact_ids")
+                .and_then(Value::as_array);
+            if supporting.is_none_or(Vec::is_empty) {
                 errors.push("qualified status requires supporting evidence".to_string());
+            }
+            if case_family == Some("synthetic_fixture") {
+                errors.push("synthetic_fixture cases can never be engineering-qualified".to_string());
+            }
+            for evidence_id in supporting.into_iter().flatten().filter_map(Value::as_str) {
+                if let Some(record) = evidence_by_id.get(evidence_id) {
+                    let class = record.get("evidence_class").and_then(Value::as_str);
+                    if matches!(class, Some("synthetic_fixture" | "scenario_assumption")) {
+                        errors.push(format!(
+                            "qualified status cannot rely on {class:?} evidence {evidence_id}"
+                        ));
+                    }
+                }
+            }
+            for model in models.into_iter().flatten() {
+                if model.get("domain_of_validity").and_then(|d| d.get("status"))
+                    .and_then(Value::as_str) != Some("in_domain") {
+                    errors.push(format!(
+                        "qualified status is incompatible with non-in-domain model {}",
+                        model.get("id").and_then(Value::as_str).unwrap_or("<missing-id>")
+                    ));
+                }
             }
         }
         Some("indeterminate") => {
