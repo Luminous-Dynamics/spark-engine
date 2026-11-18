@@ -265,6 +265,7 @@ pub fn map_qecon_to_divertor_loads(
         assumptions: input.power_balance.assumptions.clone(),
         interpretation_limits: vec![
             "Q_econ extraction-surface area and divertor target wetted area are distinct physical boundaries and are never substituted for one another.".to_string(),
+            "Matching surface identifiers enforce a declared software join only; they do not independently prove that the supplied geometry or upstream model uses the same physical boundary.".to_string(),
             "The effective alpha-heating fraction, auxiliary heating, core radiation, stored-energy derivative, SOL radiation, divertor routing, wetted areas and peak factors are caller-supplied inputs from separately identified sources.".to_string(),
             "This bridge performs declared power accounting and area normalization only; it does not solve plasma-edge transport, detachment, neutral dynamics, transient control or target thermal response.".to_string(),
             "The peak-to-average factor is supplied by an upstream model or measurement; it is not inferred from the average target heat flux.".to_string(),
