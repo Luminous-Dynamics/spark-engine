@@ -31,6 +31,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install pinned schema-validation dependency
-        run: python -m pip install --disable-pip-version-check jsonschema==4.26.0
+        run: python -m pip install --disable-pip-version-check jsonschema[format]==4.26.0
       - name: Validate schema, fixtures, references, evidence digests and negative controls
         run: python scripts/validate_fusion_cases.py
