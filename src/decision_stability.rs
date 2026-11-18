@@ -436,6 +436,9 @@ mod tests {
     const CLIFF: &str = include_str!(
         "../benchmarks/research/decision-stability/synthetic-model-choice-cliff-v0.1.json"
     );
+    const DECISION_IRRELEVANT: &str = include_str!(
+        "../benchmarks/research/decision-stability/synthetic-decision-irrelevant-disagreement-v0.1.json"
+    );
     const CONSENSUS: &str = include_str!(
         "../benchmarks/research/decision-stability/synthetic-common-mode-consensus-v0.1.json"
     );
@@ -449,6 +452,47 @@ mod tests {
         assert_eq!(summary.robust_feasible_set, vec!["candidate-b".to_string()]);
         assert_eq!(summary.nominal_single_model_preference, "candidate-a");
         assert_eq!(summary.candidates.len(), 2);
+    }
+
+    #[test]
+    fn decision_irrelevant_model_spread_does_not_create_a_false_split() {
+        let summary = validate_model_choice_cliff(DECISION_IRRELEVANT)
+            .expect("decision-irrelevant disagreement fixture is valid");
+        assert_eq!(summary.robust_feasible_set, vec!["candidate-a".to_string()]);
+        assert!(summary.candidates.iter().all(|candidate| {
+            candidate.model_set_disposition != "DecisionSplit"
+        }));
+        assert_eq!(
+            summary.candidates.iter()
+                .find(|candidate| candidate.candidate_id == "candidate-a")
+                .expect("candidate-a exists")
+                .model_set_disposition,
+            "AllModelsPassObservedEnvelope"
+        );
+        assert_eq!(
+            summary.candidates.iter()
+                .find(|candidate| candidate.candidate_id == "candidate-b")
+                .expect("candidate-b exists")
+                .model_set_disposition,
+            "AllModelsFailObservedEnvelope"
+        );
+    }
+
+    #[test]
+    fn model_choice_cliff_rejects_missing_candidate_model_pair() {
+        let mut fixture: Value = serde_json::from_str(CLIFF).expect("fixture parses");
+        fixture["evaluations"].as_array_mut().unwrap().retain(|row| {
+            !(row["candidate_id"] == "candidate-b" && row["model_id"] == "model-m2")
+        });
+        assert!(validate_model_choice_cliff(&fixture.to_string()).is_err());
+    }
+
+    #[test]
+    fn model_choice_cliff_rejects_duplicate_candidate_model_pair() {
+        let mut fixture: Value = serde_json::from_str(CLIFF).expect("fixture parses");
+        let duplicate = fixture["evaluations"][0].clone();
+        fixture["evaluations"].as_array_mut().unwrap().push(duplicate);
+        assert!(validate_model_choice_cliff(&fixture.to_string()).is_err());
     }
 
     #[test]
