@@ -598,6 +598,13 @@ mod tests {
     }
 
     #[test]
+    fn rejects_non_finite_target_heat_flux_from_extreme_area_ratio() {
+        let mut input = request();
+        input.divertor_targets[0].wetted_surface.area_m2 = f64::MIN_POSITIVE;
+        assert!(map_qecon_to_divertor_loads(&input).is_err());
+    }
+
+    #[test]
     fn requires_explicit_time_window_for_window_average() {
         let mut input = request();
         input.time_basis.kind = PowerTimeBasisKind::WindowAverage;
