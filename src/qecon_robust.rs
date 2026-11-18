@@ -14,8 +14,8 @@
 //! transformed physical parameters.
 
 use crate::qecon::{
-    QeconEvidenceClass, QeconInput, QeconScenario, QeconScenarioResult,
-    calculate_qecon, calculate_qecon_scenario,
+    QeconEvidenceClass, QeconInput, QeconScenario, QeconScenarioResult, calculate_qecon,
+    calculate_qecon_scenario,
 };
 use crate::qecon_exploration::{
     MAX_QECON_UNCERTAINTY_SAMPLES, QECON_PARAMETER_COUNT, QeconParameter, QeconProbabilityEstimate,
