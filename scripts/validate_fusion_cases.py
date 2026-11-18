@@ -500,7 +500,23 @@ def main() -> int:
         return 1
     print("PASS rejected negative control: mismatched surface role")
 
-    print(f"Validated {len(loaded)} fixture(s) and {len(controls) + 2} negative control(s).")
+    unknown_as_zero = copy.deepcopy(positive)
+    unknown_as_zero["quantities"][0]["value"] = 0.0
+    if not validate_manifest(unknown_as_zero, schema):
+        print("FAIL negative control did not reject: unknown silently converted to zero", file=sys.stderr)
+        return 1
+    print("PASS rejected negative control: unknown silently converted to zero")
+
+    missing_time_series = copy.deepcopy(positive)
+    time_basis = missing_time_series["time_bases"][0]
+    time_basis["kind"] = "time_series"
+    time_basis["sample_interval_seconds"] = 0.1
+    if not validate_manifest(missing_time_series, schema):
+        print("FAIL negative control did not reject: time series without data artefact", file=sys.stderr)
+        return 1
+    print("PASS rejected negative control: time series without data artefact")
+
+    print(f"Validated {len(loaded)} fixture(s) and {len(controls) + 4} negative control(s).")
     return 0
 
 
