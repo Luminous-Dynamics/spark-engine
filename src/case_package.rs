@@ -60,6 +60,7 @@ pub fn validate_case_manifest(value: &Value) -> Result<CasePackageSummary, Vec<S
     let uncertainty = root.get("uncertainty_models").and_then(Value::as_array);
     let evidence = root.get("evidence_artifacts").and_then(Value::as_array);
     let accounting = root.get("accounting_checks").and_then(Value::as_array);
+    let observables = root.get("observables").and_then(Value::as_array);
 
     let time_ids = collect_ids(time_bases, "time_bases", &mut errors);
     let boundary_ids = collect_ids(boundaries, "physical_boundaries", &mut errors);
@@ -67,6 +68,8 @@ pub fn validate_case_manifest(value: &Value) -> Result<CasePackageSummary, Vec<S
     let model_ids = collect_ids(models, "models", &mut errors);
     let uncertainty_ids = collect_ids(uncertainty, "uncertainty_models", &mut errors);
     let evidence_ids = collect_ids(evidence, "evidence_artifacts", &mut errors);
+    let _accounting_ids = collect_ids(accounting, "accounting_checks", &mut errors);
+    let _observable_ids = collect_ids(observables, "observables", &mut errors);
 
     let evidence_by_id: HashMap<&str, &Value> = evidence.into_iter().flatten()
         .filter_map(|item| Some((item.get("id")?.as_str()?, item))).collect();
@@ -79,6 +82,7 @@ pub fn validate_case_manifest(value: &Value) -> Result<CasePackageSummary, Vec<S
         .collect();
 
     validate_time_bases(time_bases, &mut errors);
+    validate_boundaries(boundaries, &evidence_ids, &mut errors);
     validate_models(models, model_family.as_deref(), &evidence_ids, &mut errors);
     validate_flows(flows, &boundary_ids, &boundary_role_by_id, &time_ids,
         &time_by_id, &evidence_ids, &uncertainty_ids, &mut errors);
@@ -91,6 +95,7 @@ pub fn validate_case_manifest(value: &Value) -> Result<CasePackageSummary, Vec<S
         &evidence_by_id, &mut errors);
     validate_accounting(accounting, flows, &flow_ids, &boundary_ids, &time_ids,
         &evidence_ids, &mut errors);
+    validate_observables(observables, &evidence_ids, &mut errors);
     validate_qualification(root.get("qualification"), model_family.as_deref(),
         models, &evidence_ids, &evidence_by_id, &mut errors);
 
@@ -195,6 +200,16 @@ fn validate_time_bases(items: Option<&Vec<Value>>, errors: &mut Vec<String>) {
                 errors.push(format!("{context} steady_state must not claim a finite duration")),
             None => errors.push(format!("{context}.kind must be a string")),
             _ => {}
+        }
+    }
+}
+
+fn validate_boundaries(items: Option<&Vec<Value>>, evidence_ids: &HashSet<String>,
+    errors: &mut Vec<String>) {
+    for (index, boundary) in items.into_iter().flatten().enumerate() {
+        if let Some(geometry_id) = boundary.get("geometry_artifact_id").and_then(Value::as_str) {
+            check_ref(Some(geometry_id), evidence_ids, "geometry evidence artifact",
+                &format!("physical_boundaries[{index}]"), errors);
         }
     }
 }
@@ -444,10 +459,11 @@ fn validate_transfers(transfers: Option<&Vec<Value>>, case_family: Option<&str>,
     let mut transfer_ids = HashSet::new();
     for (index, transfer) in transfers.iter().enumerate() {
         let context = format!("cross_family_transfers[{index}]");
-        if let Some(id) = transfer.get("id").and_then(Value::as_str) {
-            if !transfer_ids.insert(id) {
-                errors.push(format!("duplicate cross-family transfer id {id}"));
-            }
+        let transfer_id = transfer.get("id").and_then(Value::as_str);
+        if transfer_id.is_none_or(str::is_empty) {
+            errors.push(format!("{context}.id must be a non-empty string"));
+        } else if !transfer_ids.insert(transfer_id.unwrap_or_default()) {
+            errors.push(format!("duplicate cross-family transfer id {}", transfer_id.unwrap_or_default()));
         }
         let source_id = transfer.get("source_model_id").and_then(Value::as_str);
         let destination_id = transfer.get("destination_model_id").and_then(Value::as_str);
@@ -594,6 +610,15 @@ fn resolve_flows<'a>(check: &Value, field: &str, flow_ids: &HashSet<String>,
         }
     }
     result
+}
+
+fn validate_observables(items: Option<&Vec<Value>>, evidence_ids: &HashSet<String>,
+    errors: &mut Vec<String>) {
+    for (index, observable) in items.into_iter().flatten().enumerate() {
+        check_ref_array(observable, "reference_artifact_ids", evidence_ids,
+            "observable reference evidence", &format!("observables[{index}]"),
+            false, false, errors);
+    }
 }
 
 fn validate_qualification(qualification: Option<&Value>, case_family: Option<&str>,
