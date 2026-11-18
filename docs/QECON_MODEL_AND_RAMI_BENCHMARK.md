@@ -225,6 +225,31 @@ The next economics increment is a weighted closest-viable-design solver faithful
 
 Do not label the finite-difference ranking as the paper's weighted projection. Do not claim a globally closest viable design until the constrained optimization and independent oracle are implemented and validated.
 
+## Weighted closest-viable-design projection
+
+The new `qecon_projection` module implements the 2026 paper's weighted least-squares endpoint problem:
+
+`min Σ_i (difficulty_i / scale_i²) · (theta_i - theta_reference_i)²`
+
+subject to `Q_econ(theta) >= target` and positive box constraints.
+
+The distance is evaluated in the original ten parameters and is dimensionless by construction. The solver uses log(theta) as its numerical coordinate, where the paper establishes log-log-concavity of Q_econ on the strictly positive domain. It enforces the paper's lower-bound condition `lower_i > theta_reference_i / 2`, which is the stated sufficient condition for uniqueness of the projection for positive diagonal weights.
+
+**Plant lifetime is treated as discrete.** The solver enumerates every permitted integer year in the declared lifetime interval and solves the nine-dimensional continuous subproblem for each candidate. It does not relax lifetime to a real number and silently round the result.
+
+For each fixed lifetime, it constructs a strictly feasible starting point from the economically favourable box corner, then follows a logarithmic-barrier path using cyclic one-dimensional coordinate minimization. The result records the weighted objective contribution per parameter, selected bounds, achieved Q_econ, lifetime candidates examined, coordinate sweeps, final barrier parameter and a finite-difference KKT stationarity residual.
+
+### Interpretation and validation limits
+
+- `difficulty_weight` and `scale` are user-supplied stakeholder assumptions. They select an endpoint; they do not alter the Q_econ viability surface.
+- The result is an endpoint projection, not a literal research, manufacturing, financing or policy implementation trajectory.
+- The paper's uniqueness theorem applies only when the supplied strictly-positive box satisfies the enforced lower-bound condition.
+- The implementation uses a barrier/coordinate method, not SLSQP. A small KKT residual is a diagnostic, not an independent optimality proof.
+- Acceptance still requires a separate numerical oracle (e.g. SLSQP), multiple-start comparison, frozen fixture reproduction and objective/constraint residual comparison.
+- A project that projects to `Q_econ >= 1` may still violate heat-exhaust, component-fluence, stability, maintenance or project-finance constraints.
+
+The implementation issue is [#18](https://github.com/Luminous-Dynamics/spark-engine). Keep local elasticity, global associations, independent Sobol indices and this stakeholder-weighted projection as distinct analyses: they answer different questions.
+
 ## Quantitative benchmark scoreboard
 
 The numbers below are **qualification targets**, not results achieved by Spark. Comparisons must preserve the same task definition, dataset version, device/shot split, warning horizon, event threshold, units and uncertainty treatment.

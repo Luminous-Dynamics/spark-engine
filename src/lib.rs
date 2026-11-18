@@ -78,6 +78,9 @@ pub mod qecon;
 // Sensitivity, scenario sweeps and correlated uncertainty for Q_econ
 pub mod qecon_exploration;
 
+// Weighted closest-viable-design projection for Q_econ
+pub mod qecon_projection;
+
 // First-order reliability/availability screening (not full RAMI)
 pub mod plant_availability;
 
@@ -134,6 +137,12 @@ pub use qecon_exploration::{
     QeconUncertaintySample, QeconUncertaintyScenario, QeconUncertaintyScenarioResult,
     estimate_qecon_sobol_indices, propagate_qecon_scenario_uncertainty,
     propagate_qecon_uncertainty, rank_qecon_global_associations, rank_qecon_sensitivities,
+};
+pub use qecon_projection::{
+    QECON_PROJECTION_MAX_LIFETIME_SPAN_YEARS, QECON_PROJECTION_REVISION,
+    QeconProjectionBound, QeconProjectionBoundState, QeconProjectionParameterResult,
+    QeconProjectionStatus, QeconWeightedProjectionInput, QeconWeightedProjectionResult,
+    project_qecon_to_viability,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
