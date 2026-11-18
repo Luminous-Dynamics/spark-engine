@@ -25,7 +25,7 @@ A *Nature Physics* perspective published October 14, 2026 argues that fusion dig
 
 Public baselines already exist:
 - [UKAEA PROCESS](https://www.ukaea.org/service/process/) is a broad systems code spanning physics, engineering, heat transfer, energy conversion and buildings. It is a matched systems-code baseline, not a code we should claim to replace.
-- [OpenMC Fusion Benchmarks](https://openmc-fusion-benchmarks.readthedocs.io/en/latest/intro.html) uses schema-driven benchmark specifications, CAD geometry, automatic meshing and reproducible execution for neutronics V&V. Reuse its conventions where compatible rather than inventing a competing neutronics benchmark format.
+- [OpenMC Fusion Benchmarks](https://openmc-fusion-benchmarks.readthedocs.io/en/latest/intro.html) uses schema-driven benchmark specifications, CAD geometry, automatic meshing and reproducible execution for neutronics V&V. Reuse its conventions where compatible rather than inventing a competing neutronics benchmark format. The 2026 paper [OpenMC-Fusion-Benchmarks, a CAD-Based Automated Framework for Fusion Neutronics Validation](https://doi.org/10.1080/15361055.2026.2664345), published online 14 May 2026, describes STEP-based geometries, automated meshing, benchmark specifications and uncertainty analysis; its initial demonstrated case remains a proof-of-concept workflow, not blanket/TBR validation.
 - [FNG-ITER streaming validation](https://doi.org/10.1080/15361055.2024.2400762) compares OpenMC with an experimental neutron-shielding benchmark and reports most calculated/measurement discrepancies within combined statistical and experimental uncertainty (less than 10%); it is a shielding validation case, not blanket TBR validation.
 
 ## 3. The first end-to-end reference case
@@ -101,7 +101,7 @@ Symtropy's existing rigid-body engine is not, by that fact, a validated MHD, neu
 
 Mycelix records evidence provenance, execution identity, independent review and authorization boundaries. Reuse [fusion evidence-provenance bundles #6300](https://github.com/Luminous-Dynamics/mycelix/issues/6300) for power-exhaust source chains, [algorithm-experiment attestations #5900](https://github.com/Luminous-Dynamics/mycelix/issues/5900) for solver/benchmark run identity, and [verifier-independence profiles #1371](https://github.com/Luminous-Dynamics/mycelix/issues/1371) for shared fault-domain transparency. Producer output is not its own independent approval. Hashes establish artifact identity; signatures establish who attested; neither establishes scientific truth.
 
-Sol-Atlas contributes spatial context: site/grid infrastructure, component placement, materials/irradiation layers, maintenance routes and external constraints. It does not replace the specialist physical solvers or issue qualification decisions.
+Sol-Atlas contributes spatial context: site/grid infrastructure, component placement, materials/irradiation layers, maintenance routes and external constraints. Reuse its [grid-network qualification benchmark #332](https://github.com/Luminous-Dynamics/sol-atlas-leptos/issues/332) and [South African multi-resource siting envelope #662](https://github.com/Luminous-Dynamics/sol-atlas-leptos/issues/662) for generic grid and siting capabilities; neither is a fusion-specific site qualification. It does not replace specialist physical solvers or issue qualification decisions.
 
 ## 5. Canonical dataflow
 
