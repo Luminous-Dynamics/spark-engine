@@ -12,9 +12,7 @@
 //! between them when the extraction area, power ledger, target shares, target
 //! wetted areas and provenance are all explicit.
 
-use crate::qecon::{
-    QeconEvidenceClass, QeconResult, QeconScenario, calculate_qecon_scenario,
-};
+use crate::qecon::{QeconEvidenceClass, QeconResult, QeconScenario, calculate_qecon_scenario};
 use serde::{Deserialize, Serialize};
 
 pub const POWER_EXHAUST_BRIDGE_REVISION: &str = "power-exhaust-boundary-bridge-v0.1";
@@ -194,17 +192,13 @@ pub fn map_qecon_to_divertor_loads(
     validate_input(input)?;
     let qecon = calculate_qecon_scenario(&input.qecon_scenario)?;
 
-    let fusion_power_density = input
-        .qecon_scenario
-        .input
-        .fusion_power_density_mw_per_m2;
+    let fusion_power_density = input.qecon_scenario.input.fusion_power_density_mw_per_m2;
     let total_fusion_power = fusion_power_density * input.extraction_surface.area_m2;
     let alpha_heating = total_fusion_power
         * input
             .power_balance
             .effective_alpha_heating_fraction_of_fusion_power;
-    let separatrix_power = alpha_heating
-        + input.power_balance.auxiliary_heating_power_mw
+    let separatrix_power = alpha_heating + input.power_balance.auxiliary_heating_power_mw
         - input.power_balance.core_radiated_power_mw
         - input.power_balance.stored_energy_change_rate_mw;
     let sol_radiated_power = separatrix_power * input.power_balance.sol_radiated_fraction;
@@ -294,12 +288,21 @@ fn validate_input(input: &PowerExhaustBridgeInput) -> Result<(), String> {
     if input.qecon_control_surface_id.trim().is_empty()
         || input.extraction_surface.surface_id.trim().is_empty()
     {
-        return Err("Q_econ control-surface and extraction-surface identifiers must be non-empty".to_string());
+        return Err(
+            "Q_econ control-surface and extraction-surface identifiers must be non-empty"
+                .to_string(),
+        );
     }
     if input.qecon_control_surface_id != input.extraction_surface.surface_id {
-        return Err("Q_econ control-surface identifier must match the extraction-surface identifier".to_string());
+        return Err(
+            "Q_econ control-surface identifier must match the extraction-surface identifier"
+                .to_string(),
+        );
     }
-    validate_surface(&input.extraction_surface, PowerSurfaceRole::EnergyExtraction)?;
+    validate_surface(
+        &input.extraction_surface,
+        PowerSurfaceRole::EnergyExtraction,
+    )?;
     validate_time_basis(&input.time_basis)?;
     validate_provenance(
         input.power_balance.evidence_class,
@@ -314,7 +317,10 @@ fn validate_input(input: &PowerExhaustBridgeInput) -> Result<(), String> {
         balance.effective_alpha_heating_fraction_of_fusion_power,
         "effective_alpha_heating_fraction_of_fusion_power",
     )?;
-    validate_nonnegative_finite(balance.auxiliary_heating_power_mw, "auxiliary_heating_power_mw")?;
+    validate_nonnegative_finite(
+        balance.auxiliary_heating_power_mw,
+        "auxiliary_heating_power_mw",
+    )?;
     validate_nonnegative_finite(balance.core_radiated_power_mw, "core_radiated_power_mw")?;
     if !balance.stored_energy_change_rate_mw.is_finite() {
         return Err("stored_energy_change_rate_mw must be finite".to_string());
@@ -328,12 +334,13 @@ fn validate_input(input: &PowerExhaustBridgeInput) -> Result<(), String> {
     let fusion_power = input.qecon_scenario.input.fusion_power_density_mw_per_m2
         * input.extraction_surface.area_m2;
     let alpha_heating = fusion_power * balance.effective_alpha_heating_fraction_of_fusion_power;
-    let separatrix_power = alpha_heating
-        + balance.auxiliary_heating_power_mw
+    let separatrix_power = alpha_heating + balance.auxiliary_heating_power_mw
         - balance.core_radiated_power_mw
         - balance.stored_energy_change_rate_mw;
     if !separatrix_power.is_finite() || separatrix_power < 0.0 {
-        return Err("declared power ledger produces negative or non-finite separatrix power".to_string());
+        return Err(
+            "declared power ledger produces negative or non-finite separatrix power".to_string(),
+        );
     }
 
     if input.divertor_targets.is_empty() {
@@ -347,13 +354,21 @@ fn validate_input(input: &PowerExhaustBridgeInput) -> Result<(), String> {
         if target.target_id.trim().is_empty() || !target_ids.insert(target.target_id.as_str()) {
             return Err("divertor target identifiers must be non-empty and unique".to_string());
         }
-        validate_surface(&target.wetted_surface, PowerSurfaceRole::DivertorWettedTarget)?;
+        validate_surface(
+            &target.wetted_surface,
+            PowerSurfaceRole::DivertorWettedTarget,
+        )?;
         if !surface_ids.insert(target.wetted_surface.surface_id.as_str()) {
-            return Err("extraction and divertor target surface identifiers must be distinct and unique".to_string());
+            return Err(
+                "extraction and divertor target surface identifiers must be distinct and unique"
+                    .to_string(),
+            );
         }
         validate_fraction(target.share_of_divertor_power, "share_of_divertor_power")?;
         if target.share_of_divertor_power <= 0.0 {
-            return Err("every declared divertor target must have a positive power share".to_string());
+            return Err(
+                "every declared divertor target must have a positive power share".to_string(),
+            );
         }
         if !target.peak_to_average_factor.is_finite() || target.peak_to_average_factor < 1.0 {
             return Err("peak_to_average_factor must be finite and >= 1".to_string());
@@ -361,20 +376,32 @@ fn validate_input(input: &PowerExhaustBridgeInput) -> Result<(), String> {
         share_sum += target.share_of_divertor_power;
     }
     if (share_sum - 1.0).abs() > 1.0e-9 {
-        return Err("divertor target power shares must sum to one; account for every routed target branch".to_string());
+        return Err(
+            "divertor target power shares must sum to one; account for every routed target branch"
+                .to_string(),
+        );
     }
     Ok(())
 }
 
-fn validate_surface(surface: &PowerSurfaceArea, expected_role: PowerSurfaceRole) -> Result<(), String> {
+fn validate_surface(
+    surface: &PowerSurfaceArea,
+    expected_role: PowerSurfaceRole,
+) -> Result<(), String> {
     if surface.surface_id.trim().is_empty() {
         return Err("surface_id must not be empty".to_string());
     }
     if surface.role != expected_role {
-        return Err(format!("surface {} has an incompatible physical role", surface.surface_id));
+        return Err(format!(
+            "surface {} has an incompatible physical role",
+            surface.surface_id
+        ));
     }
     if !surface.area_m2.is_finite() || surface.area_m2 <= 0.0 {
-        return Err(format!("surface {} area_m2 must be finite and positive", surface.surface_id));
+        return Err(format!(
+            "surface {} area_m2 must be finite and positive",
+            surface.surface_id
+        ));
     }
     validate_provenance(
         surface.evidence_class,
@@ -392,7 +419,10 @@ fn validate_time_basis(basis: &PowerTimeBasis) -> Result<(), String> {
     match basis.kind {
         PowerTimeBasisKind::SteadyStateAverage => {
             if basis.averaging_window_seconds.is_some() {
-                return Err("steady-state time basis must not declare a finite averaging window".to_string());
+                return Err(
+                    "steady-state time basis must not declare a finite averaging window"
+                        .to_string(),
+                );
             }
         }
         PowerTimeBasisKind::WindowAverage => {
@@ -428,7 +458,9 @@ fn validate_provenance(
 
 fn validate_sha256(value: &str, label: &str) -> Result<(), String> {
     if value.len() != 64 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
-        return Err(format!("{label} must contain exactly 64 hexadecimal characters"));
+        return Err(format!(
+            "{label} must contain exactly 64 hexadecimal characters"
+        ));
     }
     Ok(())
 }
@@ -554,13 +586,23 @@ mod tests {
         assert!((result.divertor_routed_power_mw - 3.6).abs() < 1.0e-12);
         assert!((result.other_post_sol_power_mw - 0.9).abs() < 1.0e-12);
         assert!((result.divertor_targets[0].average_heat_flux_mw_per_m2 - 9.0).abs() < 1.0e-12);
-        assert!((result.divertor_targets[0].estimated_peak_heat_flux_mw_per_m2 - 13.5).abs() < 1.0e-12);
+        assert!(
+            (result.divertor_targets[0].estimated_peak_heat_flux_mw_per_m2 - 13.5).abs() < 1.0e-12
+        );
         assert!((result.divertor_targets[1].average_heat_flux_mw_per_m2 - 6.0).abs() < 1.0e-12);
-        assert!((result.divertor_targets[1].estimated_peak_heat_flux_mw_per_m2 - 12.0).abs() < 1.0e-12);
+        assert!(
+            (result.divertor_targets[1].estimated_peak_heat_flux_mw_per_m2 - 12.0).abs() < 1.0e-12
+        );
         assert!(result.interpretation_limits.len() >= 5);
-        assert_eq!(result.qecon_scenario.input.fusion_power_density_mw_per_m2, 3.7);
+        assert_eq!(
+            result.qecon_scenario.input.fusion_power_density_mw_per_m2,
+            3.7
+        );
         assert_eq!(result.power_balance_inputs.sol_radiated_fraction, 0.5);
-        assert_eq!(result.divertor_targets[0].surface_assumptions[0], "Synthetic geometry fixture");
+        assert_eq!(
+            result.divertor_targets[0].surface_assumptions[0],
+            "Synthetic geometry fixture"
+        );
     }
 
     #[test]
@@ -610,7 +652,9 @@ mod tests {
     #[test]
     fn rejects_non_finite_target_heat_flux_from_extreme_area_ratio() {
         let mut input = request();
-        input.divertor_targets[0].wetted_surface.area_m2 = f64::MIN_POSITIVE;
+        // MIN_POSITIVE is the smallest normal value; the smaller subnormal area
+        // makes the peak-flux multiplication overflow in this negative control.
+        input.divertor_targets[0].wetted_surface.area_m2 = f64::MIN_POSITIVE / 2.0;
         assert!(map_qecon_to_divertor_loads(&input).is_err());
     }
 
@@ -630,7 +674,8 @@ mod tests {
         input.power_balance.evidence_class = QeconEvidenceClass::EngineeringEstimate;
         input.power_balance.source_locator = Some("https://example.org/edge-model".to_string());
         input.power_balance.model_revision = "edge-model-2026.1".to_string();
-        input.divertor_targets[0].wetted_surface.evidence_class = QeconEvidenceClass::LiteratureReported;
+        input.divertor_targets[0].wetted_surface.evidence_class =
+            QeconEvidenceClass::LiteratureReported;
         input.divertor_targets[0].wetted_surface.source_locator =
             Some("https://example.org/target-geometry-paper".to_string());
         input.divertor_targets[0].wetted_surface.model_revision = "target-geometry-v2".to_string();
