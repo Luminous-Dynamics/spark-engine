@@ -6,7 +6,6 @@ on:
       - "schemas/fusion-qualification-case.schema.json"
       - "benchmarks/conformance/**"
       - "benchmarks/research/decision-stability/**"
-      - "benchmarks/research/decision-stability/**"
       - "scripts/validate_fusion_cases.py"
       - "src/case_package.rs"
       - "src/decision_stability.rs"
