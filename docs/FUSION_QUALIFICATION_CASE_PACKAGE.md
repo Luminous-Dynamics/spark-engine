@@ -230,7 +230,7 @@ The validator:
 
 This is a first conformance profile, not a general UCUM implementation, full RO-Crate validator, JCS canonicalizer, signature verifier or physical model validator. It deliberately fails closed for unsupported or ambiguous combinations. Expanding the unit vocabulary should be done with tested UCUM-compatible semantics, not string guessing.
 
-Run locally with Python 3.12 and `python -m pip install jsonschema==4.26.0`, then `python scripts/validate_fusion_cases.py`. The dedicated CI job must still pass on the exact PR head before the validator is called CI-validated.
+Run locally with Python 3.12 and `python -m pip install 'jsonschema[format]==4.26.0'`, then `python scripts/validate_fusion_cases.py`. The dedicated CI job must still pass on the exact PR head before the validator is called CI-validated.
 
 ## 12. Implementation sequence
 
