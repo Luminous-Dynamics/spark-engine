@@ -122,6 +122,8 @@ The breakthrough would be an **evidence-carrying plant qualification compiler**:
 
 This is complementary to domain solvers such as PROCESS and SOLPS-ITER. The aim is not to claim a better plasma code; it is to make end-to-end plant decisions auditable and reproducible across codes, vendors and reactor concepts.
 
+This direction is aligned with, not unique relative to, the [U.S. DOE Fusion Science & Technology Roadmap (June 2026)](https://www.energy.gov/documents/fusion-science-and-technology-roadmap), which calls for common standards, a FAIR-oriented data repository, whole-plant VV/UQ, interoperable model outputs and a first FPP RAMI handbook. A separate 2026 study also proposes auditable evidence packages for maintenance and hot-cell operations ([Tesini, Fusion Engineering and Design 231 (2026) 115954](https://doi.org/10.1016/j.fusengdes.2026.115954)). The credible contribution is to make these requirements executable in a small, open, cross-code boundary contract with replayable acceptance tests—not to claim prior art or industry programmes have missed the need.
+
 ## 6. Prioritized next increments
 
 1. Replace point-only bridge inputs with explicit lower/nominal/upper or distribution-bearing inputs, including dependence assumptions and model-discrepancy terms. Use conservative interval propagation only where dependencies are known; do not call independent interval combinations calibrated probability.
