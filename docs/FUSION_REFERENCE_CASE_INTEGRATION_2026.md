@@ -48,6 +48,10 @@ The recorded reference outputs are:
 
 This is an ITER reference calculation, not an experimental result and not a commercial power-plant design. The values above are rounded for human orientation. The executable case must bind the exact source run, schema, raw/unrounded outputs, artifact digests and output tuple mapping. Do not reconstruct full-precision evidence from the rounded table.
 
+The pinned upstream source is `IRFM/D0FUS v3.2.0`, commit `a682c3511dc189b2a4cdd6f4b8bc545d3cdb8924`; the source/wheel parity work is tracked in [Symthaea PR #12314](https://github.com/Luminous-Dynamics/symthaea/pull/12314). The referenced run is workflow #12, artifact `d0fus-3.2.0-iter-reference-24cf96355086f8bc8b95add8bdb8675c2e124a35`. The frozen output tuple has 165 values and the `GlobalConfig` has 167 fields. The service-gate mapping records `P_e_gross` at tuple index 153, `P_recirc_var` at 160, `P_recirc_fix` at 161 and `P_recirculated` at 162; schema-manifest SHA-256 is `a390b317a336f1ec683e3c2e2950cb7480c7d79bdac38d498258270266b2f774`.
+
+**Precision status:** Symthaea PR #12345 currently uses detailed-report power values rounded to 3–4 decimal places and a 0.001 MW bookkeeping tolerance. Its follow-up D0FUS run is adding full-precision tuple power terms and stricter residual checks. The Spark reference package must use that full-precision artifact before claiming independent numeric reproduction; until then, it is a negative-control specification and a reuse of the source-linked Symthaea service-gate result, not a newly reproduced Spark calculation.
+
 The key negative control is simple:
 
 `P_net = P_gross - P_recirc,var - P_recirc,fixed`
