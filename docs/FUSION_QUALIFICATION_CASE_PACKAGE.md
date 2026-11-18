@@ -2,7 +2,7 @@
 
 **Status:** proposed, schema-backed v0.1  
 **Tracking:** [Issue #39](https://github.com/Luminous-Dynamics/spark-engine/issues/39)  
-**Related work:** [power-exhaust boundary contract](POWER_EXHAUST_BOUNDARY_CONTRACT.md) (in the current research branch), [exhaust benchmark corpus #33](https://github.com/Luminous-Dynamics/spark-engine/issues/33), [RAMI #34](https://github.com/Luminous-Dynamics/spark-engine/issues/34), [whole-plant net electricity #35](https://github.com/Luminous-Dynamics/spark-engine/issues/35), [robust co-design #36](https://github.com/Luminous-Dynamics/spark-engine/issues/36), [transient component lifetime #38](https://github.com/Luminous-Dynamics/spark-engine/issues/38), and [tritium fuel-cycle closure #37](https://github.com/Luminous-Dynamics/spark-engine/issues/37).
+**Related work:** [power-exhaust boundary contract](POWER_EXHAUST_BOUNDARY_CONTRACT.md) (in the current research branch), [exhaust benchmark corpus #33](https://github.com/Luminous-Dynamics/spark-engine/issues/33), [RAMI #34](https://github.com/Luminous-Dynamics/spark-engine/issues/34), [whole-plant net electricity #35](https://github.com/Luminous-Dynamics/spark-engine/issues/35), [robust co-design #36](https://github.com/Luminous-Dynamics/spark-engine/issues/36), [transient component lifetime #38](https://github.com/Luminous-Dynamics/spark-engine/issues/38), and [tritium fuel-cycle closure #37](https://github.com/Luminous-Dynamics/spark-engine/issues/37), plus [model-family separation #41](https://github.com/Luminous-Dynamics/spark-engine/issues/41).
 
 This document defines a proposed, code-agnostic package for carrying a fusion engineering case from source data through model execution, comparison and qualification. It is an interoperability contract, not a plasma, neutronics, thermal-hydraulic, material or finance solver. The schema is a first implementation artifact; the semantic validator, canonical digest tooling and domain adapters remain follow-on work.
 
@@ -22,6 +22,16 @@ A useful case package must therefore preserve more than input and output values.
 - What was actually checked, by whom, and what remains unknown?
 
 The package is intended to let specialist codes remain specialist codes while making their exchanges inspectable and repeatable.
+
+### 1.1 Model-family isolation is mandatory
+
+The case manifest requires an explicit `model_family`. The initial controlled vocabulary distinguishes synthetic fixtures, lattice-confinement-fusion research, magnetic-confinement fusion, inertial-confinement fusion, magnetized-target fusion, generic fusion-plant systems work and explicitly reviewed cross-family contracts.
+
+This distinction protects a critical scientific boundary in Spark Engine: its original LCF anomaly-investigation programme is not a validated fusion power-plant model. The Q_econ and plant-systems work adapts a published economic framework and depends on separately qualified conventional-fusion physics and engineering inputs. Those programmes may share units, provenance, uncertainty and evidence-package infrastructure, but must not silently share physical priors, calibration data or qualification status.
+
+A cross-family transfer must identify both source and destination model families, declare the physical argument for transfer, retain separate provenance and uncertainty, and pass an explicit independent review. The schema's family identifier is a guardrail against accidental mixing; it does not prove the family assignment or validate a model.
+
+See [Issue #41](https://github.com/Luminous-Dynamics/spark-engine/issues/41). This is not an abandonment of LCF research. It preserves the integrity of both research programmes and prevents a result in one domain from being misrepresented as evidence in another.
 
 ## 2. Standards-first packaging
 
