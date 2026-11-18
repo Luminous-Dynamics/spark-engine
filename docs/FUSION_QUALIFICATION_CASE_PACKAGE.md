@@ -129,9 +129,11 @@ The validator currently checks:
 - additive conservation-check direction, quantity, exact unit code, common time basis and relative residual against the declared tolerance;
 - qualified status requiring independent review and supporting evidence; indeterminate status requiring blockers.
 
-The CLI does **not** yet execute JSON Schema 2020-12 validation, perform a full UCUM parse/conversion, hash packaged files, validate geometry digests, verify model domain-of-validity envelopes, inspect signed attestations or establish physics correctness. Those remain explicit gates. A successful semantic run is not a qualification verdict; the synthetic fixture deliberately remains `not_qualified`.
+The Rust CLI does **not** execute JSON Schema 2020-12 validation or a full UCUM parser/converter. The separate development-only GitHub Actions conformance job runs `scripts/validate_fusion_cases.py` against the JSON Schema, checks cross-record references and selected boundary semantics, verifies local evidence-file SHA-256 digests, and exercises schema/semantic negative controls. This development harness uses pinned Python `jsonschema`; the Rust library and CLI remain the runtime implementation.
 
-The ten negative-control tests cover duplicate boundary IDs, implicit model-family mixing, unresolved boundary/evidence/uncertainty references, ledger non-closure, holdout leakage, missing divertor target identity and cross-family transfer without review. CI must still run these tests on the exact PR head before the code is described as test-passing.
+Neither validator verifies plasma or neutronics physics, qualifies a material, establishes a model's physical domain from evidence, verifies signed attestations or certifies a plant. A successful validation run is not a qualification verdict; the synthetic fixture deliberately remains `not_qualified`. Full UCUM conversion, digest canonicalization for the manifest itself, RO-Crate packaging and physical model-domain qualification remain explicit gates.
+
+The Rust test suite includes eleven semantic negative controls: duplicate IDs, implicit model-family mixing, unresolved boundary/evidence/uncertainty references, non-conserving ledgers, holdout leakage, incorrect divertor target identity, incompatible units, missing cross-family review and synthetic false qualification. The Python conformance harness independently checks schema and additional negative controls. Exact-head CI is still pending until the jobs complete successfully.
 
 ## 4. Evidence semantics
 
