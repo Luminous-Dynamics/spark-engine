@@ -33,8 +33,8 @@ pub const QECON_PROJECTION_MAX_LIFETIME_SPAN_YEARS: u32 = 250;
 const BARRIER_PARAMETERS: [f64; 8] = [
     1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5,
 ];
-const MAX_COORDINATE_SWEEPS: usize = 80;
-const GOLDEN_SECTION_STEPS: usize = 36;
+const MAX_COORDINATE_SWEEPS: usize = 160;
+const GOLDEN_SECTION_STEPS: usize = 48;
 const COORDINATE_TOLERANCE: f64 = 2e-8;
 const FEASIBILITY_EPSILON: f64 = 1e-12;
 
@@ -927,7 +927,10 @@ mod tests {
 
     #[test]
     fn already_viable_reference_is_returned_with_zero_distance() {
-        let reference = reference_input(3.7);
+        let mut reference = reference_input(3.7);
+        // The projection domain is strictly positive. Keep this reference
+        // inside the declared box rather than using the zero-cost fixture.
+        reference.design.target_cost_per_energy_yield_usd_per_mj = 1e-12;
         let bounds = projection_bounds(&reference, None, None, 1.0, 1.0);
         let result = project_qecon_to_viability(&QeconWeightedProjectionInput {
             reference: reference.clone(),
@@ -1021,14 +1024,17 @@ mod tests {
         ];
         let mut objectives = Vec::new();
         for start in starts {
-            let (values, _, converged, _) = optimize_fixed_lifetime(
+            let (values, sweeps, converged, _) = optimize_fixed_lifetime(
                 &reference,
                 &bounds,
                 &start,
                 request.target_q_econ,
             )
             .unwrap();
-            assert!(converged);
+            assert!(
+                converged,
+                "feasible start {start:?} did not converge after {sweeps} sweeps"
+            );
             assert!(q_at_values(&reference, &values).unwrap() >= request.target_q_econ);
             let input = input_from_values(&reference, &values).unwrap();
             objectives.push(weighted_distance_squared(&input, &reference, &bounds));
