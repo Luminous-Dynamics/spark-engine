@@ -120,7 +120,15 @@
       ]
     }
   ],
-  "quantities": [],
+  "quantities": [
+    {
+      "id": "unmeasured-component-temperature",
+      "name": "Component temperature unavailable in synthetic fixture",
+      "quantity_kind": "temperature",
+      "status": "unknown",
+      "unknown_reason": "The synthetic accounting fixture has no physical component or thermal model."
+    }
+  ],
   "models": [
     {
       "id": "toy-ledger-model",
