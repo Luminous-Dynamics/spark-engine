@@ -129,6 +129,7 @@ pub struct DivertorTargetLoad {
     pub peak_to_average_factor: f64,
     pub estimated_peak_heat_flux_mw_per_m2: f64,
     pub assumptions: Vec<String>,
+    pub surface_assumptions: Vec<String>,
 }
 
 /// Conservation-accounted mapping result.
@@ -139,6 +140,7 @@ pub struct DivertorTargetLoad {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PowerExhaustBridgeResult {
     pub bridge_model_revision: String,
+    pub qecon_scenario: QeconScenario,
     pub qecon_scenario_id: String,
     pub qecon_model_revision: String,
     pub qecon_evidence_class: QeconEvidenceClass,
@@ -151,6 +153,8 @@ pub struct PowerExhaustBridgeResult {
     pub power_balance_source_locator: Option<String>,
     pub power_balance_model_revision: String,
     pub power_balance_input_digest_sha256: String,
+    /// Full power-balance inputs are retained for replay and evidence review.
+    pub power_balance_inputs: ExhaustPowerBalance,
     pub fusion_power_density_mw_per_m2: f64,
     pub total_fusion_power_mw: f64,
     pub alpha_heating_power_mw: f64,
@@ -232,6 +236,7 @@ pub fn map_qecon_to_divertor_loads(
                 peak_to_average_factor: target.peak_to_average_factor,
                 estimated_peak_heat_flux_mw_per_m2: peak_heat_flux,
                 assumptions: target.assumptions.clone(),
+                surface_assumptions: target.wetted_surface.assumptions.clone(),
             }
         })
         .collect::<Vec<_>>();
@@ -246,6 +251,7 @@ pub fn map_qecon_to_divertor_loads(
 
     Ok(PowerExhaustBridgeResult {
         bridge_model_revision: POWER_EXHAUST_BRIDGE_REVISION.to_string(),
+        qecon_scenario: input.qecon_scenario.clone(),
         qecon_scenario_id: qecon.scenario_id,
         qecon_model_revision: qecon.model_revision,
         qecon_evidence_class: qecon.evidence_class,
@@ -258,6 +264,7 @@ pub fn map_qecon_to_divertor_loads(
         power_balance_source_locator: input.power_balance.source_locator.clone(),
         power_balance_model_revision: input.power_balance.model_revision.clone(),
         power_balance_input_digest_sha256: input.power_balance.input_digest_sha256.clone(),
+        power_balance_inputs: input.power_balance.clone(),
         fusion_power_density_mw_per_m2: fusion_power_density,
         total_fusion_power_mw: total_fusion_power,
         alpha_heating_power_mw: alpha_heating,
@@ -551,6 +558,9 @@ mod tests {
         assert!((result.divertor_targets[1].average_heat_flux_mw_per_m2 - 6.0).abs() < 1.0e-12);
         assert!((result.divertor_targets[1].estimated_peak_heat_flux_mw_per_m2 - 12.0).abs() < 1.0e-12);
         assert!(result.interpretation_limits.len() >= 5);
+        assert_eq!(result.qecon_scenario.input.fusion_power_density_mw_per_m2, 3.7);
+        assert_eq!(result.power_balance_inputs.sol_radiated_fraction, 0.5);
+        assert_eq!(result.divertor_targets[0].surface_assumptions[0], "Synthetic geometry fixture");
     }
 
     #[test]
