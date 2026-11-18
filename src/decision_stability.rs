@@ -509,7 +509,9 @@ pub fn validate_ood_refusal(raw: &str) -> Result<OodRefusalSummary, String> {
     }
     let requested_value = required_f64(requested, "value", "requested_state")?;
     if (lower..=upper).contains(&requested_value) {
-        return Err("OOD refusal fixture requested state is actually inside the qualified domain".to_string());
+        return Err(
+            "OOD refusal fixture requested state is actually inside the qualified domain".to_string(),
+        );
     }
 
     let model_output = required(&root, "model_output", "root")?;
@@ -539,7 +541,9 @@ pub fn validate_ood_refusal(raw: &str) -> Result<OodRefusalSummary, String> {
             .as_bool()
             .ok_or_else(|| "must_not_emit_robust_lower_bound must be boolean".to_string())?
     {
-        return Err("reported OOD refusal does not match the frozen expected disposition".to_string());
+        return Err(
+            "reported OOD refusal does not match the frozen expected disposition".to_string(),
+        );
     }
 
     Ok(OodRefusalSummary {
