@@ -2,7 +2,8 @@
 
 **Status:** research and qualification programme; targets below are proposed, not achieved results  
 **Scope:** evidence-qualified fusion-plant systems integration, not a claim to outperform specialist plasma or neutronics solvers  
-**Model-family boundary:** this programme is separate from the repository's LCF anomaly-investigation model family; see [Issue #41](https://github.com/Luminous-Dynamics/spark-engine/issues/41).
+**Model-family boundary:** this programme is separate from the repository's LCF anomaly-investigation model family; see [Issue #41](https://github.com/Luminous-Dynamics/spark-engine/issues/41).  
+**Integrated execution:** [FUSION-E2E-001 #43](https://github.com/Luminous-Dynamics/spark-engine/issues/43) and the [decision-to-engineering reference-case protocol](FUSION_REFERENCE_CASE_INTEGRATION_2026.md).
 
 ## 1. Strategic thesis
 
@@ -109,6 +110,7 @@ The programme is deliberately sequenced to create a useful evidence chain rather
 6. **RAMI and remote-maintenance campaigns** — [Issue #34](https://github.com/Luminous-Dynamics/spark-engine/issues/34). Use geometry, tool reach, cask/hot-cell capacity, operations, failure and recommissioning evidence.
 7. **Whole-plant energy, exergy and net electricity** — [Issue #35](https://github.com/Luminous-Dynamics/spark-engine/issues/35). Consume only qualified subsystem outputs; reconcile first-law energy and exergy destruction before reporting net grid export.
 8. **Robust multiobjective co-design** — [Issue #36](https://github.com/Luminous-Dynamics/spark-engine/issues/36). Search a Pareto frontier only over candidates whose mandatory evidence gates are satisfied; keep indeterminate and infeasible states explicit.
+9. **Integrated reference-case orchestration** — [FUSION-E2E-001 #43](https://github.com/Luminous-Dynamics/spark-engine/issues/43) and [decision-to-engineering reference-case protocol](FUSION_REFERENCE_CASE_INTEGRATION_2026.md). Compose Symthaea's decision policy and plant-service/lifecycle gates with Spark's boundary accounting, Symtropy's deterministic geometry/maintenance certificates, and Mycelix's independent provenance/review. The D0FUS ITER negative-net-power control is the first reference; it does not imply a commercial design or experimental validation.
 
 ## 6. Luminous project boundaries
 
