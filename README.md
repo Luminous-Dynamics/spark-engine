@@ -44,7 +44,7 @@ physics-honest assessment and
 [`docs/ANOMALY_INVESTIGATION_ROADMAP.md`](docs/ANOMALY_INVESTIGATION_ROADMAP.md)
 for the phased research plan this tool supports.
 
-The repository also contains a **separate conventional fusion-plant systems integration programme**. It does not inherit LCF physics or evidence. See [`docs/FUSION_SYSTEMS_BENCHMARK_STRATEGY_2026.md`](docs/FUSION_SYSTEMS_BENCHMARK_STRATEGY_2026.md) and [`docs/FUSION_QUALIFICATION_CASE_PACKAGE.md`](docs/FUSION_QUALIFICATION_CASE_PACKAGE.md) for its model-family boundary, benchmark programme and evidence-carrying case format.
+The repository also contains a **separate conventional fusion-plant systems integration programme**. It does not inherit LCF physics or evidence. See [`docs/FUSION_SYSTEMS_BENCHMARK_STRATEGY_2026.md`](docs/FUSION_SYSTEMS_BENCHMARK_STRATEGY_2026.md), [`docs/FUSION_QUALIFICATION_CASE_PACKAGE.md`](docs/FUSION_QUALIFICATION_CASE_PACKAGE.md), and [`docs/FUSION_REFERENCE_CASE_INTEGRATION_2026.md`](docs/FUSION_REFERENCE_CASE_INTEGRATION_2026.md) for its model-family boundary, benchmark programme, evidence-carrying case format and cross-project reference workflow ([FUSION-E2E-001 #43](https://github.com/Luminous-Dynamics/spark-engine/issues/43)).
 
 ## Why this might matter to you
 
