@@ -31,7 +31,7 @@ pub struct ConsensusSummary {
     pub minimum_estimate: f64,
     pub maximum_estimate: f64,
     pub estimate_range: f64,
-    pub independent_model_confirmation_count: usize,
+    pub dependence_cluster_count: usize,
     pub reference_error_minimum: f64,
     pub reference_error_maximum: f64,
 }
@@ -290,12 +290,10 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
     let reference_value = required_f64(reference, "value", "held_reference")?;
     let expected = required(&root, "expected", "root")?;
 
-    let expected_min = required(&required(expected, "model_envelope", "expected")?, "minimum", "model_envelope")?
-        .as_f64().ok_or_else(|| "expected model-envelope minimum must be numeric".to_string())?;
-    let expected_max = required(&required(expected, "model_envelope", "expected")?, "maximum", "model_envelope")?
-        .as_f64().ok_or_else(|| "expected model-envelope maximum must be numeric".to_string())?;
-    let expected_range = required(&required(expected, "model_envelope", "expected")?, "range", "model_envelope")?
-        .as_f64().ok_or_else(|| "expected model-envelope range must be numeric".to_string())?;
+    let expected_envelope = required(expected, "model_envelope", "expected")?;
+    let expected_min = required_f64(expected_envelope, "minimum", "model_envelope")?;
+    let expected_max = required_f64(expected_envelope, "maximum", "model_envelope")?;
+    let expected_range = required_f64(expected_envelope, "range", "model_envelope")?;
     let range = maximum - minimum;
     if minimum != expected_min || maximum != expected_max || range != expected_range {
         return Err("common-mode model envelope does not match the known answer".to_string());
@@ -314,10 +312,10 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
         return Err("common-mode dependence labels do not match the known answer".to_string());
     }
 
-    let expected_count = required(expected, "independent_model_confirmation_count", "expected")?
-        .as_u64().ok_or_else(|| "independent_model_confirmation_count must be an integer".to_string())?;
+    let expected_count = required(expected, "dependence_cluster_count", "expected")?
+        .as_u64().ok_or_else(|| "dependence_cluster_count must be an integer".to_string())?;
     if dependence_groups.len() as u64 != expected_count {
-        return Err("independent model confirmation count must follow distinct dependence groups".to_string());
+        return Err("dependence cluster count must match distinct registered source/calibration groups".to_string());
     }
     let reference_error_minimum = reference_value - maximum;
     let reference_error_maximum = reference_value - minimum;
@@ -332,7 +330,7 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
         minimum_estimate: minimum,
         maximum_estimate: maximum,
         estimate_range: range,
-        independent_model_confirmation_count: dependence_groups.len(),
+        dependence_cluster_count: dependence_groups.len(),
         reference_error_minimum,
         reference_error_maximum,
     })
@@ -358,8 +356,14 @@ pub fn validate_conformal_coverage_arithmetic(
         if coverage_bp == 0 || coverage_bp > 10_000 {
             return Err("coverage_basis_points must be in 1..=10000".to_string());
         }
-        let numerator = (n + 1) * coverage_bp;
-        let rank = (numerator + 9_999) / 10_000;
+        let numerator = n
+            .checked_add(1)
+            .and_then(|samples| samples.checked_mul(coverage_bp))
+            .ok_or_else(|| "conformal rank arithmetic overflowed".to_string())?;
+        let rank = numerator
+            .checked_add(9_999)
+            .ok_or_else(|| "conformal ceiling arithmetic overflowed".to_string())?
+            / 10_000;
         let expected_rank = required(case, "rank_k", "rank_case")?.as_u64()
             .ok_or_else(|| "rank_k must be an unsigned integer".to_string())?;
         let available = rank <= n;
@@ -444,7 +448,7 @@ mod tests {
     fn common_mode_consensus_counts_dependency_groups_not_model_names() {
         let summary = validate_common_mode_consensus(CONSENSUS).expect("synthetic consensus is valid");
         assert_eq!(summary.model_count, 3);
-        assert_eq!(summary.independent_model_confirmation_count, 1);
+        assert_eq!(summary.dependence_cluster_count, 1);
         assert_eq!(summary.estimate_range, 2.0);
         assert_eq!(summary.reference_error_minimum, 28.0);
         assert_eq!(summary.reference_error_maximum, 30.0);
@@ -453,7 +457,7 @@ mod tests {
     #[test]
     fn common_mode_consensus_rejects_false_independence_count() {
         let mut fixture: Value = serde_json::from_str(CONSENSUS).expect("fixture parses");
-        fixture["expected"]["independent_model_confirmation_count"] = serde_json::json!(3);
+        fixture["expected"]["dependence_cluster_count"] = serde_json::json!(3);
         assert!(validate_common_mode_consensus(&fixture.to_string()).is_err());
     }
 
