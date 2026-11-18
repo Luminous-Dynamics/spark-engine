@@ -96,7 +96,7 @@ pub struct ProjectCashflowPeriod {
 /// Evidence-carrying project cash-flow input.
 ///
 /// All money amounts must use the same currency, currency year and real /
-—nominal basis. The caller is responsible for converting them consistently.
+/// nominal basis. The caller is responsible for converting them consistently.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ProjectFinanceInput {
     pub scenario_id: String,
