@@ -44,6 +44,8 @@ physics-honest assessment and
 [`docs/ANOMALY_INVESTIGATION_ROADMAP.md`](docs/ANOMALY_INVESTIGATION_ROADMAP.md)
 for the phased research plan this tool supports.
 
+The repository also contains a **separate conventional fusion-plant systems integration programme**. It does not inherit LCF physics or evidence. See [`docs/FUSION_SYSTEMS_BENCHMARK_STRATEGY_2026.md`](docs/FUSION_SYSTEMS_BENCHMARK_STRATEGY_2026.md) and [`docs/FUSION_QUALIFICATION_CASE_PACKAGE.md`](docs/FUSION_QUALIFICATION_CASE_PACKAGE.md) for its model-family boundary, benchmark programme and evidence-carrying case format.
+
 ## Why this might matter to you
 
 If you're doing LCF/LENR-adjacent research and deciding what to fund or run next: the
