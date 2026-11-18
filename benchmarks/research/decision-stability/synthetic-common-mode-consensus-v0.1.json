@@ -18,21 +18,24 @@
       "estimate": 70,
       "source_family": "synthetic-closure-alpha",
       "calibration_group": "synthetic-calibration-7",
-      "execution_lineage": "runner-a"
+      "execution_lineage": "runner-a",
+      "dependence_cluster_id": "shared-dependence-1"
     },
     {
       "model_id": "model-b",
       "estimate": 71,
       "source_family": "synthetic-closure-alpha",
       "calibration_group": "synthetic-calibration-7",
-      "execution_lineage": "runner-b"
+      "execution_lineage": "runner-b",
+      "dependence_cluster_id": "shared-dependence-1"
     },
     {
       "model_id": "model-c",
       "estimate": 72,
       "source_family": "synthetic-closure-alpha",
       "calibration_group": "synthetic-calibration-7",
-      "execution_lineage": "runner-c"
+      "execution_lineage": "runner-c",
+      "dependence_cluster_id": "shared-dependence-1"
     }
   ],
   "held_reference": {
@@ -48,10 +51,6 @@
       "range": 2,
       "unit": "MWe"
     },
-    "shared_dependence_groups": [
-      "synthetic-closure-alpha",
-      "synthetic-calibration-7"
-    ],
     "dependence_cluster_count": 1,
     "consensus_disposition": "CommonModeConsensus",
     "reference_error_range": {
@@ -64,7 +63,17 @@
       "Do not infer statistical independence from execution-lineage differences.",
       "Do not label model-envelope width as a calibrated confidence interval.",
       "The evaluator-only reference must remain hidden from any policy until it commits to an evaluation."
+    ],
+    "declared_dependence_clusters": [
+      "shared-dependence-1"
     ]
   },
-  "claim_ceiling": "Synthetic dependence-accounting control only; it says nothing about PROCESS, SARAS, D0FUS or actual reactor models."
+  "claim_ceiling": "Synthetic dependence-accounting control only; it says nothing about PROCESS, SARAS, D0FUS or actual reactor models.",
+  "unresolved_dependency_dimensions": [
+    "implementation_lineage",
+    "shared_libraries",
+    "execution_provider",
+    "operator_authority",
+    "trust_root"
+  ]
 }
