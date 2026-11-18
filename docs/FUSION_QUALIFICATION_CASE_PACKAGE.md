@@ -25,7 +25,7 @@ The package is intended to let specialist codes remain specialist codes while ma
 
 ### 1.1 Model-family isolation is mandatory
 
-The case manifest requires an explicit `model_family`. The initial controlled vocabulary distinguishes synthetic fixtures, lattice-confinement-fusion research, magnetic-confinement fusion, inertial-confinement fusion, magnetized-target fusion, generic fusion-plant systems work and explicitly reviewed cross-family contracts.
+The case manifest and each model record require explicit `model_family` declarations. The initial controlled vocabulary distinguishes synthetic fixtures, lattice-confinement-fusion research, magnetic-confinement fusion, inertial-confinement fusion, magnetized-target fusion, generic fusion-plant systems work and explicitly reviewed cross-family contracts. Every model in a case must declare its own family; a case whose family is `cross_family_contract` requires an explicit transfer contract and independent review in the semantic-validation layer.
 
 This distinction protects a critical scientific boundary in Spark Engine: its original LCF anomaly-investigation programme is not a validated fusion power-plant model. The Q_econ and plant-systems work adapts a published economic framework and depends on separately qualified conventional-fusion physics and engineering inputs. Those programmes may share units, provenance, uncertainty and evidence-package infrastructure, but must not silently share physical priors, calibration data or qualification status.
 
