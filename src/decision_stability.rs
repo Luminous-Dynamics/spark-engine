@@ -120,7 +120,9 @@ pub fn validate_model_choice_cliff(raw: &str) -> Result<DecisionCliffSummary, St
         return Err("model variants must not receive invented probabilities".to_string());
     }
     if required_str(profile, "probabilistic_aggregation", "comparison_profile")? != "forbidden" {
-        return Err("probabilistic aggregation must be explicitly forbidden for this model set".to_string());
+        return Err(
+            "probabilistic aggregation must be explicitly forbidden for this model set".to_string(),
+        );
     }
 
     let candidates = required_array(profile, "candidate_set", "comparison_profile")?;
@@ -174,11 +176,15 @@ pub fn validate_model_choice_cliff(raw: &str) -> Result<DecisionCliffSummary, St
         let rows = by_candidate.get(candidate_id)
             .ok_or_else(|| format!("candidate {candidate_id} has no model evaluations"))?;
         if rows.len() != model_ids.len() {
-            return Err(format!("candidate {candidate_id} does not have one result for every registered model"));
+            return Err(format!(
+                "candidate {candidate_id} does not have one result for every registered model"
+            ));
         }
         let row_models: BTreeSet<_> = rows.iter().map(|row| row.0.clone()).collect();
         if row_models != model_ids {
-            return Err(format!("candidate {candidate_id} model coverage does not match the registered model set"));
+            return Err(format!(
+                "candidate {candidate_id} model coverage does not match the registered model set"
+            ));
         }
 
         let pass_count = rows.iter().filter(|row| row.1).count();
@@ -191,13 +197,24 @@ pub fn validate_model_choice_cliff(raw: &str) -> Result<DecisionCliffSummary, St
             "AllModelsFailObservedEnvelope"
         };
 
-        let expected_candidate = required(expected_dispositions, candidate_id, "expected.candidate_dispositions")?;
-        let expected_disposition = required_str(expected_candidate, "model_set_disposition", "expected candidate")?;
-        let expected_robust = required(expected_candidate, "robustly_feasible", "expected candidate")?
+        let expected_candidate = required(
+            expected_dispositions,
+            candidate_id,
+            "expected.candidate_dispositions",
+        )?;
+        let expected_disposition = required_str(
+            expected_candidate,
+            "model_set_disposition",
+            "expected candidate",
+        )?;
+        let expected_robust =
+            required(expected_candidate, "robustly_feasible", "expected candidate")?
             .as_bool()
             .ok_or_else(|| "expected.robustly_feasible must be a boolean".to_string())?;
         if expected_disposition != disposition || expected_robust != robustly_feasible {
-            return Err(format!("candidate {candidate_id} expected disposition does not match computed result"));
+            return Err(format!(
+                "candidate {candidate_id} expected disposition does not match computed result"
+            ));
         }
 
         if robustly_feasible {
@@ -226,7 +243,11 @@ pub fn validate_model_choice_cliff(raw: &str) -> Result<DecisionCliffSummary, St
     let nominal_preference = nominal_m1.first()
         .map(|row| row.0.clone())
         .ok_or_else(|| "model-m1 baseline evaluations are missing".to_string())?;
-    let expected_preference = required_str(expected, "nominal_single_model_m1_preference", "expected")?;
+    let expected_preference = required_str(
+        expected,
+        "nominal_single_model_m1_preference",
+        "expected",
+    )?;
     if nominal_preference != expected_preference {
         return Err("nominal single-model preference does not match the known answer".to_string());
     }
@@ -292,7 +313,10 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
                 source_families[left] == source_families[right]
                     || calibration_groups[left] == calibration_groups[right];
             if shares_declared_dependency && declared_clusters[left] != declared_clusters[right] {
-                return Err("models sharing a declared source/calibration dependency must share a dependence cluster".to_string());
+                return Err(
+                    "models sharing a declared source/calibration dependency must share a dependence cluster"
+                        .to_string(),
+                );
             }
         }
     }
@@ -320,7 +344,8 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
         return Err("common-mode model envelope does not match the known answer".to_string());
     }
 
-    let expected_cluster_values = required_array(expected, "declared_dependence_clusters", "expected")?
+    let expected_cluster_values =
+        required_array(expected, "declared_dependence_clusters", "expected")?
         .iter()
         .map(|value| value.as_str().map(ToString::to_string)
             .ok_or_else(|| "declared_dependence_clusters entries must be strings".to_string()))
@@ -338,7 +363,8 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
     let reference_error_maximum = reference_value - minimum;
     let expected_error = required(expected, "reference_error_range", "expected")?;
     if reference_error_minimum != required_f64(expected_error, "minimum", "reference_error_range")?
-        || reference_error_maximum != required_f64(expected_error, "maximum", "reference_error_range")? {
+        || reference_error_maximum
+            != required_f64(expected_error, "maximum", "reference_error_range")?
         return Err("common-mode reference error does not match the known answer".to_string());
     }
 
@@ -391,15 +417,21 @@ pub fn validate_conformal_coverage_arithmetic(
             .as_bool().ok_or_else(|| "finite_bound_available must be boolean".to_string())?;
         let expected_disposition = required_str(case, "expected_disposition", "rank_case")?;
         if rank != expected_rank || available != expected_available {
-            return Err(format!("conformal rank case n={n}, coverage={coverage_bp} does not match known answer"));
+            return Err(format!(
+                "conformal rank case n={n}, coverage={coverage_bp} does not match known answer"
+            ));
         }
         if !available {
             insufficient += 1;
             if expected_disposition != "InsufficientCalibration" {
-                return Err("unavailable conformal rank must be InsufficientCalibration".to_string());
+                return Err(
+                    "unavailable conformal rank must be InsufficientCalibration".to_string(),
+                );
             }
         } else if expected_disposition != "ArithmeticControlOnly" {
-            return Err("finite synthetic conformal rank must remain ArithmeticControlOnly".to_string());
+            return Err(
+                "finite synthetic conformal rank must remain ArithmeticControlOnly".to_string(),
+            );
         }
     }
 
@@ -417,7 +449,11 @@ pub fn validate_conformal_coverage_arithmetic(
         }
         let uncovered = (10_000 - parametric) + (10_000 - discrepancy);
         let floor = 10_000_u64.saturating_sub(uncovered);
-        let expected_floor = required(case, "union_bound_total_coverage_floor_basis_points", "coverage_case")?
+        let expected_floor = required(
+            case,
+            "union_bound_total_coverage_floor_basis_points",
+            "coverage_case",
+        )?
             .as_u64().ok_or_else(|| "coverage floor must be an integer".to_string())?;
         if floor != expected_floor {
             return Err("union-bound coverage floor does not match the known answer".to_string());
@@ -524,7 +560,8 @@ mod tests {
 
     #[test]
     fn common_mode_consensus_counts_dependency_groups_not_model_names() {
-        let summary = validate_common_mode_consensus(CONSENSUS).expect("synthetic consensus is valid");
+        let summary =
+            validate_common_mode_consensus(CONSENSUS).expect("synthetic consensus is valid");
         assert_eq!(summary.model_count, 3);
         assert_eq!(summary.dependence_cluster_count, 1);
         assert_eq!(summary.estimate_range, 2.0);
@@ -567,7 +604,8 @@ mod tests {
         fixture["comparison_profile"]["model_set"].as_array_mut().unwrap().reverse();
         fixture["comparison_profile"]["hard_constraints"].as_array_mut().unwrap().reverse();
         fixture["evaluations"].as_array_mut().unwrap().reverse();
-        let reordered = validate_model_choice_cliff(&fixture.to_string()).expect("reordered fixture is valid");
+        let reordered = validate_model_choice_cliff(&fixture.to_string())
+            .expect("reordered fixture is valid");
         assert_eq!(baseline, reordered);
     }
 
@@ -576,13 +614,15 @@ mod tests {
         let baseline = validate_common_mode_consensus(CONSENSUS).expect("baseline is valid");
         let mut fixture: Value = serde_json::from_str(CONSENSUS).expect("fixture parses");
         fixture["registered_models"].as_array_mut().unwrap().reverse();
-        let reordered = validate_common_mode_consensus(&fixture.to_string()).expect("reordered fixture is valid");
+        let reordered = validate_common_mode_consensus(&fixture.to_string())
+            .expect("reordered fixture is valid");
         assert_eq!(baseline, reordered);
     }
 
     #[test]
     fn conformal_arithmetic_is_order_invariant() {
-        let baseline = validate_conformal_coverage_arithmetic(CONFORMAL).expect("baseline is valid");
+        let baseline =
+            validate_conformal_coverage_arithmetic(CONFORMAL).expect("baseline is valid");
         let mut fixture: Value = serde_json::from_str(CONFORMAL).expect("fixture parses");
         fixture["conformal_rank_cases"].as_array_mut().unwrap().reverse();
         fixture["coverage_composition_cases"].as_array_mut().unwrap().reverse();
@@ -607,7 +647,8 @@ mod tests {
         let mut fixture: Value = serde_json::from_str(CONFORMAL).expect("fixture parses");
         fixture["conformal_rank_cases"][0]["rank_k"] = serde_json::json!(18);
         fixture["conformal_rank_cases"][0]["finite_bound_available"] = serde_json::json!(true);
-        fixture["conformal_rank_cases"][0]["expected_disposition"] = serde_json::json!("ArithmeticControlOnly");
+        fixture["conformal_rank_cases"][0]["expected_disposition"] =
+            serde_json::json!("ArithmeticControlOnly");
         assert!(validate_conformal_coverage_arithmetic(&fixture.to_string()).is_err());
     }
 }
