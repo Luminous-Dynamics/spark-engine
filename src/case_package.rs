@@ -737,6 +737,40 @@ mod tests {
     }
 
     #[test]
+    fn rejects_cross_family_transfer_with_synthetic_review_evidence() {
+        let mut case = fixture();
+        case["model_family"] = Value::String("cross_family_contract".into());
+        case["models"][0]["model_family"] = Value::String("fusion_plant_systems".into());
+        case["models"].as_array_mut().unwrap().push(serde_json::json!({
+            "id": "magnetic-plasma-model",
+            "name": "Magnetic plasma model",
+            "model_family": "magnetic_confinement_fusion",
+            "discipline": "plasma_physics",
+            "version": "0.1.0",
+            "revision": "synthetic-interface-test",
+            "domain_of_validity": {
+                "summary": "Schema-only negative control.",
+                "status": "unknown",
+                "known_exclusions": ["No physical validation."]
+            },
+            "input_artifact_ids": ["synthetic-ledger-source"],
+            "output_artifact_ids": []
+        }));
+        case["cross_family_transfers"] = serde_json::json!([{
+            "id": "plant-to-plasma-interface",
+            "source_model_id": "toy-ledger-model",
+            "destination_model_id": "magnetic-plasma-model",
+            "source_family": "fusion_plant_systems",
+            "destination_family": "magnetic_confinement_fusion",
+            "rationale": "Negative control for a declared model-family interface.",
+            "claim": "Schema wiring only; not a physics transfer claim.",
+            "independent_review_evidence_id": "synthetic-ledger-source"
+        }]);
+        let errors = validate_case_manifest(&case).unwrap_err();
+        assert!(errors.iter().any(|e| e.contains("independent-review evidence class is insufficient")));
+    }
+
+    #[test]
     fn rejects_unknown_evidence_reference() {
         let mut case = fixture();
         case["flows"][0]["evidence_artifact_ids"][0] = Value::String("missing-evidence".into());
