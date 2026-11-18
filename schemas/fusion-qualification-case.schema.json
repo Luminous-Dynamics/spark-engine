@@ -391,8 +391,60 @@
         },
         "uncertainty_model_id": {
           "$ref": "#/$defs/id"
+        },
+        "surface_role": {
+          "enum": [
+            "energy_extraction_surface",
+            "divertor_target_wetted_surface",
+            "first_wall",
+            "blanket",
+            "other"
+          ]
+        },
+        "time_series_artifact_id": {
+          "$ref": "#/$defs/id"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "quantity_kind": {
+                "const": "heat_flux"
+              }
+            },
+            "required": [
+              "quantity_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "surface_role"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "quantity_kind": {
+                "not": {
+                  "const": "heat_flux"
+                }
+              }
+            },
+            "required": [
+              "quantity_kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "surface_role"
+              ]
+            }
+          }
+        }
+      ]
     },
     "quantity": {
       "type": "object",
