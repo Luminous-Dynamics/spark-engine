@@ -151,6 +151,12 @@
       "items": {
         "$ref": "#/$defs/crossFamilyTransfer"
       }
+    },
+    "accounting_checks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/accountingCheck"
+      }
     }
   },
   "$defs": {
@@ -1192,6 +1198,81 @@
         "fusion_plant_systems",
         "cross_family_contract"
       ]
+    },
+    "accountingCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "boundary_id",
+        "quantity_kind",
+        "unit",
+        "time_basis_id",
+        "inbound_flow_ids",
+        "outbound_flow_ids",
+        "relative_tolerance",
+        "evidence_artifact_ids"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "boundary_id": {
+          "$ref": "#/$defs/id"
+        },
+        "quantity_kind": {
+          "enum": [
+            "power",
+            "energy",
+            "heat_flux",
+            "mass_flow",
+            "mass",
+            "particle_rate",
+            "tritium_flow",
+            "electric_power",
+            "electrical_energy",
+            "temperature",
+            "pressure",
+            "other",
+            "fusion_power_density",
+            "divertor_heat_flux"
+          ]
+        },
+        "unit": {
+          "$ref": "#/$defs/unit"
+        },
+        "time_basis_id": {
+          "$ref": "#/$defs/id"
+        },
+        "inbound_flow_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "outbound_flow_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "relative_tolerance": {
+          "type": "number",
+          "minimum": 0
+        },
+        "evidence_artifact_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
     }
   },
   "allOf": [
