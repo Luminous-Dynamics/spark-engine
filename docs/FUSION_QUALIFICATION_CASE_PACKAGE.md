@@ -133,7 +133,7 @@ The Rust CLI does **not** execute JSON Schema 2020-12 validation or a full UCUM 
 
 Neither validator verifies plasma or neutronics physics, qualifies a material, establishes a model's physical domain from evidence, verifies signed attestations or certifies a plant. A successful validation run is not a qualification verdict; the synthetic fixture deliberately remains `not_qualified`. Full UCUM conversion, digest canonicalization for the manifest itself, RO-Crate packaging and physical model-domain qualification remain explicit gates.
 
-The Rust test suite includes twelve semantic negative controls: duplicate IDs, implicit model-family mixing, unresolved boundary/evidence/uncertainty references, non-conserving ledgers, holdout leakage, incorrect divertor target identity, incompatible units, missing cross-family review and synthetic false qualification. The Python conformance harness independently checks schema and additional negative controls. Exact-head CI is still pending until the jobs complete successfully.
+The Rust test suite includes fourteen semantic negative controls: duplicate IDs, implicit model-family mixing, unresolved boundary/evidence/uncertainty references, non-conserving ledgers, holdout leakage, incorrect divertor target identity, incompatible units, missing cross-family review and synthetic false qualification. The Python conformance harness independently checks schema and additional negative controls. Exact-head CI is still pending until the jobs complete successfully.
 
 ## 4. Evidence semantics
 
