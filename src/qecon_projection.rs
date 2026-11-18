@@ -927,7 +927,11 @@ mod tests {
 
     #[test]
     fn already_viable_reference_is_returned_with_zero_distance() {
-        let reference = reference_input(3.7);
+        let mut reference = reference_input(3.7);
+        // The projection domain is strictly positive. Keep this already-viable
+        // reference inside the box instead of using the zero-cost fixture,
+        // whose corresponding lower bound is intentionally positive.
+        reference.design.target_cost_per_energy_yield_usd_per_mj = 1e-12;
         let bounds = projection_bounds(&reference, None, None, 1.0, 1.0);
         let result = project_qecon_to_viability(&QeconWeightedProjectionInput {
             reference: reference.clone(),
