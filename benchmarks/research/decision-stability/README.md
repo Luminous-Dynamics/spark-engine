@@ -7,6 +7,7 @@
 ## Fixtures
 
 - `synthetic-model-choice-cliff-v0.1.json` — two matched synthetic model variants cause candidate A to cross a hard clearance constraint while candidate B remains feasible. There is no probability assigned to the two model variants.
+- `synthetic-decision-irrelevant-disagreement-v0.1.json` — two matched variants differ by 21 MWe for candidate A, but both remain on the same side of every hard gate; disagreement is recorded without a false decision split.
 - `synthetic-common-mode-consensus-v0.1.json` — three model labels agree closely but share one synthetic closure/calibration lineage and disagree with a hidden reference. Agreement cannot be counted as three independent confirmations.
 - `synthetic-conformal-coverage-arithmetic-v0.1.json` — hand-computed finite-sample conformal rank and conservative union-bound controls. It is arithmetic only, not an empirical calibration corpus.
 
@@ -20,5 +21,5 @@ Before these fixtures are used by an evaluator:
 3. Test deliberate mutations of thresholds, model ordering, dependency groups, coverage ranks and status fields.
 4. Preserve every input/model/candidate result and expected refusal.
 5. Wire the exact fixtures into Rust unit tests and CI only after their report contract is reviewed.
-6. The current Rust tests verify the three synthetic control families only; they do not score real solver runs or establish measured calibration.
+6. The current Rust tests cover four synthetic decision controls and hostile missing/duplicate-pair mutations; they do not score real solver runs or establish measured calibration.
 7. Never promote the synthetic class or these fixture digests into measured/model-validated evidence.
