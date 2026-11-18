@@ -81,6 +81,12 @@ pub mod qecon_exploration;
 // Weighted closest-viable-design projection for Q_econ
 pub mod qecon_projection;
 
+// Conditional robust-viability assessment with independent validation ensemble
+pub mod qecon_robust;
+
+// Weighted chance-constrained Q_econ design projection
+pub mod qecon_chance_projection;
+
 // First-order reliability/availability screening (not full RAMI)
 pub mod plant_availability;
 
@@ -143,6 +149,17 @@ pub use qecon_projection::{
     QeconProjectionBound, QeconProjectionBoundState, QeconProjectionParameterResult,
     QeconProjectionStatus, QeconWeightedProjectionInput, QeconWeightedProjectionResult,
     project_qecon_to_viability,
+};
+pub use qecon_chance_projection::{
+    MAX_CHANCE_CANDIDATE_EVALUATIONS, MAX_CHANCE_COORDINATE_SWEEPS,
+    QECON_CHANCE_PROJECTION_REVISION, QeconChanceProjectionInput,
+    QeconChanceProjectionResult, QeconChanceProjectionSearchStatus,
+    project_qecon_to_chance_constrained_viability,
+};
+pub use qecon_robust::{
+    QECON_ROBUST_ASSESSMENT_REVISION, QeconRobustAssessmentResult, QeconRobustAssessmentScenario,
+    QeconRobustMarginal, QeconRobustRunEstimate, QeconRobustTransform, QeconRobustUncertaintyInput,
+    assess_qecon_robust_viability,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{

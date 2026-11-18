@@ -250,6 +250,35 @@ For each fixed lifetime, it constructs a strictly feasible starting point from t
 
 The implementation issue is [#18](https://github.com/Luminous-Dynamics/spark-engine). Keep local elasticity, global associations, independent Sobol indices and this stakeholder-weighted projection as distinct analyses: they answer different questions.
 
+## Chance-constrained weighted Q_econ design projection
+
+A new `qecon_chance_projection` layer composes weighted design bounds with the robust uncertainty sampler. It minimizes the original-parameter weighted Euclidean distance subject to a Wilson 95% lower-bound constraint on the conditional Monte Carlo probability `P(Q_econ >= target)`.
+
+The search uses common random numbers: every candidate shares the same optimization seed and sample set. It enumerates integer plant lifetimes, starts at the declared favourable box corner, and uses coordinate moves/bisection toward the reference while preserving the chance-feasible side. Search budgets are explicit. The selected candidate is rechecked using the optimization seed, then independently validated using a distinct seed that was never read by the search.
+
+It reports optimization and validation probability intervals, feasibility margins, selected design, weighted objective, parameter movements, lifetime/sweep counts and model-evaluation cost. The projected input is distinct from the baseline; its canonical digest must be created by the shared evidence layer.
+
+This is an approximate sample-average coordinate search, not a global-optimality proof. It assumes monotonic Q_econ effects in the declared favourable directions across the supplied box. Wilson intervals measure finite simulation error only; they do not validate the input distributions, model discrepancy, heat exhaust or materials physics. See [issue #27](https://github.com/Luminous-Dynamics/spark-engine/issues/27).
+
+## Conditional robust-viability assessment
+
+A separate `qecon_robust` module now evaluates one nominal Q_econ candidate with two independent seeded ensembles:
+
+1. An optimization ensemble, whose seed can be reused across candidate designs to obtain common random numbers during comparisons.
+2. An untouched validation ensemble with a different seed, used only after the candidate has been selected.
+
+Uncertainty is expressed explicitly as multiplicative triangular factors or additive triangular offsets for each of the ten Q_econ parameters. This allows relative perturbations for fluence, efficiency, energy price and costs, and native-unit offsets for interest rates, target costs or integer plant lifetime. Zero nominal inputs need an additive uncertainty model if the zero itself is uncertain.
+
+The result reports Q_econ/utilization/net-rate distributions, P(Q_econ ≥ target), and Wilson 95% sampling intervals for both ensembles. A validation flag is set only when the independent validation ensemble's Wilson lower bound meets the caller's required probability threshold.
+
+### Interpretation and next step
+
+- This is a robust assessment of one candidate, not yet a chance-constrained design optimizer.
+- The probability is conditional on the supplied marginals, latent Gaussian dependence, Q_econ model and omitted-physics assumptions.
+- Wilson intervals quantify finite Monte Carlo sampling error only; they do not represent uncertainty in marginal assumptions, model discrepancy, heat exhaust or material physics.
+- Base scenario evidence class is inherited and never upgraded by sampling.
+- The follow-on [issue #27](https://github.com/Luminous-Dynamics/spark-engine/issues/27) covers chance-constrained weighted design projection, including separate optimization/validation seeds, common random numbers, sample-average approximation and held-out distribution stress tests.
+
 ## Quantitative benchmark scoreboard
 
 The numbers below are **qualification targets**, not results achieved by Spark. Comparisons must preserve the same task definition, dataset version, device/shot split, warning horizon, event threshold, units and uncertainty treatment.
@@ -309,6 +338,38 @@ That is a national-scale programme with access to major facilities, data, comput
 - full boundary accounting from plasma to export, availability and economics;
 - open cross-device evaluation with frozen holdouts and negative controls;
 - auditable design decisions that show which measurements would most reduce risk.
+
+## Industry milestone snapshot — 17 November 2026
+
+This snapshot distinguishes demonstrated plasma/component milestones from commercial-plant claims. It is not an investment ranking.
+
+| Programme | Latest public milestone / status | What it demonstrates | What it does not demonstrate |
+|---|---|---|---|
+| **General Fusion LM26** | On 16 November 2026, the company reported October 2026 electron temperature above 1 keV with practical low-speed compression, measured with UKAEA Thomson scattering; the company says it is working toward 10 keV and its D-D Lawson criterion by end-2028 | A measured plasma-heating milestone, co-measured with a national fusion laboratory; commercial systems work is also under way | It is not yet the stated Lawson milestone, fusion-electric breakeven or a net-electric plant. The company's first-of-a-kind plant operating target is around 2035 |
+| **CFS SPARC** | CFS's public pages describe the facility as under construction and first plasma / Q>1 as the 2027 campaign objective. CFS reported eight of eighteen toroidal-field magnets installed in a recent update | HTS magnet manufacturing/installation and a specific Q_fus>1 experimental campaign plan | A campaign goal is not an achieved Q result; Q_fus is plasma fusion power relative to plasma auxiliary heating, not whole-plant net electricity |
+| **Helion Polaris / Orion** | Helion's current Polaris page describes the prototype goal as demonstrating electricity from fusion and direct energy recovery. It explicitly says its prior use of "net electricity" did not match the concrete prototype objective. Orion's public wording is initial operations in 2028; independent reporting in September 2026 described full-power expectations later | Direct conversion/recovery subsystem testing and fusion-derived electricity demonstration | Demonstrating some electrical recovery is not the same as net electric generation. Do not score Polaris as a net-electric machine on this basis |
+| **NIF** | LLNL reports an 11th ignition on 20 June 2026 with 7.9 MJ yield and target gain around 3.8 | Repeatable multi-megajoule inertial-fusion target performance | Laser-to-target gain is not facility electrical gain or a grid power plant |
+| **ITER** | ITER reports the ninth and final vacuum-vessel sector delivered in October 2026, with the core components on site | Major industrial procurement and assembly progress | Component delivery is not plasma operations or a fusion power demonstration |
+
+Sources:
+- General Fusion / LM26: [company Q3 2026 results, 16 Nov 2026](https://investors.generalfusion.com/news-releases/news-release-details/general-fusion-reports-third-quarter-2026-results); [UKAEA / UK Government milestone, 8 Oct 2026](https://www.gov.uk/government/news/ukaea-general-fusion-announce-magnetised-target-fusion-milestone)
+- CFS: [SPARC status and 2027 goal](https://cfs.energy/technology/sparc/); [recent magnet installation update](https://www.linkedin.com/posts/commonwealth-fusion-systems_fusionenergy-magnets-sparc-activity-7508160944787689472-wcEP); [first-campaign scenario and Q>1 strategy](https://blog.cfs.energy/how-cfs-will-rev-up-our-sparc-tokamak-for-its-q1-fusion-moment/)
+- Helion: [Polaris objective and clarification of "net electricity"](https://www.helionenergy.com/polaris); [Feb 2026 D-T / 150-million-degree milestone](https://www.helionenergy.com/newsroom/helion-achieves-new-fusion-energy-milestones); [Axios Pro, Sep 2026 timeline reporting](https://www.axios.com/pro/climate-deals/2026/09/08/helion-energy-fusion-net-electricity-date-year)
+- NIF: [LLNL ignition results](https://lasers.llnl.gov/science/achieving-fusion-ignition)
+- ITER: [final vacuum-vessel sector delivery](https://www.iter.org/node/20687/remarkable-chapter-draws-close)
+
+### Competitive implication for Luminous Dynamics
+
+We should not try to compete with these programmes on plasma temperature, Q_fus, magnet scale, target yield, prototype power or construction funding. They have facilities, specialized teams, proprietary data and capital that we do not have.
+
+A credible contribution is to make their *cross-domain evidence problem* more reproducible and inspectable:
+1. Make every headline quantity carry its exact denominator and boundary: Q_plasma, target gain, Q_fus, recirculating-power ratio, net electrical export, Q_econ, availability and lifecycle cash flow.
+2. Build reproducible qualification cases for materials life, heat exhaust, remote maintenance and plant availability around published datasets and geometry cases.
+3. Preserve provenance, uncertainty, negative results, model discrepancy and evidence class as first-class data.
+4. Compare independent solver outputs and operational benchmarks at identical boundaries rather than build a single all-purpose "fusion score".
+5. Publish open adapters and benchmark manifests that laboratories, vendors and regulators can audit without adopting the Luminous stack.
+
+The most valuable potential differentiator is an open, evidence-carrying plant-qualification layer that connects specialist physics, materials, remote maintenance, net power and lifecycle economics. It is a research programme, not a capability already qualified on a real fusion plant.
 
 ## Paradigm shifts worth pursuing
 
