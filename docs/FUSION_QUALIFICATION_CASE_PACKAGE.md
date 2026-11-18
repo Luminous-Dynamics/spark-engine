@@ -220,6 +220,7 @@ The branch includes a development-only Python validator at `scripts/validate_fus
 The validator:
 - validates the manifest with JSON Schema Draft 2020-12 and a format checker;
 - checks uniqueness and referential integrity for boundaries, time bases, flows, models, uncertainty records and evidence artefacts;
+- evaluates explicitly declared conservation ledgers using exact unit/time-basis matches, directed boundary joins and relative residual tolerances; it does not assume every boundary must close without a declared check;
 - checks a deliberately bounded UCUM unit profile for common power, energy, heat-flux, mass, mass-flow, temperature and pressure quantities;
 - requires fusion power density to name the energy-extraction surface and divertor heat flux to name a divertor target wetted surface, including the declared spatial statistic;
 - rejects unresolved time-series artefact references and calibration/validation/holdout split overlap;
