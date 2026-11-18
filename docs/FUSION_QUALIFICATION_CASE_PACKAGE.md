@@ -4,7 +4,7 @@
 **Tracking:** [Issue #39](https://github.com/Luminous-Dynamics/spark-engine/issues/39)  
 **Related work:** [power-exhaust boundary contract](POWER_EXHAUST_BOUNDARY_CONTRACT.md) (in the current research branch), [exhaust benchmark corpus #33](https://github.com/Luminous-Dynamics/spark-engine/issues/33), [RAMI #34](https://github.com/Luminous-Dynamics/spark-engine/issues/34), [whole-plant net electricity #35](https://github.com/Luminous-Dynamics/spark-engine/issues/35), [robust co-design #36](https://github.com/Luminous-Dynamics/spark-engine/issues/36), [transient component lifetime #38](https://github.com/Luminous-Dynamics/spark-engine/issues/38), and [tritium fuel-cycle closure #37](https://github.com/Luminous-Dynamics/spark-engine/issues/37), plus [model-family separation #41](https://github.com/Luminous-Dynamics/spark-engine/issues/41) and [fusion-neutronics benchmarks #42](https://github.com/Luminous-Dynamics/spark-engine/issues/42).
 
-This document defines a proposed, code-agnostic package for carrying a fusion engineering case from source data through model execution, comparison and qualification. It is an interoperability contract, not a plasma, neutronics, thermal-hydraulic, material or finance solver. The schema is a first implementation artifact; the semantic validator, canonical digest tooling and domain adapters remain follow-on work.
+This document defines a proposed, code-agnostic package for carrying a fusion engineering case from source data through model execution, comparison and qualification. It is an interoperability contract, not a plasma, neutronics, thermal-hydraulic, material or finance solver. The JSON Schema and Rust semantic-validation CLI are implemented in this branch. Runtime JSON Schema validation, canonical digest tooling, RO-Crate packaging and domain adapters remain follow-on work.
 
 ## 1. Why a case package is needed
 
@@ -108,6 +108,30 @@ A second validation stage must check cross-record invariants that JSON Schema al
 - model use is within its declared domain, or the result is marked out-of-domain / indeterminate.
 
 No missing quantity is filled with zero. Unknown is a valid state with a reason and a named owner for resolution.
+
+### 3.2 Implemented semantic validator and CLI
+
+The branch adds `src/case_package.rs` and the `spark-case-validate` binary. Run the synthetic fixture with:
+
+```bash
+cargo run --bin spark-case-validate -- benchmarks/conformance/synthetic-power-ledger.case.json
+```
+
+The validator currently checks:
+
+- uniqueness and resolution of case, model, boundary, flow, time-basis, uncertainty and evidence identifiers;
+- model-family consistency, plus explicit source/destination model records and independent-review evidence for cross-family transfers;
+- flow endpoint direction for accounting ledgers, time-basis references and mandatory evidence links;
+- a conservative UCUM-dimension subset for common power, energy, surface-power-density, mass-flow, mass, temperature and pressure units; unsupported codes fail closed for those quantity kinds;
+- fusion power density ↔ energy-extraction-surface identity and divertor heat flux ↔ divertor-target-wetted-surface identity;
+- no negative directed-flow values (reverse the declared edge rather than encode a negative value);
+- calibration/validation/holdout data-set disjointness;
+- additive conservation-check direction, quantity, exact unit code, common time basis and relative residual against the declared tolerance;
+- qualified status requiring independent review and supporting evidence; indeterminate status requiring blockers.
+
+The CLI does **not** yet execute JSON Schema 2020-12 validation, perform a full UCUM parse/conversion, hash packaged files, validate geometry digests, verify model domain-of-validity envelopes, inspect signed attestations or establish physics correctness. Those remain explicit gates. A successful semantic run is not a qualification verdict; the synthetic fixture deliberately remains `not_qualified`.
+
+The ten negative-control tests cover duplicate boundary IDs, implicit model-family mixing, unresolved boundary/evidence/uncertainty references, ledger non-closure, holdout leakage, missing divertor target identity and cross-family transfer without review. CI must still run these tests on the exact PR head before the code is described as test-passing.
 
 ## 4. Evidence semantics
 
