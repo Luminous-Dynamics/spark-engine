@@ -18,7 +18,7 @@
 use crate::qecon::{
     QECON_MODEL_REVISION, QeconEvidenceClass, QeconInput, calculate_qecon,
 };
-use crate::qecon_exploration::QeconParameter;
+use crate::qecon_exploration::{QECON_PARAMETER_COUNT, QeconParameter};
 use crate::qecon_projection::{
     QeconProjectionBound, QeconProjectionBoundState, QeconProjectionParameterResult,
     bound_state, clamp_reference, favourable_corner, input_from_values, input_values,
