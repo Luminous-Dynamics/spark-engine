@@ -99,7 +99,7 @@ Symtropy's existing rigid-body engine is not, by that fact, a validated MHD, neu
 
 ### Mycelix and Sol-Atlas — independent evidence and site context
 
-Mycelix records evidence provenance, execution identity, independent review and authorization boundaries. Producer output is not its own independent approval. Hashes establish artifact identity; signatures establish who attested; neither establishes scientific truth.
+Mycelix records evidence provenance, execution identity, independent review and authorization boundaries. Reuse [fusion evidence-provenance bundles #6300](https://github.com/Luminous-Dynamics/mycelix/issues/6300) for power-exhaust source chains, [algorithm-experiment attestations #5900](https://github.com/Luminous-Dynamics/mycelix/issues/5900) for solver/benchmark run identity, and [verifier-independence profiles #1371](https://github.com/Luminous-Dynamics/mycelix/issues/1371) for shared fault-domain transparency. Producer output is not its own independent approval. Hashes establish artifact identity; signatures establish who attested; neither establishes scientific truth.
 
 Sol-Atlas contributes spatial context: site/grid infrastructure, component placement, materials/irradiation layers, maintenance routes and external constraints. It does not replace the specialist physical solvers or issue qualification decisions.
 
