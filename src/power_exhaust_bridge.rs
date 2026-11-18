@@ -234,7 +234,15 @@ pub fn map_qecon_to_divertor_loads(
                 assumptions: target.assumptions.clone(),
             }
         })
-        .collect();
+        .collect::<Vec<_>>();
+
+    if divertor_targets.iter().any(|target| {
+        !target.target_power_mw.is_finite()
+            || !target.average_heat_flux_mw_per_m2.is_finite()
+            || !target.estimated_peak_heat_flux_mw_per_m2.is_finite()
+    }) {
+        return Err("computed target power and heat-flux outputs must be finite".to_string());
+    }
 
     Ok(PowerExhaustBridgeResult {
         bridge_model_revision: POWER_EXHAUST_BRIDGE_REVISION.to_string(),
