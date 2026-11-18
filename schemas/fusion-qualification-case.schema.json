@@ -438,27 +438,6 @@
           "if": {
             "properties": {
               "quantity_kind": {
-                "not": {
-                  "const": "heat_flux"
-                }
-              }
-            },
-            "required": [
-              "quantity_kind"
-            ]
-          },
-          "then": {
-            "not": {
-              "required": [
-                "surface_role"
-              ]
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "quantity_kind": {
                 "enum": [
                   "heat_flux",
                   "fusion_power_density",
