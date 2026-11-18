@@ -14,14 +14,13 @@
 //! transformed physical parameters.
 
 use crate::qecon::{
-    QECON_MODEL_REVISION, QeconEvidenceClass, QeconInput, QeconScenario,
-    QeconScenarioResult, calculate_qecon, calculate_qecon_scenario,
+    QeconEvidenceClass, QeconInput, QeconScenario, QeconScenarioResult,
+    calculate_qecon, calculate_qecon_scenario,
 };
 use crate::qecon_exploration::{
-    MAX_QECON_UNCERTAINTY_SAMPLES, QECON_PARAMETER_COUNT, QeconParameter,
-    QeconProbabilityEstimate, QeconScalarStatistics, cholesky_correlation,
-    multiply_lower_triangular, scalar_statistics, standard_normal_cdf,
-    standard_normal_vector, wilson_probability_estimate,
+    MAX_QECON_UNCERTAINTY_SAMPLES, QECON_PARAMETER_COUNT, QeconParameter, QeconProbabilityEstimate,
+    QeconScalarStatistics, cholesky_correlation, multiply_lower_triangular, scalar_statistics,
+    standard_normal_cdf, standard_normal_vector, wilson_probability_estimate,
 };
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -186,7 +185,9 @@ pub fn assess_qecon_robust_viability(
         scenario.uncertainty_input.validation_sample_count,
     )?;
 
-    let validation_qualified = validation.probability_q_econ_at_least_target.wilson_lower_95
+    let validation_qualified = validation
+        .probability_q_econ_at_least_target
+        .wilson_lower_95
         >= scenario.required_viability_probability;
 
     Ok(QeconRobustAssessmentResult {
@@ -253,8 +254,14 @@ fn validate_robust_assessment_scenario(
         return Err("optimization and validation seeds must be different".to_string());
     }
     for (name, count) in [
-        ("optimization_sample_count", uncertainty.optimization_sample_count),
-        ("validation_sample_count", uncertainty.validation_sample_count),
+        (
+            "optimization_sample_count",
+            uncertainty.optimization_sample_count,
+        ),
+        (
+            "validation_sample_count",
+            uncertainty.validation_sample_count,
+        ),
     ] {
         if !(2..=MAX_QECON_UNCERTAINTY_SAMPLES).contains(&count) {
             return Err(format!(
@@ -401,16 +408,76 @@ mod tests {
 
     fn marginals() -> Vec<QeconRobustMarginal> {
         vec![
-            QeconRobustMarginal { parameter: QeconParameter::FusionPowerDensity, transform: QeconRobustTransform::Multiplicative, minimum: 0.9, mode: 1.0, maximum: 1.1 },
-            QeconRobustMarginal { parameter: QeconParameter::SurfaceReplacementTime, transform: QeconRobustTransform::Multiplicative, minimum: 0.8, mode: 1.0, maximum: 1.2 },
-            QeconRobustMarginal { parameter: QeconParameter::SurfaceEnergyFluenceLimit, transform: QeconRobustTransform::Multiplicative, minimum: 0.9, mode: 1.0, maximum: 1.1 },
-            QeconRobustMarginal { parameter: QeconParameter::NetEnergyConversionEfficiency, transform: QeconRobustTransform::Multiplicative, minimum: 0.9, mode: 1.0, maximum: 1.1 },
-            QeconRobustMarginal { parameter: QeconParameter::NetPriceOfEnergy, transform: QeconRobustTransform::Multiplicative, minimum: 0.8, mode: 1.0, maximum: 1.2 },
-            QeconRobustMarginal { parameter: QeconParameter::TargetCostPerEnergyYield, transform: QeconRobustTransform::Additive, minimum: 0.0, mode: 0.0, maximum: 0.001 },
-            QeconRobustMarginal { parameter: QeconParameter::SurfaceReplacementCost, transform: QeconRobustTransform::Multiplicative, minimum: 0.8, mode: 1.0, maximum: 1.2 },
-            QeconRobustMarginal { parameter: QeconParameter::PlantArealCost, transform: QeconRobustTransform::Multiplicative, minimum: 0.8, mode: 1.0, maximum: 1.2 },
-            QeconRobustMarginal { parameter: QeconParameter::RealInterestRate, transform: QeconRobustTransform::Additive, minimum: -0.5, mode: 0.0, maximum: 0.5 },
-            QeconRobustMarginal { parameter: QeconParameter::PlantLifetime, transform: QeconRobustTransform::Additive, minimum: -2.0, mode: 0.0, maximum: 2.0 },
+            QeconRobustMarginal {
+                parameter: QeconParameter::FusionPowerDensity,
+                transform: QeconRobustTransform::Multiplicative,
+                minimum: 0.9,
+                mode: 1.0,
+                maximum: 1.1,
+            },
+            QeconRobustMarginal {
+                parameter: QeconParameter::SurfaceReplacementTime,
+                transform: QeconRobustTransform::Multiplicative,
+                minimum: 0.8,
+                mode: 1.0,
+                maximum: 1.2,
+            },
+            QeconRobustMarginal {
+                parameter: QeconParameter::SurfaceEnergyFluenceLimit,
+                transform: QeconRobustTransform::Multiplicative,
+                minimum: 0.9,
+                mode: 1.0,
+                maximum: 1.1,
+            },
+            QeconRobustMarginal {
+                parameter: QeconParameter::NetEnergyConversionEfficiency,
+                transform: QeconRobustTransform::Multiplicative,
+                minimum: 0.9,
+                mode: 1.0,
+                maximum: 1.1,
+            },
+            QeconRobustMarginal {
+                parameter: QeconParameter::NetPriceOfEnergy,
+                transform: QeconRobustTransform::Multiplicative,
+                minimum: 0.8,
+                mode: 1.0,
+                maximum: 1.2,
+            },
+            QeconRobustMarginal {
+                parameter: QeconParameter::TargetCostPerEnergyYield,
+                transform: QeconRobustTransform::Additive,
+                minimum: 0.0,
+                mode: 0.0,
+                maximum: 0.001,
+            },
+            QeconRobustMarginal {
+                parameter: QeconParameter::SurfaceReplacementCost,
+                transform: QeconRobustTransform::Multiplicative,
+                minimum: 0.8,
+                mode: 1.0,
+                maximum: 1.2,
+            },
+            QeconRobustMarginal {
+                parameter: QeconParameter::PlantArealCost,
+                transform: QeconRobustTransform::Multiplicative,
+                minimum: 0.8,
+                mode: 1.0,
+                maximum: 1.2,
+            },
+            QeconRobustMarginal {
+                parameter: QeconParameter::RealInterestRate,
+                transform: QeconRobustTransform::Additive,
+                minimum: -0.5,
+                mode: 0.0,
+                maximum: 0.5,
+            },
+            QeconRobustMarginal {
+                parameter: QeconParameter::PlantLifetime,
+                transform: QeconRobustTransform::Additive,
+                minimum: -2.0,
+                mode: 0.0,
+                maximum: 2.0,
+            },
         ]
     }
 
@@ -471,12 +538,24 @@ mod tests {
     fn robust_assessment_has_distinct_sampling_intervals_and_model_assumptions() {
         let result = assess_qecon_robust_viability(&scenario()).unwrap();
         assert!(
-            result.optimization.probability_q_econ_at_least_target.wilson_lower_95
-                <= result.optimization.probability_q_econ_at_least_target.probability_estimate
+            result
+                .optimization
+                .probability_q_econ_at_least_target
+                .wilson_lower_95
+                <= result
+                    .optimization
+                    .probability_q_econ_at_least_target
+                    .probability_estimate
         );
         assert!(
-            result.validation.probability_q_econ_at_least_target.probability_estimate
-                <= result.validation.probability_q_econ_at_least_target.wilson_upper_95
+            result
+                .validation
+                .probability_q_econ_at_least_target
+                .probability_estimate
+                <= result
+                    .validation
+                    .probability_q_econ_at_least_target
+                    .wilson_upper_95
         );
         assert!(result.interpretation_limits.len() >= 5);
     }
@@ -505,6 +584,12 @@ mod tests {
         request.uncertainty_input.validation_sample_count = 4096;
         request.base_scenario.input.fusion_power_density_mw_per_m2 = 2.8;
         let result = assess_qecon_robust_viability(&request).unwrap();
-        assert!(result.validation.probability_q_econ_at_least_target.probability_estimate < 1.0);
+        assert!(
+            result
+                .validation
+                .probability_q_econ_at_least_target
+                .probability_estimate
+                < 1.0
+        );
     }
 }
