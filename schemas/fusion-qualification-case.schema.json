@@ -823,7 +823,7 @@
           }
         },
         "model_family": {
-          "$ref": "#/$defs/modelFamily"
+          "$ref": "#/$defs/concreteModelFamily"
         }
       }
     },
@@ -1159,10 +1159,10 @@
           "$ref": "#/$defs/id"
         },
         "source_family": {
-          "$ref": "#/$defs/modelFamily"
+          "$ref": "#/$defs/concreteModelFamily"
         },
         "destination_family": {
-          "$ref": "#/$defs/modelFamily"
+          "$ref": "#/$defs/concreteModelFamily"
         },
         "rationale": {
           "type": "string",
@@ -1273,6 +1273,17 @@
           }
         }
       }
+    },
+    "concreteModelFamily": {
+      "type": "string",
+      "enum": [
+        "synthetic_fixture",
+        "lattice_confinement_fusion",
+        "magnetic_confinement_fusion",
+        "inertial_confinement_fusion",
+        "magnetized_target_fusion",
+        "fusion_plant_systems"
+      ]
     }
   },
   "allOf": [
