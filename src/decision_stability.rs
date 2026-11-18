@@ -499,6 +499,38 @@ mod tests {
     }
 
     #[test]
+    fn model_choice_cliff_is_order_invariant() {
+        let baseline = validate_model_choice_cliff(CLIFF).expect("baseline is valid");
+        let mut fixture: Value = serde_json::from_str(CLIFF).expect("fixture parses");
+        fixture["comparison_profile"]["candidate_set"].as_array_mut().unwrap().reverse();
+        fixture["comparison_profile"]["model_set"].as_array_mut().unwrap().reverse();
+        fixture["comparison_profile"]["hard_constraints"].as_array_mut().unwrap().reverse();
+        fixture["evaluations"].as_array_mut().unwrap().reverse();
+        let reordered = validate_model_choice_cliff(&fixture.to_string()).expect("reordered fixture is valid");
+        assert_eq!(baseline, reordered);
+    }
+
+    #[test]
+    fn common_mode_consensus_is_order_invariant() {
+        let baseline = validate_common_mode_consensus(CONSENSUS).expect("baseline is valid");
+        let mut fixture: Value = serde_json::from_str(CONSENSUS).expect("fixture parses");
+        fixture["registered_models"].as_array_mut().unwrap().reverse();
+        let reordered = validate_common_mode_consensus(&fixture.to_string()).expect("reordered fixture is valid");
+        assert_eq!(baseline, reordered);
+    }
+
+    #[test]
+    fn conformal_arithmetic_is_order_invariant() {
+        let baseline = validate_conformal_coverage_arithmetic(CONFORMAL).expect("baseline is valid");
+        let mut fixture: Value = serde_json::from_str(CONFORMAL).expect("fixture parses");
+        fixture["conformal_rank_cases"].as_array_mut().unwrap().reverse();
+        fixture["coverage_composition_cases"].as_array_mut().unwrap().reverse();
+        let reordered = validate_conformal_coverage_arithmetic(&fixture.to_string())
+            .expect("reordered fixture is valid");
+        assert_eq!(baseline, reordered);
+    }
+
+    #[test]
     fn conformal_validator_rejects_clamped_finite_rank() {
         let mut fixture: Value = serde_json::from_str(CONFORMAL).expect("fixture parses");
         fixture["conformal_rank_cases"][0]["rank_k"] = serde_json::json!(18);
