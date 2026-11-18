@@ -804,6 +804,31 @@ mod tests {
     }
 
     #[test]
+    fn rejects_unresolved_geometry_evidence() {
+        let mut case = fixture();
+        case["physical_boundaries"][0]["geometry_artifact_id"] =
+            Value::String("missing-geometry".into());
+        assert!(validate_case_manifest(&case).unwrap_err().iter()
+            .any(|e| e.contains("unknown geometry evidence")));
+    }
+
+    #[test]
+    fn rejects_unresolved_observable_reference_evidence() {
+        let mut case = fixture();
+        case["observables"] = serde_json::json!([{
+            "id": "reference-power-check",
+            "name": "Reference power",
+            "expected_value": 100.0,
+            "unit": {"system": "UCUM", "code": "MW"},
+            "metric": "absolute_error",
+            "tolerance": 1e-6,
+            "reference_artifact_ids": ["missing-reference"]
+        }]);
+        assert!(validate_case_manifest(&case).unwrap_err().iter()
+            .any(|e| e.contains("unknown observable reference evidence")));
+    }
+
+    #[test]
     fn rejects_power_quantity_with_energy_unit() {
         let mut case = fixture();
         case["flows"][0]["unit"]["code"] = Value::String("MJ".into());
