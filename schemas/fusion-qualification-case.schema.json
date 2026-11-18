@@ -369,7 +369,9 @@
             "electrical_energy",
             "temperature",
             "pressure",
-            "other"
+            "other",
+            "fusion_power_density",
+            "divertor_heat_flux"
           ]
         },
         "value": {
@@ -403,6 +405,15 @@
         },
         "time_series_artifact_id": {
           "$ref": "#/$defs/id"
+        },
+        "spatial_statistic": {
+          "enum": [
+            "surface_average",
+            "local_peak",
+            "profile_point",
+            "profile",
+            "other"
+          ]
         }
       },
       "allOf": [
@@ -440,6 +451,100 @@
             "not": {
               "required": [
                 "surface_role"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "quantity_kind": {
+                "enum": [
+                  "heat_flux",
+                  "fusion_power_density",
+                  "divertor_heat_flux"
+                ]
+              }
+            },
+            "required": [
+              "quantity_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "surface_role",
+              "spatial_statistic"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "quantity_kind": {
+                "const": "fusion_power_density"
+              }
+            },
+            "required": [
+              "quantity_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "surface_role": {
+                "const": "energy_extraction_surface"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "quantity_kind": {
+                "const": "divertor_heat_flux"
+              }
+            },
+            "required": [
+              "quantity_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "surface_role": {
+                "const": "divertor_target_wetted_surface"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "quantity_kind": {
+                "not": {
+                  "enum": [
+                    "heat_flux",
+                    "fusion_power_density",
+                    "divertor_heat_flux"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "quantity_kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "surface_role"
+                  ]
+                },
+                {
+                  "required": [
+                    "spatial_statistic"
+                  ]
+                }
               ]
             }
           }
