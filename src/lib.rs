@@ -71,6 +71,9 @@ pub mod bridge;
 // Fusion qualification case-package semantic validation
 pub mod case_package;
 
+// Synthetic fusion architecture decision-stability benchmark controls
+pub mod decision_stability;
+
 // Extended fusion physics (D-T, p-B11, muon-catalyzed)
 pub mod reactions;
 
