@@ -302,14 +302,6 @@ pub fn validate_common_mode_consensus(raw: &str) -> Result<ConsensusSummary, Str
         return Err("unresolved dependency dimensions must remain explicit".to_string());
     }
     let actual_cluster_set: BTreeSet<_> = declared_clusters.iter().cloned().collect();
-    let expected_clusters = required_array(
-        required(&required(&root, "expected", "root")?, "declared_dependence_clusters", "expected")?,
-        "items",
-        "expected.declared_dependence_clusters",
-    );
-    let _ = expected_clusters;
-
-
     let minimum = values.iter().copied().fold(f64::INFINITY, f64::min);
     let maximum = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     let reference = required(&root, "held_reference", "root")?;
