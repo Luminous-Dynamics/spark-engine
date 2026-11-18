@@ -5,8 +5,10 @@ on:
     paths:
       - "schemas/fusion-qualification-case.schema.json"
       - "benchmarks/conformance/**"
+      - "benchmarks/research/decision-stability/**"
       - "scripts/validate_fusion_cases.py"
       - "src/case_package.rs"
+      - "src/decision_stability.rs"
       - "src/bin/validate_case_package.rs"
       - "src/lib.rs"
       - "Cargo.toml"
@@ -46,6 +48,8 @@ jobs:
         run: python scripts/validate_fusion_cases.py
       - name: Set up Rust for the runtime semantic validator
         uses: dtolnay/rust-toolchain@stable
+      - name: Run decision-stability synthetic known-answer tests
+        run: cargo test --lib decision_stability::tests -- --nocapture
       - name: Run Rust semantic validator on every case package
         shell: bash
         run: |
