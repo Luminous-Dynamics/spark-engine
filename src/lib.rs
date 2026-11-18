@@ -78,6 +78,9 @@ pub mod qecon;
 // Sensitivity, scenario sweeps and correlated uncertainty for Q_econ
 pub mod qecon_exploration;
 
+// Weighted closest-viable-design projection for Q_econ
+pub mod qecon_projection;
+
 // Conditional robust-viability assessment with independent validation ensemble
 pub mod qecon_robust;
 
@@ -140,6 +143,12 @@ pub use qecon_exploration::{
     QeconUncertaintySample, QeconUncertaintyScenario, QeconUncertaintyScenarioResult,
     estimate_qecon_sobol_indices, propagate_qecon_scenario_uncertainty,
     propagate_qecon_uncertainty, rank_qecon_global_associations, rank_qecon_sensitivities,
+};
+pub use qecon_projection::{
+    QECON_PROJECTION_MAX_LIFETIME_SPAN_YEARS, QECON_PROJECTION_REVISION,
+    QeconProjectionBound, QeconProjectionBoundState, QeconProjectionParameterResult,
+    QeconProjectionStatus, QeconWeightedProjectionInput, QeconWeightedProjectionResult,
+    project_qecon_to_viability,
 };
 pub use qecon_chance_projection::{
     MAX_CHANCE_CANDIDATE_EVALUATIONS, MAX_CHANCE_COORDINATE_SWEEPS,
