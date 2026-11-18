@@ -20,6 +20,11 @@ on:
       - "schemas/fusion-qualification-case.schema.json"
       - "benchmarks/conformance/**"
       - "scripts/validate_fusion_cases.py"
+      - "src/case_package.rs"
+      - "src/bin/validate_case_package.rs"
+      - "src/lib.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
       - ".github/workflows/fusion-case-package.yml"
 
 permissions:
