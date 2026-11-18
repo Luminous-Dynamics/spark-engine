@@ -394,6 +394,7 @@ def main() -> int:
     boundary_mismatch["flows"][0]["quantity_kind"] = "divertor_heat_flux"
     boundary_mismatch["flows"][0]["surface_role"] = "divertor_target_wetted_surface"
     boundary_mismatch["flows"][0]["spatial_statistic"] = "surface_average"
+    boundary_mismatch["flows"][0]["unit"]["code"] = "MW.m-2"
     if not validate_manifest(boundary_mismatch, schema):
         print("FAIL negative control did not reject: mismatched surface role", file=sys.stderr)
         return 1
