@@ -74,11 +74,14 @@ pub fn validate_case_manifest(value: &Value) -> Result<CasePackageSummary, Vec<S
         .filter_map(|item| Some((item.get("id")?.as_str()?, item))).collect();
     let model_by_id: HashMap<&str, &Value> = models.into_iter().flatten()
         .filter_map(|item| Some((item.get("id")?.as_str()?, item))).collect();
+    let boundary_role_by_id: HashMap<&str, &str> = boundaries.into_iter().flatten()
+        .filter_map(|item| Some((item.get("id")?.as_str()?, item.get("role")?.as_str()?)))
+        .collect();
 
     validate_time_bases(time_bases, &mut errors);
     validate_models(models, model_family.as_deref(), &evidence_ids, &mut errors);
-    validate_flows(flows, &boundary_ids, &time_ids, &time_by_id, &evidence_ids,
-        &uncertainty_ids, &mut errors);
+    validate_flows(flows, &boundary_ids, &boundary_role_by_id, &time_ids,
+        &time_by_id, &evidence_ids, &uncertainty_ids, &mut errors);
     validate_quantities(quantities, &boundary_ids, &time_ids, &evidence_ids,
         &uncertainty_ids, &mut errors);
     validate_uncertainty(uncertainty, &evidence_ids, &mut errors);
@@ -219,8 +222,9 @@ fn validate_models(items: Option<&Vec<Value>>, case_family: Option<&str>,
 }
 
 fn validate_flows(items: Option<&Vec<Value>>, boundaries: &HashSet<String>,
-    times: &HashSet<String>, time_by_id: &HashMap<&str, &Value>,
-    evidence: &HashSet<String>, uncertainty: &HashSet<String>, errors: &mut Vec<String>) {
+    boundary_roles: &HashMap<&str, &str>, times: &HashSet<String>,
+    time_by_id: &HashMap<&str, &Value>, evidence: &HashSet<String>,
+    uncertainty: &HashSet<String>, errors: &mut Vec<String>) {
     for (index, flow) in items.into_iter().flatten().enumerate() {
         let context = format!("flows[{index}]");
         let from = flow.get("from_boundary_id").and_then(Value::as_str);
@@ -255,15 +259,31 @@ fn validate_flows(items: Option<&Vec<Value>>, boundaries: &HashSet<String>,
             Some("energy_extraction_surface" | "divertor_target_wetted_surface" | "first_wall" | "blanket" | "other")) {
             errors.push(format!("{context} heat_flux has missing or unsupported surface_role"));
         }
+        if let Some(surface) = surface {
+            let endpoint_matches = [from, to].into_iter().flatten()
+                .any(|id| boundary_roles.get(id).copied() == Some(surface));
+            if !endpoint_matches {
+                errors.push(format!(
+                    "{context} surface_role {surface} does not match either declared endpoint boundary"
+                ));
+            }
+        }
 
         match flow.get("value").and_then(Value::as_f64) {
             Some(value) if value.is_finite() && value >= 0.0 => {}
             Some(_) => errors.push(format!("{context}.value must be finite and non-negative; reverse the flow direction instead of using a negative value")),
             None => errors.push(format!("{context}.value must be numeric")),
         }
+        let unit_code = flow.get("unit").and_then(|u| u.get("code")).and_then(Value::as_str);
         if flow.get("unit").and_then(|u| u.get("system")).and_then(Value::as_str) != Some("UCUM")
-            || flow.get("unit").and_then(|u| u.get("code")).and_then(Value::as_str).is_none_or(str::is_empty) {
+            || unit_code.is_none_or(str::is_empty) {
             errors.push(format!("{context}.unit must declare a non-empty UCUM code"));
+        } else if !unit_matches_quantity(kind, unit_code.unwrap_or_default()) {
+            errors.push(format!(
+                "{context} UCUM unit {} is incompatible with quantity_kind {}",
+                unit_code.unwrap_or_default(),
+                kind.unwrap_or("missing")
+            ));
         }
         if let Some(time_id) = time_id {
             if time_by_id.get(time_id).and_then(|basis| basis.get("kind")).and_then(Value::as_str) == Some("time_series") {
@@ -273,6 +293,36 @@ fn validate_flows(items: Option<&Vec<Value>>, boundaries: &HashSet<String>,
                 errors.push(format!("{context} provides a time-series artifact but its time basis is not time_series"));
             }
         }
+    }
+}
+
+
+/// Conservative UCUM-dimension compatibility for common fusion engineering
+/// quantities. This is deliberately a subset, not a general UCUM parser:
+/// unsupported unit spellings fail closed instead of being silently coerced.
+fn unit_matches_quantity(kind: Option<&str>, code: &str) -> bool {
+    let power = ["W", "kW", "MW", "GW"].contains(&code);
+    let energy = ["J", "kJ", "MJ", "GJ", "Wh", "kWh", "MWh", "GWh"].contains(&code);
+    let surface_power_density = ["W.m-2", "kW.m-2", "MW.m-2"].contains(&code);
+    let mass_flow = ["g.s-1", "kg.s-1"].contains(&code);
+    let mass = ["g", "kg"].contains(&code);
+    let particle_rate = code == "s-1";
+    let temperature = ["K", "Cel"].contains(&code);
+    let pressure = ["Pa", "kPa", "MPa"].contains(&code);
+    match kind {
+        Some("power" | "electric_power") => power,
+        Some("energy" | "electrical_energy") => energy,
+        Some("heat_flux" | "fusion_power_density" | "divertor_heat_flux") => surface_power_density,
+        Some("mass_flow") => mass_flow,
+        Some("tritium_flow") => mass_flow || particle_rate,
+        Some("mass") => mass,
+        Some("tritium_inventory") => mass || code == "1",
+        Some("particle_rate") => particle_rate,
+        Some("temperature") => temperature,
+        Some("pressure") => pressure,
+        Some("cost" | "price" | "probability" | "availability" | "stress" | "strain"
+            | "damage" | "lifetime" | "other") => !code.trim().is_empty(),
+        _ => false,
     }
 }
 
@@ -286,9 +336,19 @@ fn validate_quantities(items: Option<&Vec<Value>>, boundaries: &HashSet<String>,
                 if quantity.get("value").and_then(Value::as_f64).is_none_or(|v| !v.is_finite()) {
                     errors.push(format!("{context} known value must be finite and numeric"));
                 }
+                let unit_code = quantity.get("unit").and_then(|u| u.get("code")).and_then(Value::as_str);
                 if quantity.get("unit").and_then(|u| u.get("system")).and_then(Value::as_str) != Some("UCUM")
-                    || quantity.get("unit").and_then(|u| u.get("code")).and_then(Value::as_str).is_none_or(str::is_empty) {
+                    || unit_code.is_none_or(str::is_empty) {
                     errors.push(format!("{context} known quantity requires a UCUM unit"));
+                } else if !unit_matches_quantity(
+                    quantity.get("quantity_kind").and_then(Value::as_str),
+                    unit_code.unwrap_or_default()
+                ) {
+                    errors.push(format!(
+                        "{context} UCUM unit {} is incompatible with quantity_kind {}",
+                        unit_code.unwrap_or_default(),
+                        quantity.get("quantity_kind").and_then(Value::as_str).unwrap_or("missing")
+                    ));
                 }
                 check_ref(quantity.get("physical_boundary_id").and_then(Value::as_str), boundaries,
                     "physical boundary", &context, errors);
