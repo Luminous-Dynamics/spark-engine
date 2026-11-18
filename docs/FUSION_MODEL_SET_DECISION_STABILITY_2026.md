@@ -1,6 +1,6 @@
 # Fusion architecture decision-stability benchmark — 2026
 
-**Status:** four synthetic controls and targeted Rust known-answer tests are authored and wired; exact-head CI/test success and any performance result are not claimed  
+**Status:** five synthetic controls and seventeen targeted Rust known-answer tests are authored and wired; exact-head CI/test success and any performance result are not claimed  
 **Tracking:** [FUSION-DECISION-ROBUSTNESS-001, Spark #44](https://github.com/Luminous-Dynamics/spark-engine/issues/44)  
 **Composes with:** [FUSION-E2E-001 #43](https://github.com/Luminous-Dynamics/spark-engine/issues/43), [Spark robust co-design #36](https://github.com/Luminous-Dynamics/spark-engine/issues/36), and the existing Symthaea/Symtropy UQ and model-discrepancy owners below.
 
@@ -196,7 +196,7 @@ No SOTA claim without matched budgets, blind held-out cases, strong baselines, a
 
 ### Initial implementation state — 18 November 2026
 
-Five JSON fixtures are now present under `benchmarks/research/decision-stability/`. `src/decision_stability.rs` contains Rust known-answer validators and seventeen unit tests, and the Spark fusion case-package workflow runs the targeted test module when the research fixtures or validator change. The fixtures have been fetched back and parsed as JSON; the conformal rank and union-bound values have been independently recalculated in a lightweight static check. This is not a Rust compile/test pass: the local authoring environment has no Rust toolchain and the exact-head hosted result remains queued. The current hosted workflow state is recorded on [draft PR #40](https://github.com/Luminous-Dynamics/spark-engine/pull/40); queued or absent workflows must never be reported as passes. The evaluator covers five synthetic controls, including an OOD numerical-output refusal; the OOD validator retains the model point estimate but refuses decision eligibility and an adjusted robust lower bound, not the full tournament or real solver adapters.
+Five JSON fixtures are now present under `benchmarks/research/decision-stability/`. `src/decision_stability.rs` contains Rust known-answer validators and seventeen unit tests, and the Spark fusion case-package workflow runs the targeted test module when the research fixtures or validator change. The fixtures have been fetched back and parsed as JSON; the conformal rank and union-bound values have been independently recalculated in a lightweight static check. This is not a Rust compile/test pass: the local authoring environment has no Rust toolchain and the exact-head hosted result remains queued. The current hosted workflow state is recorded on [draft PR #40](https://github.com/Luminous-Dynamics/spark-engine/pull/40); queued or absent workflows must never be reported as passes. The evaluator covers five synthetic controls, including an OOD numerical-output refusal; the OOD validator retains the model point estimate but refuses decision eligibility and an adjusted robust lower bound. This is not the full tournament or real solver adapters.
 
 ## 10. Execution and ownership
 
