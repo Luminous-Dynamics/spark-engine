@@ -1,6 +1,6 @@
 # Decision-stability synthetic controls
 
-**Status:** hand-authored benchmark seeds; not yet wired into CI or a scoring executable.  
+**Status:** hand-authored synthetic benchmark seeds with a Rust known-answer oracle wired into the targeted CI test step; no successful exact-head run is claimed and no tournament/scoring executable exists yet.  
 **Parent:** [FUSION-DECISION-ROBUSTNESS-001 #44](https://github.com/Luminous-Dynamics/spark-engine/issues/44).  
 **Claim ceiling:** software/decision semantics only. No fixture represents a fusion design, physical solver output, measured residual, calibrated probability, or plant performance.
 
@@ -20,4 +20,5 @@ Before these fixtures are used by an evaluator:
 3. Test deliberate mutations of thresholds, model ordering, dependency groups, coverage ranks and status fields.
 4. Preserve every input/model/candidate result and expected refusal.
 5. Wire the exact fixtures into Rust unit tests and CI only after their report contract is reviewed.
-6. Never promote the synthetic class or these fixture digests into measured/model-validated evidence.
+6. The current Rust tests verify the three synthetic control families only; they do not score real solver runs or establish measured calibration.
+7. Never promote the synthetic class or these fixture digests into measured/model-validated evidence.
