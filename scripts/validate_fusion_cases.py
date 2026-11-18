@@ -371,37 +371,36 @@ def validate_manifest(
         if not transfers:
             errors.append("cross_family_contract requires explicit cross_family_transfers")
         _unique_ids(transfers, "cross_family_transfers", errors)
-        covered_pairs: set[tuple[str, str]] = set()
         for transfer in transfers:
             source = model_by_id.get(transfer["source_model_id"])
             destination = model_by_id.get(transfer["destination_model_id"])
             if source is None or destination is None:
                 errors.append(f"cross-family transfer {transfer['id']} references an unknown model")
                 continue
+            if transfer["source_model_id"] == transfer["destination_model_id"]:
+                errors.append(f"cross-family transfer {transfer['id']} cannot connect a model to itself")
             if source["model_family"] != transfer["source_family"]:
                 errors.append(f"cross-family transfer {transfer['id']} source family mismatch")
             if destination["model_family"] != transfer["destination_family"]:
                 errors.append(f"cross-family transfer {transfer['id']} destination family mismatch")
             if transfer["source_family"] == transfer["destination_family"]:
                 errors.append(f"cross-family transfer {transfer['id']} does not cross model families")
+            if not transfer["rationale"].strip() or not transfer["claim"].strip():
+                errors.append(f"cross-family transfer {transfer['id']} requires rationale and claim")
             review_id = transfer["independent_review_evidence_id"]
             if review_id not in evidence_ids:
                 errors.append(f"cross-family transfer {transfer['id']} lacks a review evidence record")
             else:
                 review = evidence_by_id[review_id]
-                if review["evidence_class"] in {"synthetic_fixture", "scenario_assumption"}:
+                if review["evidence_class"] not in {
+                    "measured",
+                    "code_to_code_comparison",
+                    "experimental_validation",
+                    "engineering_qualification",
+                }:
                     errors.append(
                         f"cross-family transfer {transfer['id']} review evidence is not independent"
                     )
-            covered_pairs.add((transfer["source_model_id"], transfer["destination_model_id"]))
-        for source in models:
-            for destination in models:
-                if source["model_family"] != destination["model_family"]:
-                    if (source["id"], destination["id"]) not in covered_pairs:
-                        errors.append(
-                            "missing explicit transfer contract for "
-                            f"{source['id']} -> {destination['id']}"
-                        )
 
     if case_family == "synthetic_fixture" and qualification["status"] == "qualified":
         errors.append("synthetic_fixture cases can never be engineering-qualified")
