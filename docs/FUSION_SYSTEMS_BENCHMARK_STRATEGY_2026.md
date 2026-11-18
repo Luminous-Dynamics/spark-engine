@@ -112,6 +112,8 @@ The programme is deliberately sequenced to create a useful evidence chain rather
 8. **Robust multiobjective co-design** — [Issue #36](https://github.com/Luminous-Dynamics/spark-engine/issues/36). Search a Pareto frontier only over candidates whose mandatory evidence gates are satisfied; keep indeterminate and infeasible states explicit.
 9. **Integrated reference-case orchestration** — [FUSION-E2E-001 #43](https://github.com/Luminous-Dynamics/spark-engine/issues/43) and [decision-to-engineering reference-case protocol](FUSION_REFERENCE_CASE_INTEGRATION_2026.md). Compose Symthaea's decision policy and plant-service/lifecycle gates with Spark's boundary accounting, Symtropy's deterministic geometry/maintenance certificates, and Mycelix's independent provenance/review. The D0FUS ITER negative-net-power control is the first reference; it does not imply a commercial design or experimental validation.
 
+9. **Integrated decision-stability atlas** — [FUSION-DECISION-ROBUSTNESS-001 #44](https://github.com/Luminous-Dynamics/spark-engine/issues/44) and [benchmark protocol](FUSION_MODEL_SET_DECISION_STABILITY_2026.md). Compose covariance, model-form discrepancy, matched-model disagreement, applicability and scenario evidence into robust Pareto/decision-stability reports without merging their uncertainty semantics.
+
 ## 6. Luminous project boundaries
 
 - **Spark Engine:** case formats, fusion systems economics, power/exhaust interfaces, design screening and the original LCF anomaly investigation. LCF and magnetic-confinement plant model families remain separated.
