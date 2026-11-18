@@ -33,8 +33,8 @@ pub const QECON_PROJECTION_MAX_LIFETIME_SPAN_YEARS: u32 = 250;
 const BARRIER_PARAMETERS: [f64; 8] = [
     1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5,
 ];
-const MAX_COORDINATE_SWEEPS: usize = 80;
-const GOLDEN_SECTION_STEPS: usize = 36;
+const MAX_COORDINATE_SWEEPS: usize = 160;
+const GOLDEN_SECTION_STEPS: usize = 48;
 const COORDINATE_TOLERANCE: f64 = 2e-8;
 const FEASIBILITY_EPSILON: f64 = 1e-12;
 
@@ -273,7 +273,7 @@ struct CandidateProjection {
     final_barrier_parameter: f64,
 }
 
-fn validate_projection_input(
+pub(crate) fn validate_projection_input(
     request: &QeconWeightedProjectionInput,
 ) -> Result<(), String> {
     calculate_qecon(&request.reference)?;
@@ -366,7 +366,7 @@ fn validate_projection_input(
     Ok(())
 }
 
-fn order_projection_bounds(
+pub(crate) fn order_projection_bounds(
     bounds: &[QeconProjectionBound],
 ) -> Result<[QeconProjectionBound; 10], String> {
     let mut ordered: [Option<QeconProjectionBound>; 10] =
@@ -383,11 +383,11 @@ fn order_projection_bounds(
         .map_err(|_| "expected ten Q_econ projection bounds".to_string())
 }
 
-fn input_values(input: &QeconInput) -> [f64; 10] {
+pub(crate) fn input_values(input: &QeconInput) -> [f64; 10] {
     std::array::from_fn(|index| QeconParameter::ALL[index].value(input))
 }
 
-fn input_from_values(reference: &QeconInput, values: &[f64; 10]) -> Result<QeconInput, String> {
+pub(crate) fn input_from_values(reference: &QeconInput, values: &[f64; 10]) -> Result<QeconInput, String> {
     let mut input = reference.clone();
     for parameter in QeconParameter::ALL {
         input = parameter.with_value(&input, values[parameter.index()])?;
@@ -406,7 +406,7 @@ fn reference_is_inside_box(
     })
 }
 
-fn clamp_reference(
+pub(crate) fn clamp_reference(
     reference: &[f64; 10],
     bounds: &[QeconProjectionBound; 10],
 ) -> [f64; 10] {
@@ -415,7 +415,7 @@ fn clamp_reference(
     })
 }
 
-fn favourable_corner(bounds: &[QeconProjectionBound; 10]) -> [f64; 10] {
+pub(crate) fn favourable_corner(bounds: &[QeconProjectionBound; 10]) -> [f64; 10] {
     std::array::from_fn(|index| {
         let bound = &bounds[index];
         match bound.parameter {
@@ -471,7 +471,7 @@ fn interpolate(left: &[f64; 10], right: &[f64; 10], alpha: f64) -> [f64; 10] {
     std::array::from_fn(|index| left[index] + alpha * (right[index] - left[index]))
 }
 
-fn weighted_distance_squared(
+pub(crate) fn weighted_distance_squared(
     input: &QeconInput,
     reference: &QeconInput,
     bounds: &[QeconProjectionBound; 10],
@@ -689,7 +689,7 @@ fn coordinate_barrier_value(
     barrier_value(reference, &values, bounds, target, barrier)
 }
 
-fn bound_state(value: f64, bound: &QeconProjectionBound) -> QeconProjectionBoundState {
+pub(crate) fn bound_state(value: f64, bound: &QeconProjectionBound) -> QeconProjectionBoundState {
     if bound.minimum == bound.maximum {
         QeconProjectionBoundState::Fixed
     } else if (value - bound.minimum).abs() <= 1e-7 * bound.scale.max(1.0) {
@@ -835,7 +835,7 @@ fn build_projection_result(
         weighted_distance_squared: distance,
         kkt_stationarity_residual: kkt_residual,
         status,
-        integer_lifetime_candidates_examined: lifetime_candidates_examined,
+        integer_lifetime_candidates_examined,
         coordinate_sweeps,
         total_coordinate_sweeps,
         final_barrier_parameter,
@@ -928,9 +928,8 @@ mod tests {
     #[test]
     fn already_viable_reference_is_returned_with_zero_distance() {
         let mut reference = reference_input(3.7);
-        // The projection domain is strictly positive. Keep this already-viable
-        // reference inside the box instead of using the zero-cost fixture,
-        // whose corresponding lower bound is intentionally positive.
+        // The projection domain is strictly positive. Keep this reference
+        // inside the declared box rather than using the zero-cost fixture.
         reference.design.target_cost_per_energy_yield_usd_per_mj = 1e-12;
         let bounds = projection_bounds(&reference, None, None, 1.0, 1.0);
         let result = project_qecon_to_viability(&QeconWeightedProjectionInput {
@@ -1025,14 +1024,17 @@ mod tests {
         ];
         let mut objectives = Vec::new();
         for start in starts {
-            let (values, _, converged, _) = optimize_fixed_lifetime(
+            let (values, sweeps, converged, _) = optimize_fixed_lifetime(
                 &reference,
                 &bounds,
                 &start,
                 request.target_q_econ,
             )
             .unwrap();
-            assert!(converged);
+            assert!(
+                converged,
+                "feasible start {start:?} did not converge after {sweeps} sweeps"
+            );
             assert!(q_at_values(&reference, &values).unwrap() >= request.target_q_econ);
             let input = input_from_values(&reference, &values).unwrap();
             objectives.push(weighted_distance_squared(&input, &reference, &bounds));
