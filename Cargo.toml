@@ -29,6 +29,10 @@ proptest = "1.0"
 name = "spark"
 path = "src/bin/spark.rs"
 
+[[bin]]
+name = "spark-case-validate"
+path = "src/bin/validate_case_package.rs"
+
 [[example]]
 name = "analysis_runner"
 path = "examples/analysis_runner.rs"
