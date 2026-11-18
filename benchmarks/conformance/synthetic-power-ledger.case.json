@@ -213,5 +213,29 @@
       "synthetic-ledger-source"
     ]
   },
-  "model_family": "synthetic_fixture"
+  "model_family": "synthetic_fixture",
+  "accounting_checks": [
+    {
+      "id": "control-volume-power-closure",
+      "boundary_id": "control-volume",
+      "quantity_kind": "power",
+      "unit": {
+        "system": "UCUM",
+        "code": "MW"
+      },
+      "time_basis_id": "one-second-window",
+      "inbound_flow_ids": [
+        "input-power"
+      ],
+      "outbound_flow_ids": [
+        "sink-a-power",
+        "sink-b-power",
+        "sink-c-power"
+      ],
+      "relative_tolerance": 1e-10,
+      "evidence_artifact_ids": [
+        "synthetic-ledger-source"
+      ]
+    }
+  ]
 }
