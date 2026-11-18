@@ -364,6 +364,9 @@ pub fn validate_conformal_coverage_arithmetic(
     }
 
     let rank_cases = required_array(&root, "conformal_rank_cases", "root")?;
+    if rank_cases.is_empty() {
+        return Err("conformal rank control set must not be empty".to_string());
+    }
     let mut insufficient = 0usize;
     for case in rank_cases {
         let n = required(case, "n", "rank_case")?.as_u64()
@@ -401,6 +404,9 @@ pub fn validate_conformal_coverage_arithmetic(
     }
 
     let coverage_cases = required_array(&root, "coverage_composition_cases", "root")?;
+    if coverage_cases.is_empty() {
+        return Err("coverage-composition control set must not be empty".to_string());
+    }
     for case in coverage_cases {
         let parametric = required(case, "parametric_coverage_basis_points", "coverage_case")?
             .as_u64().ok_or_else(|| "parametric coverage must be an integer".to_string())?;
@@ -458,6 +464,17 @@ mod tests {
     fn decision_irrelevant_model_spread_does_not_create_a_false_split() {
         let summary = validate_model_choice_cliff(DECISION_IRRELEVANT)
             .expect("decision-irrelevant disagreement fixture is valid");
+        let fixture: Value = serde_json::from_str(DECISION_IRRELEVANT).expect("fixture parses");
+        let candidate_a: Vec<f64> = fixture["evaluations"].as_array().unwrap().iter()
+            .filter(|row| row["candidate_id"] == "candidate-a")
+            .map(|row| row["net_export_mwe"].as_f64().unwrap())
+            .collect();
+        assert_eq!(
+            candidate_a.iter().copied().fold(f64::NEG_INFINITY, f64::max)
+                - candidate_a.iter().copied().fold(f64::INFINITY, f64::min),
+            21.0
+        );
+        assert!(candidate_a.iter().all(|value| *value >= 50.0));
         assert_eq!(summary.robust_feasible_set, vec!["candidate-a".to_string()]);
         assert!(summary.candidates.iter().all(|candidate| {
             candidate.model_set_disposition != "DecisionSplit"
@@ -572,6 +589,17 @@ mod tests {
         let reordered = validate_conformal_coverage_arithmetic(&fixture.to_string())
             .expect("reordered fixture is valid");
         assert_eq!(baseline, reordered);
+    }
+
+    #[test]
+    fn conformal_validator_rejects_empty_control_sets() {
+        let mut no_rank_cases: Value = serde_json::from_str(CONFORMAL).expect("fixture parses");
+        no_rank_cases["conformal_rank_cases"] = serde_json::json!([]);
+        assert!(validate_conformal_coverage_arithmetic(&no_rank_cases.to_string()).is_err());
+
+        let mut no_coverage_cases: Value = serde_json::from_str(CONFORMAL).expect("fixture parses");
+        no_coverage_cases["coverage_composition_cases"] = serde_json::json!([]);
+        assert!(validate_conformal_coverage_arithmetic(&no_coverage_cases.to_string()).is_err());
     }
 
     #[test]
