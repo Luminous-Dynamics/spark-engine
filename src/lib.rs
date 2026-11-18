@@ -78,6 +78,9 @@ pub mod qecon;
 // Sensitivity, scenario sweeps and correlated uncertainty for Q_econ
 pub mod qecon_exploration;
 
+// Conditional robust-viability assessment with independent validation ensemble
+pub mod qecon_robust;
+
 // First-order reliability/availability screening (not full RAMI)
 pub mod plant_availability;
 
@@ -134,6 +137,11 @@ pub use qecon_exploration::{
     QeconUncertaintySample, QeconUncertaintyScenario, QeconUncertaintyScenarioResult,
     estimate_qecon_sobol_indices, propagate_qecon_scenario_uncertainty,
     propagate_qecon_uncertainty, rank_qecon_global_associations, rank_qecon_sensitivities,
+};
+pub use qecon_robust::{
+    QECON_ROBUST_ASSESSMENT_REVISION, QeconRobustAssessmentResult, QeconRobustAssessmentScenario,
+    QeconRobustMarginal, QeconRobustRunEstimate, QeconRobustTransform, QeconRobustUncertaintyInput,
+    assess_qecon_robust_viability,
 };
 pub use shielding::{NeutronShielding, ShieldingResult};
 pub use sub_kev_yield::{
