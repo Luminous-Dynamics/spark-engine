@@ -1,6 +1,6 @@
 # Decision-stability synthetic controls
 
-**Status:** hand-authored synthetic benchmark seeds with a Rust known-answer oracle wired into the targeted CI test step; no successful exact-head run is claimed and no tournament/scoring executable exists yet.  
+**Status:** five hand-authored synthetic benchmark controls, covered by seventeen authored Rust known-answer/hostile tests and wired into the targeted CI test step; no successful exact-head run or tournament/scoring executable is claimed.  
 **Parent:** [FUSION-DECISION-ROBUSTNESS-001 #44](https://github.com/Luminous-Dynamics/spark-engine/issues/44).  
 **Claim ceiling:** software/decision semantics only. No fixture represents a fusion design, physical solver output, measured residual, calibrated probability, or plant performance.
 
