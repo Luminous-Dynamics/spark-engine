@@ -150,6 +150,10 @@
         "fusion_plant_systems",
         "cross_family_contract"
       ]
+    },
+    "$schema": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "$defs": {
@@ -583,6 +587,7 @@
       "required": [
         "id",
         "name",
+        "model_family",
         "discipline",
         "version",
         "revision",
@@ -677,6 +682,18 @@
           "items": {
             "$ref": "#/$defs/id"
           }
+        },
+        "model_family": {
+          "type": "string",
+          "enum": [
+            "synthetic_fixture",
+            "lattice_confinement_fusion",
+            "magnetic_confinement_fusion",
+            "inertial_confinement_fusion",
+            "magnetized_target_fusion",
+            "fusion_plant_systems",
+            "cross_family_contract"
+          ]
         }
       }
     },
